@@ -1,0 +1,85 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s | FileCheck --enable-var-scope %s
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear" %s | FileCheck --enable-var-scope %s
+
+// Type-variable results and calls to defined generic functions remain supported.
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Generic {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def nested @produce() -> !poly.tvar<@T>
+// CHECK-NEXT:      function.def @inspect(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<2 x !poly.tvar<@T>>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !pod.type<[@value: !poly.tvar<@T>]>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @helper(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<2 x !poly.tvar<@T>>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !pod.type<[@value: !poly.tvar<@T>]>) {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @Generic::@produce() : () -> !poly.tvar<@T>
+// CHECK-NEXT:        function.call @Generic::@inspect(%[[VAL_5]], %[[VAL_3]], %[[VAL_4]]) : (!poly.tvar<@T>, !array.type<2 x !poly.tvar<@T>>, !pod.type<[@value: !poly.tvar<@T>]>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @produce() -> !poly.tvar<@T>
+    function.def @inspect(%value: !poly.tvar<@T>, %values: !array.type<2 x !poly.tvar<@T>>, %pod: !pod.type<[@value: !poly.tvar<@T>]>) {
+      function.return
+    }
+    function.def @helper(%values: !array.type<2 x !poly.tvar<@T>>, %pod: !pod.type<[@value: !poly.tvar<@T>]>) {
+      %value = function.call @Generic::@produce() : () -> !poly.tvar<@T>
+      function.call @Generic::@inspect(%value, %values, %pod) : (!poly.tvar<@T>, !array.type<2 x !poly.tvar<@T>>, !pod.type<[@value: !poly.tvar<@T>]>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Plain value arguments, handle results, and defined functions remain supported.
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def private @values(!felt.type, !array.type<2 x !felt.type>, !pod.type<[@value: !felt.type]>)
+// CHECK-NEXT:    function.def private @produce() -> !struct.type<@Cell>
+// CHECK-NEXT:    function.def @inspect(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Cell>) -> !felt.type {
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_2]][@value] : <@Cell>, !felt.type
+// CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @helper(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !pod.type<[@value: !felt.type]>) {
+// CHECK-NEXT:      function.call @values(%[[VAL_4]], %[[VAL_5]], %[[VAL_6]]) : (!felt.type, !array.type<2 x !felt.type>, !pod.type<[@value: !felt.type]>) -> ()
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @produce() : () -> !struct.type<@Cell>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @inspect(%[[VAL_7]]) : (!struct.type<@Cell>) -> !felt.type
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def private @values(!felt.type, !array.type<2 x !felt.type>, !pod.type<[@value: !felt.type]>)
+  function.def private @produce() -> !struct.type<@Cell>
+  function.def @inspect(%cell: !struct.type<@Cell>) -> !felt.type {
+    %value = struct.readm %cell[@value] : !struct.type<@Cell>, !felt.type
+    function.return %value : !felt.type
+  }
+  function.def @helper(%scalar: !felt.type, %array: !array.type<2 x !felt.type>, %pod: !pod.type<[@value: !felt.type]>) {
+    function.call @values(%scalar, %array, %pod) : (!felt.type, !array.type<2 x !felt.type>, !pod.type<[@value: !felt.type]>) -> ()
+    %cell = function.call @produce() : () -> !struct.type<@Cell>
+    %read = function.call @inspect(%cell) : (!struct.type<@Cell>) -> !felt.type
+    function.return
+  }
+}
