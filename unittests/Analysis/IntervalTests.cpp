@@ -905,7 +905,7 @@ TEST_F(IntervalAnalysisAPITests, DynamicNonAssertCastsInitializeResultLattices) 
   ModuleIntervalAnalysis analysis(mod->getOperation());
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   unsigned dynamicCastCount = 0;
   computeFn.walk([&](Operation *op) {
@@ -943,7 +943,7 @@ TEST_F(IntervalAnalysisAPITests, DynamicTruncationReducesToFieldRange) {
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   unsigned toFeltCount = 0;
   computeFn.walk([&](cast::IntToFeltOp op) {
@@ -1003,7 +1003,7 @@ TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setPropagateInputConstraints(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const auto &intervals = analysis.getResult(structDef).getConstrainIntervals();
   ASSERT_FALSE(intervals.empty());
@@ -1049,7 +1049,7 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   ModuleIntervalAnalysis analysis(mod->getOperation());
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const auto &intervals = analysis.getResult(structDef).getComputeIntervals();
   ASSERT_FALSE(intervals.empty());
@@ -1117,7 +1117,7 @@ TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsDisabledByDefault) {
   ModuleIntervalAnalysis analysis(mod->getOperation());
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   SmallVector<Value> values = {
       computeFn.getArgument(0), constFive.getResult(), sumOp.getResult(), negOp.getResult(),
@@ -1163,7 +1163,7 @@ TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsPropagateThroughSupportedArit
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, computeFn.getArgument(0));
   ASSERT_NE(argLattice, nullptr);
@@ -1244,7 +1244,7 @@ TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsTrackBooleanAndSelectResults)
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const IntervalAnalysisLattice *flagLattice = lookupLattice(analysis, computeFn.getArgument(0));
   ASSERT_NE(flagLattice, nullptr);
@@ -1324,7 +1324,7 @@ TEST_F(IntervalAnalysisAPITests, RefinedReducedIntervalsDropUnreducedIntervals) 
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, computeFn.getArgument(0));
   ASSERT_NE(argLattice, nullptr);
@@ -1348,7 +1348,7 @@ TEST_F(IntervalAnalysisAPITests, TypeFConstraintPropagationUsesFirstUnreducedInt
   analysis.setField(field);
   analysis.setPropagateInputConstraints(true);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, computeFn.getArgument(0));
   ASSERT_NE(argLattice, nullptr);
@@ -1374,7 +1374,7 @@ TEST_F(IntervalAnalysisAPITests, UnconstrainedSignalReadsDefaultToCanonicalUnred
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const IntervalAnalysisLattice *readLattice = lookupLattice(analysis, readOp.getResult());
   ASSERT_NE(readLattice, nullptr);
@@ -1435,7 +1435,7 @@ TEST_F(IntervalAnalysisAPITests, IsZeroTracksWideUnreducedMulAndSumIntervals) {
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   auto pMinusOne = field.maxVal();
   auto square = pMinusOne * pMinusOne;
@@ -1496,7 +1496,7 @@ TEST_F(IntervalAnalysisAPITests, ProductFunctionsTrackReducedIntervals) {
   ModuleIntervalAnalysis analysis(mod->getOperation());
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, productFn.getArgument(0));
   ASSERT_NE(argLattice, nullptr);
@@ -1551,7 +1551,7 @@ TEST_F(IntervalAnalysisAPITests, ProductFunctionsTrackUnreducedIntervals) {
   const Field &field = Field::getField("babybear");
   analysis.setField(field);
   analysis.setTrackUnreducedIntervals(true);
-  analysis.runAnalysis(am);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
 
   const IntervalAnalysisLattice *argLattice = lookupLattice(analysis, productFn.getArgument(0));
   ASSERT_NE(argLattice, nullptr);

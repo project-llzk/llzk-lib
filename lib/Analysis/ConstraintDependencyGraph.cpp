@@ -643,6 +643,21 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   return res;
 }
 
+/* ConstraintDependencyGraphModuleAnalysis */
+
+LogicalResult ConstraintDependencyGraphModuleAnalysis::validateInput(ModuleOp module) const {
+  auto result = module.walk([](Operation *op) -> WalkResult {
+    if (op->getName().getDialectNamespace() == "cf") {
+      return op->emitOpError(
+          "constraint dependency graph analysis requires SCF control flow; "
+          "operations from the 'cf' dialect are unsupported"
+      );
+    }
+    return WalkResult::advance();
+  });
+  return failure(result.wasInterrupted());
+}
+
 /* ConstraintDependencyGraphStructAnalysis */
 
 mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
