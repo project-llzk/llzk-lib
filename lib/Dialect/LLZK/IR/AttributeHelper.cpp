@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -11,9 +12,19 @@
 
 #include "llzk/Util/TypeHelper.h"
 
+#include <mlir/IR/Operation.h>
+
 using namespace mlir;
 
 namespace llzk {
+
+void setUnitAttr(Operation *op, llvm::StringRef name, bool enabled) {
+  if (enabled) {
+    op->setAttr(name, UnitAttr::get(op->getContext()));
+  } else {
+    op->removeAttr(name);
+  }
+}
 
 // Adapted from AsmPrinter::printStrippedAttrOrType(), but without printing type.
 void printAttrs(AsmPrinter &printer, ArrayRef<Attribute> attrs, const StringRef &separator) {
