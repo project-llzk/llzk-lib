@@ -40,6 +40,11 @@ public:
   using Base = dataflow::SparseForwardDataFlowAnalysis<Lattice>;
   using Base::SparseForwardDataFlowAnalysis;
 
+  /// Diagnose opaque calls whose arguments contain shared component handles. Their unknown
+  /// storage effects cannot be modeled, including when a handle is nested in an array or POD.
+  /// Module analyses must validate input before running SourceRef dataflow.
+  static mlir::LogicalResult validateInput(mlir::ModuleOp module);
+
   static const Lattice *getLattice(mlir::DataFlowSolver &solver, mlir::Value val);
   static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &solver, mlir::Value val);
   static mlir::FailureOr<SourceRefLatticeValue>
@@ -266,6 +271,7 @@ public:
 /// all structs in the given LLZK module.
 /// Control flow must use SCF. Any operation from the `cf` dialect anywhere in the module,
 /// including helper functions and unreachable regions, is diagnosed before analysis begins.
+/// Opaque calls receiving component handles, directly or in aggregates, are also unsupported.
 class ConstraintDependencyGraphModuleAnalysis
     : public ModuleAnalysis<
           ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis> {
@@ -284,7 +290,7 @@ public:
   }
 
 protected:
-  /// Reject unsupported CF operations before the shared SourceRef analysis visits the module.
+  /// Reject unsupported control flow and opaque component effects before running dataflow.
   mlir::LogicalResult validateInput(mlir::ModuleOp module) const override;
 
   void initializeSolver() override { (void)solver.load<SourceRefAnalysis>(); }

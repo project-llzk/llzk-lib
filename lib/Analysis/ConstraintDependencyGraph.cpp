@@ -220,6 +220,40 @@ LogicalResult SourceRefAnalysis::visitOperation(
   return success();
 }
 
+/// Return whether a value can carry shared component identity, including through value aggregates.
+static bool containsComponentHandle(Type type) {
+  if (llvm::isa<StructType>(type)) {
+    return true;
+  }
+  if (auto array = llvm::dyn_cast<ArrayType>(type)) {
+    return containsComponentHandle(array.getElementType());
+  }
+  if (auto pod = llvm::dyn_cast<PodType>(type)) {
+    return llvm::any_of(pod.getRecords(), [](auto record) {
+      return containsComponentHandle(record.getType());
+    });
+  }
+  return false;
+}
+
+LogicalResult SourceRefAnalysis::validateInput(ModuleOp module) {
+  auto result = module.walk([](Operation *op) -> WalkResult {
+    auto call = llvm::dyn_cast<CallOpInterface>(op);
+    if (!call || !llvm::any_of(call.getArgOperands().getTypes(), containsComponentHandle)) {
+      return WalkResult::advance();
+    }
+    auto callable = llvm::dyn_cast_if_present<CallableOpInterface>(call.resolveCallable());
+    if (callable && callable.getCallableRegion()) {
+      return WalkResult::advance();
+    }
+    return op->emitOpError(
+        "cannot analyze an opaque call with component handles in its arguments; "
+        "callee storage effects are unknown"
+    );
+  });
+  return failure(result.wasInterrupted());
+}
+
 void SourceRefAnalysis::visitExternalCall(
     CallOpInterface call, ArrayRef<const Lattice *> operandLattices,
     ArrayRef<Lattice *> resultLattices
@@ -652,6 +686,9 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
 //===----------------------------------------------------------------------===//
 
 LogicalResult ConstraintDependencyGraphModuleAnalysis::validateInput(ModuleOp module) const {
+  if (failed(SourceRefAnalysis::validateInput(module))) {
+    return failure();
+  }
   auto result = module.walk([](Operation *op) -> WalkResult {
     if (op->getName().getDialectNamespace() == "cf") {
       return op->emitOpError(
