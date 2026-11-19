@@ -1,5 +1,7 @@
 var NAVTREEINDEX77 =
 {
+"structllzk_1_1AuxAssignment.html#adae92182960900a1d91ded438aeedee0":[13,0,1,19,0],
+"structllzk_1_1CDGAnalysisContext.html":[11,0,3,33],
 "structllzk_1_1CDGAnalysisContext.html":[13,0,1,29],
 "structllzk_1_1CDGAnalysisContext.html#a144556fe267ffd30b852d71ba0a8391f":[11,0,3,33,1],
 "structllzk_1_1CDGAnalysisContext.html#a144556fe267ffd30b852d71ba0a8391f":[13,0,1,29,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX77 =
 "structllzk_1_1RefValueCapture.html#a2d4c4a916f8e7c686f768fd4cb0d4da7":[13,0,1,89,2],
 "structllzk_1_1RefValueCapture.html#ace91cfaefa2dd8bba6649ea851f1e0b5":[11,0,3,93,1],
 "structllzk_1_1RefValueCapture.html#ace91cfaefa2dd8bba6649ea851f1e0b5":[13,0,1,89,1],
-"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[11,0,3,94],
-"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[13,0,1,90],
-"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[11,0,3,94,0]
+"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[11,0,3,94]
 };

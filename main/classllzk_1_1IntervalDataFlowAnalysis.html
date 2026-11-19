@@ -152,7 +152,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0d1a0193e0d75c66b93f5ee3ecc7df41" id="r_a0d1a0193e0d75c66b93f5ee3ecc7df41"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a0d1a0193e0d75c66b93f5ee3ecc7df41">visitOperation</a> (mlir::Operation *op, mlir::ArrayRef&lt; const Lattice * &gt; operands, mlir::ArrayRef&lt; Lattice * &gt; results) override</td></tr>
 <tr class="memdesc:a0d1a0193e0d75c66b93f5ee3ecc7df41"><td class="mdescLeft">&#160;</td><td class="mdescRight">Visit an operation with the lattices of its operands.  <br /></td></tr>
 <tr class="memitem:a9e5a9a4132b7d26aa8015bb0c8887220" id="r_a9e5a9a4132b7d26aa8015bb0c8887220"><td class="memItemLeft">llvm::SMTExprRef&#160;</td><td class="memItemRight"><a class="el" href="#a9e5a9a4132b7d26aa8015bb0c8887220">getOrCreateSymbol</a> (const <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a> &amp;r)</td></tr>
-<tr class="memdesc:a9e5a9a4132b7d26aa8015bb0c8887220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Either return the existing SMT expression that corresponds to the <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a>, or create one.  <br /></td></tr>
+<tr class="memdesc:a9e5a9a4132b7d26aa8015bb0c8887220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the cached symbol for a source reference, allocating an internal identity on first use.  <br /></td></tr>
+<tr class="memitem:a35966406c8eb75207f48b0f083025b8b" id="r_a35966406c8eb75207f48b0f083025b8b"><td class="memItemLeft">llvm::SMTExprRef&#160;</td><td class="memItemRight"><a class="el" href="#a35966406c8eb75207f48b0f083025b8b">getOrCreateSymbol</a> (mlir::Value val)</td></tr>
+<tr class="memdesc:a35966406c8eb75207f48b0f083025b8b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the cached symbol for a value, allocating an internal identity on first use.  <br /></td></tr>
 <tr class="memitem:ad4cd6edf9c7ea6137de8ae33c8c0fd9b" id="r_ad4cd6edf9c7ea6137de8ae33c8c0fd9b"><td class="memItemLeft">const llvm::DenseMap&lt; <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a>, llvm::DenseSet&lt; Lattice * &gt; &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ad4cd6edf9c7ea6137de8ae33c8c0fd9b">getReadResults</a> () const</td></tr>
 <tr class="memitem:ad19f4b98cd9964b5da8eaf23e4489557" id="r_ad19f4b98cd9964b5da8eaf23e4489557"><td class="memItemLeft">const llvm::DenseMap&lt; <a class="el" href="classllzk_1_1SourceRef.html">SourceRef</a>, <a class="el" href="classllzk_1_1ExpressionValue.html">ExpressionValue</a> &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#ad19f4b98cd9964b5da8eaf23e4489557">getWriteResults</a> () const</td></tr>
 <tr class="inherit_header pub_methods_classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis"><td colspan="2">Public Member Functions inherited from <a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; IntervalAnalysisLattice &gt;</a></td></tr>
@@ -183,7 +185,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00298">298</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00301">301</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ad73a848171f25833c71e0f5559d08d10" name="ad73a848171f25833c71e0f5559d08d10"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad73a848171f25833c71e0f5559d08d10">&#9670;&#160;</a></span>IntervalDataFlowAnalysis()</h2>
@@ -222,18 +224,18 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel explicit">explicit</span></span>  </td>
+<span class="mlabels"><span class="mlabel explicit">explicit</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00308">308</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00688">688</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a9e5a9a4132b7d26aa8015bb0c8887220" name="a9e5a9a4132b7d26aa8015bb0c8887220"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9e5a9a4132b7d26aa8015bb0c8887220">&#9670;&#160;</a></span>getOrCreateSymbol()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e5a9a4132b7d26aa8015bb0c8887220">&#9670;&#160;</a></span>getOrCreateSymbol() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -247,16 +249,30 @@ Additional Inherited Members</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Either return the existing SMT expression that corresponds to the <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a>, or create one. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">r</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<p>Return the cached symbol for a source reference, allocating an internal identity on first use. </p>
+<p>Printed reference names do not determine SMT symbol identity. </p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l01306">1306</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l01327">1327</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a35966406c8eb75207f48b0f083025b8b" name="a35966406c8eb75207f48b0f083025b8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35966406c8eb75207f48b0f083025b8b">&#9670;&#160;</a></span>getOrCreateSymbol() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">llvm::SMTExprRef llzk::IntervalDataFlowAnalysis::getOrCreateSymbol </td>
+          <td>(</td>
+          <td class="paramtype">mlir::Value</td>          <td class="paramname"><span class="paramname"><em>val</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return the cached symbol for a value, allocating an internal identity on first use. </p>
+<p>Value and <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> symbols occupy separate namespaces, unique within the SMT solver. </p>
 
 </div>
 </div>
@@ -283,7 +299,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00327">327</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00329">329</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -310,7 +326,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00331">331</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00333">333</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -351,7 +367,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html#ac073da339fa3258e4e13a0efc229e331">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; IntervalAnalysisLattice &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00834">834</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8cpp_source.html#l00855">855</a> of file <a class="el" href="IntervalAnalysis_8cpp_source.html">IntervalAnalysis.cpp</a>.</p>
 
 </div>
 </div>

@@ -89,7 +89,7 @@ var searchData=
   ['discoveryvalue_86',['DiscoveryValue',['../structllzk_1_1polymorphic_1_1detail_1_1DiscoveryValue.html',1,'llzk::polymorphic::detail::DiscoveryValue'],['../structllzk_1_1polymorphic_1_1detail_1_1DiscoveryValue.html#a10e94c91c16cced7c3eb49e47b25f254',1,'llzk::polymorphic::detail::DiscoveryValue::DiscoveryValue()=default'],['../structllzk_1_1polymorphic_1_1detail_1_1DiscoveryValue.html#a3adbd1ffaca380330178e6ae522349c8',1,'llzk::polymorphic::detail::DiscoveryValue::DiscoveryValue(mlir::Attribute value)']]],
   ['display_87',['display',['../LICENSE_8txt.html#a956e13050c505425b31ecd1bab015be8',1,'LICENSE.txt']]],
   ['distribute_88',['distribute',['../LICENSE_8txt.html#a4043f6796a9cc8a7ee48fdad37e3788f',1,'LICENSE.txt']]],
-  ['div_89',['div',['../classllzk_1_1ExpressionValue.html#a3fe2927c13b0690ddbb8c6234518aa61',1,'llzk::ExpressionValue::div()'],['../namespacellzk.html#a899c6e0f79352e9eadb489f1cf822dce',1,'llzk::div()']]],
+  ['div_89',['div',['../classllzk_1_1ExpressionValue.html#a0c99be8a2c6bc5020af429b9ef111edd',1,'llzk::ExpressionValue::div()'],['../namespacellzk.html#a156de661ea6111a3c9a6b5756b7acea7',1,'llzk::div()']]],
   ['div_20_3a_3allzk_3a_3afelt_3a_3adivfeltop_90',['&lt;span class=&quot;tt&quot;&gt;felt.div&lt;/span&gt; (llzk::felt::DivFeltOp)',['../dialects.html#feltdiv-llzkfeltdivfeltop',1,'']]],
   ['divfeltop_91',['DivFeltOp',['../classllzk_1_1felt_1_1DivFeltOp.html',1,'llzk::felt']]],
   ['divfeltopadaptor_92',['DivFeltOpAdaptor',['../classllzk_1_1felt_1_1DivFeltOpAdaptor.html',1,'llzk::felt::DivFeltOpAdaptor'],['../classllzk_1_1felt_1_1DivFeltOpAdaptor.html#a8636c8d85ba7a4b938454cc868b87461',1,'llzk::felt::DivFeltOpAdaptor::DivFeltOpAdaptor()']]],
