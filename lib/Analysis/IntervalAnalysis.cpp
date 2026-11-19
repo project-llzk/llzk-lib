@@ -301,7 +301,7 @@ translateRef(const SourceRef &ref, const SourceRefRemappings &translations) {
       auto suffix = ref.getSuffix(prefix);
       ensure(succeeded(suffix), "prefix checked before SourceRef suffix extraction");
 
-      std::vector<SourceRefIndex> arraySuffix, remainingSuffix;
+      SourceRef::Path arraySuffix, remainingSuffix;
       bool suffixIsPastArray = false;
       for (const SourceRefIndex &idx : *suffix) {
         if (!suffixIsPastArray && arraySuffix.size() < vals.getNumArrayDims() &&
@@ -930,10 +930,10 @@ SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
   return SourceRefAnalysis::getValueState(_dataflowSolver, val);
 }
 
-std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
+SourceRef::Path IntervalDataFlowAnalysis::getArrayAccessIndices(
     Operation * /*baseOp*/, ArrayAccessOpInterface arrayAccessOp
 ) {
-  std::vector<SourceRefIndex> indices;
+  SourceRef::Path indices;
   ArrayType arrayType = arrayAccessOp.getArrRefType();
   size_t numIndices = arrayAccessOp.getIndices().size();
   indices.reserve(numIndices);
@@ -957,7 +957,7 @@ std::vector<SourceRefIndex> IntervalDataFlowAnalysis::getArrayAccessIndices(
 mlir::FailureOr<SourceRef> IntervalDataFlowAnalysis::getArrayAccessRef(
     Operation *baseOp, ArrayAccessOpInterface arrayAccessOp
 ) {
-  std::vector<SourceRefIndex> indices = getArrayAccessIndices(baseOp, arrayAccessOp);
+  SourceRef::Path indices = getArrayAccessIndices(baseOp, arrayAccessOp);
   Value arrayVal = arrayAccessOp.getArrRef();
   if (auto blockArg = llvm::dyn_cast<BlockArgument>(arrayVal)) {
     return SourceRef(blockArg, std::move(indices));
@@ -1616,7 +1616,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     SourceRefLatticeValue arrayVals = getSourceRefState(writeArr.getArrRef());
     if (arrayVals.isScalar()) {
-      std::vector<SourceRefIndex> indices = getArrayAccessIndices(op, writeArr);
+      SourceRef::Path indices = getArrayAccessIndices(op, writeArr);
       auto targetRefsRes = arrayVals.extract(indices);
       ensure(succeeded(targetRefsRes), "could not create SourceRef child for array write");
       auto [targetRefs, _] = *targetRefsRes;

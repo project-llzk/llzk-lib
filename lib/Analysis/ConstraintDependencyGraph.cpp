@@ -292,9 +292,9 @@ void SourceRefAnalysis::visitExternalCall(
   }
   const auto returnSites = predecessors->getKnownPredecessors();
 
-  std::unordered_map<SourceRef, SourceRefLatticeValue, SourceRef::Hash> translation;
+  TranslationMap translation;
   for (auto [arg, lattice] : llvm::zip_equal(funcOp.getArguments(), operandLattices)) {
-    translation[SourceRef(arg)] = lattice->getValue();
+    translation.set(SourceRef(arg), lattice->getValue());
   }
 
   for (auto [result, resultLattice] : llvm::zip(call->getResults(), resultLattices)) {

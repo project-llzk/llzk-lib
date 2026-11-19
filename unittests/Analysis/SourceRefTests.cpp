@@ -14,6 +14,7 @@
 #include "llzk/Analysis/SourceRef.h"
 #include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
@@ -66,6 +67,33 @@ TEST_F(SourceRefTests, IndexHalfOpenOverlap) {
   EXPECT_FALSE(range.overlaps(SourceRefIndex(5)));
   EXPECT_TRUE(range.overlaps(overlappingRange));
   EXPECT_FALSE(range.overlaps(adjacentRange));
+}
+
+TEST_F(SourceRefTests, SourceRefSetHandlesConstantRefs) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ConstantRef {
+    function.def @compute() -> !struct.type<@ConstantRef> {
+      %self = struct.new : !struct.type<@ConstantRef>
+      function.return %self : !struct.type<@ConstantRef>
+    }
+
+    function.def @constrain(%self: !struct.type<@ConstantRef>) {
+      %zero = felt.const 0
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  felt::FeltConstantOp constant;
+  mod->walk([&](felt::FeltConstantOp op) { constant = op; });
+  ASSERT_TRUE(constant);
+
+  SourceRefSet refs {SourceRef(constant)};
+  EXPECT_TRUE(refs.contains(SourceRef(constant)));
 }
 
 // Dynamic dimension bounds select every nonnegative index, including values
@@ -204,6 +232,7 @@ TEST_F(SourceRefTests, LatticePrefixReplacementPreservesUnmatchedRefs) {
 
   SourceRefLatticeValue value;
   EXPECT_EQ(value.insert(computeMember), ChangeResult::Change);
+  EXPECT_EQ(value.insert(computeMember), ChangeResult::NoChange);
   EXPECT_EQ(value.insert(unrelated), ChangeResult::Change);
   TranslationMap replacements {{computeRoot, SourceRefLatticeValue(constrainRoot)}};
   auto [replaced, changed] = value.replacePrefixes(replacements);
@@ -217,6 +246,30 @@ TEST_F(SourceRefTests, LatticePrefixReplacementPreservesUnmatchedRefs) {
   EXPECT_EQ(translatedChanged, ChangeResult::Change);
   EXPECT_TRUE(translated.getScalarValue().contains(expectedMember));
   EXPECT_FALSE(translated.getScalarValue().contains(unrelated));
+
+  // Replacing a translation after it has been consumed must rebuild its cached index.
+  replacements.set(computeRoot, SourceRefLatticeValue(computeRoot));
+  auto [updatedTranslation, updatedChanged] = value.translate(replacements);
+  EXPECT_EQ(updatedChanged, ChangeResult::Change);
+  EXPECT_TRUE(updatedTranslation.getScalarValue().contains(computeMember));
+  EXPECT_FALSE(updatedTranslation.getScalarValue().contains(expectedMember));
+
+  // Copies and moves must own their indexes, including after the source changes.
+  TranslationMap copied(replacements);
+  TranslationMap assigned;
+  assigned = replacements;
+  (void)copied.getIndex();
+  (void)assigned.getIndex();
+  TranslationMap moved(std::move(copied));
+  TranslationMap moveAssigned {{computeRoot, SourceRefLatticeValue(constrainRoot)}};
+  (void)moveAssigned.getIndex();
+  moveAssigned = std::move(assigned);
+  replacements.set(computeRoot, SourceRefLatticeValue(constrainRoot));
+  for (const TranslationMap *map : {&moved, &moveAssigned}) {
+    auto [result, resultChanged] = value.translate(*map);
+    EXPECT_EQ(resultChanged, ChangeResult::Change);
+    EXPECT_EQ(result.getScalarValue(), SourceRefSet({computeMember}));
+  }
 }
 
 TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
