@@ -1,5 +1,7 @@
 var NAVTREEINDEX78 =
 {
+"structllzk_1_1RefValueCapture.html#ace91cfaefa2dd8bba6649ea851f1e0b5":[13,0,1,89,1],
+"structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[11,0,3,94],
 "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html":[13,0,1,90],
 "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[11,0,3,94,0],
 "structllzk_1_1RemoveUnusedDiscardableAllocationsPassOptions.html#acfbcd77415c268e0b34b2d8c28c5381e":[13,0,1,90,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX78 =
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#a9f76246b6abe93d43c29ac21d569c78f":[13,0,1,3,0,1,0,2],
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#aa7033c88b4285b4a71b05c4e2b4809f0":[11,0,3,5,0,1,0,3],
 "structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#aa7033c88b4285b4a71b05c4e2b4809f0":[13,0,1,3,0,1,0,3],
-"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#aa9a5d0f573b9aa7563acc41b1a8efb3e":[11,0,3,5,0,1,0,11],
-"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#aa9a5d0f573b9aa7563acc41b1a8efb3e":[13,0,1,3,0,1,0,11],
-"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#aae80732959a3864a8b0b763b5a0611d2":[11,0,3,5,0,1,0,7]
+"structllzk_1_1component_1_1detail_1_1MemberDefOpGenericAdaptorBase_1_1Properties.html#aa9a5d0f573b9aa7563acc41b1a8efb3e":[11,0,3,5,0,1,0,11]
 };

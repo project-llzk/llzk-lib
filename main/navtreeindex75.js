@@ -1,5 +1,7 @@
 var NAVTREEINDEX75 =
 {
+"r1cs-backend.html#r1csconst-r1csconstop":[8,0,0,0,2],
+"r1cs-backend.html#r1csconstrain-r1csconstrainop":[8,0,0,0,3],
 "r1cs-backend.html#r1csdef-r1cssignaldefop":[8,0,0,0,4],
 "r1cs-backend.html#r1csmul_const-r1csmulconstop":[8,0,0,0,5],
 "r1cs-backend.html#r1csneg-r1csnegop":[8,0,0,0,6],
@@ -247,7 +249,5 @@ var NAVTREEINDEX75 =
 "structNotFeltOpBuildFuncHelper.html":[13,0,84],
 "structNotFeltOpBuildFuncHelper.html#a7c7ea898e49da34d41eaa17759c2c341":[13,0,84,0],
 "structNotFeltOpBuildFuncHelper.html#abad9643cfd03ee2c9225284ee27568d1":[13,0,84,1],
-"structOldOpBuildFuncHelper.html":[13,0,85],
-"structOldOpBuildFuncHelper.html#a09a0015f5ef08512ef0ac7a926e68a61":[13,0,85,0],
-"structOldOpBuildFuncHelper.html#a1555c1971d03bc35d340088b752fa851":[13,0,85,1]
+"structOldOpBuildFuncHelper.html":[13,0,85]
 };

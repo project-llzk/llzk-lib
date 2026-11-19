@@ -569,6 +569,8 @@ var namespacellzk =
     [ "resolveCallableSilently", "namespacellzk.html#a955ceb911210b69bc82ee311eb2edf77", null ],
     [ "reverse", "namespacellzk.html#aae76d2fa37db42181f9ebb929a1dac58", null ],
     [ "selectValue", "namespacellzk.html#afdf1c2e6485144f772cc0cb6e28a7e24", null ],
+    [ "setUnitAttr", "namespacellzk.html#a3b1b1f812963220389326c4ed2f71e46", null ],
+    [ "setUnitAttr", "namespacellzk.html#ae6758e729611ee2531c5e59e8acbb4aa", null ],
     [ "shiftLeft", "namespacellzk.html#a1998bc2f299c5283fc5c74a324306f3b", null ],
     [ "shiftRight", "namespacellzk.html#ac7e06f695c4b1f9358e3a1d255352cf7", null ],
     [ "signedIntDiv", "namespacellzk.html#a16ea3883a9e7284312007f6de4f7b809", null ],

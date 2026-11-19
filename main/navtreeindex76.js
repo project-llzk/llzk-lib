@@ -1,5 +1,7 @@
 var NAVTREEINDEX76 =
 {
+"structOldOpBuildFuncHelper.html#a09a0015f5ef08512ef0ac7a926e68a61":[13,0,85,0],
+"structOldOpBuildFuncHelper.html#a1555c1971d03bc35d340088b752fa851":[13,0,85,1],
 "structOpGeneratorData.html":[13,0,86],
 "structOpGeneratorData.html#a078202de65f2ba9f3d98b99c26ffbfbf":[13,0,86,0],
 "structOpGeneratorData.html#a37aa2c3f06efcfff3ba47849480eb022":[13,0,86,3],
@@ -247,7 +249,5 @@ var NAVTREEINDEX76 =
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[13,0,0,20,0],
 "structllzk_1_1AuxAssignment.html":[11,0,3,23],
 "structllzk_1_1AuxAssignment.html":[13,0,1,19],
-"structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3":[11,0,3,23,1],
-"structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3":[13,0,1,19,1],
-"structllzk_1_1AuxAssignment.html#adae92182960900a1d91ded438aeedee0":[11,0,3,23,0]
+"structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3":[11,0,3,23,1]
 };

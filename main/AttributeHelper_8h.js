@@ -10,5 +10,6 @@ var AttributeHelper_8h =
     [ "llzk::isNullOrEmpty", "namespacellzk.html#a080b2e46f6958963ba7d1ff00b26fbc4", null ],
     [ "llzk::parseDynamicAPIntValue", "namespacellzk.html#a24b8c0b3f58ca71ce8ed62b742d2907f", null ],
     [ "llzk::printAttrs", "namespacellzk.html#ab3aea79f1ec3c694d5d0bcf1f949c5fe", null ],
+    [ "llzk::setUnitAttr", "namespacellzk.html#a3b1b1f812963220389326c4ed2f71e46", null ],
     [ "llzk::stringWithoutType", "namespacellzk.html#a53fd11575f45740ca49d163fff8c925e", null ]
 ];
