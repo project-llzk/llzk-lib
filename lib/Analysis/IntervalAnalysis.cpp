@@ -1753,7 +1753,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   auto readmCase = [&](MemberReadOp) {
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue()) {
+    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
 
@@ -1768,7 +1768,8 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
   auto readArrCase = [&](ReadArrayOp) {
     auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
-    if (succeeded(arrayRef)) {
+    // A constraint on one selection cannot refine other reads of the same possible range.
+    if (succeeded(arrayRef) && !hasRangedSelection(*arrayRef)) {
       readResults[*arrayRef].insert(valLattice);
 
       for (Lattice *l : readResults[*arrayRef]) {
@@ -1780,7 +1781,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue()) {
+    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
 
