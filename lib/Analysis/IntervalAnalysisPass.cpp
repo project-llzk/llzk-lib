@@ -88,7 +88,9 @@ class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
     mia.setPropagateInputConstraints(propagateInputConstraints);
     mia.setTrackUnreducedIntervals(printUnreducedIntervals);
     auto am = getAnalysisManager();
-    mia.ensureAnalysisRun(am);
+    if (failed(mia.ensureAnalysisRun(am))) {
+      return signalPassFailure();
+    }
     AsmState asmState(modOp);
 
     auto printValueInterval = [this, &asmState, &mia](raw_ostream &out, int indent, Value value) {

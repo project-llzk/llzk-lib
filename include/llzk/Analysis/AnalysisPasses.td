@@ -63,6 +63,12 @@ def CallGraphSCCsPrinterPass : LLZKPass<"llzk-print-call-graph-sccs"> {
 def ConstraintDependencyGraphPrinterPass
     : LLZKPass<"llzk-print-constraint-dependency-graphs"> {
   let summary = "Print constraint dependency graph for all LLZK structs.";
+  let description = [{
+    Control flow must use SCF operations. Operations from the `cf` dialect are
+    rejected with a diagnostic before analysis begins. This restriction applies
+    throughout the input module, including helper functions and unreachable
+    regions, in both interprocedural and intraprocedural modes.
+  }];
   let options = [OutputStreamOption,
                  Option<"runIntraprocedural", "intraprocedural", "bool",
                         /* default */ "false",

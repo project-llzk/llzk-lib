@@ -264,6 +264,8 @@ public:
 
 /// @brief A module-level analysis for constructing ConstraintDependencyGraph objects for
 /// all structs in the given LLZK module.
+/// Control flow must use SCF. Any operation from the `cf` dialect anywhere in the module,
+/// including helper functions and unreachable regions, is diagnosed before analysis begins.
 class ConstraintDependencyGraphModuleAnalysis
     : public ModuleAnalysis<
           ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis> {
@@ -282,6 +284,9 @@ public:
   }
 
 protected:
+  /// Reject unsupported CF operations before the shared SourceRef analysis visits the module.
+  mlir::LogicalResult validateInput(mlir::ModuleOp module) const override;
+
   void initializeSolver() override { (void)solver.load<SourceRefAnalysis>(); }
 
   const CDGAnalysisContext &getContext() const override { return ctx; }
