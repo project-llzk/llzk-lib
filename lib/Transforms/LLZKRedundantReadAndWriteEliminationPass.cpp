@@ -1487,9 +1487,33 @@ class PassImpl : public llzk::impl::RedundantReadAndWriteEliminationPassBase<Pas
           redundantWrites.push_back(previous->second);
         }
         writeCandidates.ram[address] = store.getOperation();
-        state.ram.clear();
-        state.ramExact.clear();
-        state.ram[ReferenceID(address)] = value;
+        ReferenceID addressID(address);
+        if (addressID.isConst()) {
+          SmallVector<ReferenceID> invalidatedAddresses;
+          for (const auto &[knownAddress, _] : state.ram) {
+            if (!knownAddress.isConst() || knownAddress == addressID) {
+              invalidatedAddresses.push_back(knownAddress);
+            }
+          }
+          for (const ReferenceID &knownAddress : invalidatedAddresses) {
+            state.ram.erase(knownAddress);
+          }
+
+          SmallVector<Value> invalidatedExactAddresses;
+          for (const auto &[knownAddress, _] : state.ramExact) {
+            ReferenceID knownAddressID(knownAddress);
+            if (!knownAddressID.isConst() || knownAddressID == addressID) {
+              invalidatedExactAddresses.push_back(knownAddress);
+            }
+          }
+          for (Value knownAddress : invalidatedExactAddresses) {
+            state.ramExact.erase(knownAddress);
+          }
+        } else {
+          state.ram.clear();
+          state.ramExact.clear();
+        }
+        state.ram[addressID] = value;
         state.ramExact[address] = value;
       }
     }

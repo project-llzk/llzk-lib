@@ -1,0 +1,142 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// Generic member reads can resolve to the compatible concrete argument/result type.
+// Check both inferred and wildcard template arguments, then instantiate all four calls.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      struct.member @value : !felt.type {column}
+
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Match {
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      function.return
+    }
+    function.def @identity(%a: !poly.tvar<@T>) -> !poly.tvar<@T> {
+      function.return %a : !poly.tvar<@T>
+    }
+  }
+
+  struct.def @Holder {
+    struct.member @left : !struct.type<@TCell::@Cell<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %other_zero = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      struct.writem %self[@left] = %zero : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[0]>>
+      %left = struct.readm %self[@left] : !struct.type<@Holder>, !struct.type<@TCell::@Cell<[#id]>>
+      function.call @Match::@consume(%left, %other_zero) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[0]>>) -> ()
+      function.call @Match::@consume<[?]>(%left, %other_zero) : (!struct.type<@TCell::@Cell<[#id]>>, !struct.type<@TCell::@Cell<[0]>>) -> ()
+      %inferred = function.call @Match::@identity(%left) : (!struct.type<@TCell::@Cell<[#id]>>) -> !struct.type<@TCell::@Cell<[0]>>
+      %wildcard = function.call @Match::@identity<[?]>(%left) : (!struct.type<@TCell::@Cell<[#id]>>) -> !struct.type<@TCell::@Cell<[0]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// CHECK-LABEL:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @left : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@left] = %[[VAL_6]] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_5]][@left] : <@Holder>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_8]], %[[VAL_7]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        function.call @"Match_!s<@TCell_0_Cell>_consume"(%[[VAL_8]], %[[VAL_7]]) : (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) -> ()
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @"Match_!s<@TCell_0_Cell>_identity"(%[[VAL_8]]) : (!struct.type<@TCell_0_Cell>) -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @"Match_!s<@TCell_0_Cell>_identity"(%[[VAL_8]]) : (!struct.type<@TCell_0_Cell>) -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+
+// -----
+
+// Compatible unresolved dimensions within one argument must not block specialization
+// of an independent parameter, or invent a binding for the unresolved parameter.
+module attributes {llzk.lang} {
+  poly.template @Callee {
+    poly.param @K : index
+    poly.param @N : index
+    function.def @consume(%value: !array.type<@K,@N,@N x !felt.type>) { function.return }
+  }
+  poly.template @Caller {
+    poly.param @M : index
+    function.def @caller(%value: !array.type<2,@M,8 x !felt.type>) {
+      function.call @Callee::@consume(%value) : (!array.type<2,@M,8 x !felt.type>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Callee_2_\1A" {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      function.def @consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2,@N,@N x !felt.type>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Callee_2_", ""]}
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @M : index
+// CHECK-NEXT:      function.def @caller(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<2,@M,8 x !felt.type>) {
+// CHECK-NEXT:        function.call @"Callee_2_\1A"::@consume(%[[VAL_1]]) : (!array.type<2,@M,8 x !felt.type>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// An unresolved wildcard binding must retain every signature requirement instead
+// of choosing a type from the body. Independent explicit bindings can still specialize.
+module attributes {llzk.lang} {
+  poly.template @Callee {
+    poly.param @K : index
+    poly.param @T : !poly.tvar<@T>
+    function.def @consume(%array: !array.type<@K x !felt.type>, %a: !poly.tvar<@T>, %b: !poly.tvar<@T>) {
+      %cast = poly.unifiable_cast %a : (!poly.tvar<@T>) -> !array.type<1 x !felt.type>
+      function.return
+    }
+  }
+  poly.template @Caller {
+    poly.param @U : !poly.tvar<@U>
+    function.def @caller(%array: !array.type<2 x !felt.type>, %a: !array.type<1 x !poly.tvar<@U>>, %b: !array.type<1 x !felt.type>) {
+      function.call @Callee::@consume<[2, ?]>(%array, %a, %b) : (!array.type<2 x !felt.type>, !array.type<1 x !poly.tvar<@U>>, !array.type<1 x !felt.type>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @"Callee_2_\1A" {
+// CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
+// CHECK-NEXT:      function.def @consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>) {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.name_pattern = ["Callee_2_", ""]}
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @U : !poly.tvar<@U>
+// CHECK-NEXT:      function.def @caller(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !array.type<1 x !poly.tvar<@U>>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !array.type<1 x !felt.type>) {
+// CHECK-NEXT:        function.call @"Callee_2_\1A"::@consume<[?]>(%[[VAL_3]], %[[VAL_4]], %[[VAL_5]]) : (!array.type<2 x !felt.type>, !array.type<1 x !poly.tvar<@U>>, !array.type<1 x !felt.type>) -> ()
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

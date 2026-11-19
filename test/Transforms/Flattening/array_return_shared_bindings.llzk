@@ -1,0 +1,91 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// Conflicting pending allocations must preserve the shared result variable.
+module attributes {llzk.lang} {
+  poly.template @Shared {
+    poly.param @T
+    function.def @conflicting(%felt: !felt.type, %index: index) -> (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) {
+      %zero = arith.constant 0 : index
+      %left = array.new : !array.type<1 x !poly.tvar<@T>>
+      %right = array.new : !array.type<1 x !poly.tvar<@T>>
+      array.write %left[%zero] = %felt : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      array.write %right[%zero] = %index : !array.type<1 x !poly.tvar<@T>>, index
+      function.return %left, %right : !array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Shared {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @conflicting(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_0]] : <1 x !poly.tvar<@T>>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, index
+// CHECK-NEXT:        function.return %[[VAL_3]], %[[VAL_4]] : !array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Compatible pending allocations can refine both occurrences of the shared variable.
+module attributes {llzk.lang} {
+  poly.template @Shared {
+    poly.param @T
+    function.def @compatible(%felt: !felt.type) -> (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>) {
+      %zero = arith.constant 0 : index
+      %left = array.new : !array.type<1 x !poly.tvar<@T>>
+      %right = array.new : !array.type<1 x !poly.tvar<@T>>
+      array.write %left[%zero] = %felt : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      array.write %right[%zero] = %felt : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      function.return %left, %right : !array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Shared {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @compatible(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> (!array.type<1 x !felt.type>, !array.type<1 x !felt.type>) {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:        array.write %[[VAL_2]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_1]]] = %[[VAL_0]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_2]], %[[VAL_3]] : !array.type<1 x !felt.type>, !array.type<1 x !felt.type>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Distinct result variables can refine independently.
+module attributes {llzk.lang} {
+  poly.template @Independent {
+    poly.param @T
+    poly.param @U
+    function.def @independent(%felt: !felt.type, %index: index) -> (!array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@U>>) {
+      %zero = arith.constant 0 : index
+      %left = array.new : !array.type<1 x !poly.tvar<@T>>
+      %right = array.new : !array.type<1 x !poly.tvar<@U>>
+      array.write %left[%zero] = %felt : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      array.write %right[%zero] = %index : !array.type<1 x !poly.tvar<@U>>, index
+      function.return %left, %right : !array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@U>>
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Independent {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      poly.param @U
+// CHECK-NEXT:      function.def @independent(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> (!array.type<1 x !felt.type>, !array.type<1 x index>) {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !felt.type>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <1 x index>
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_0]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x index>, index
+// CHECK-NEXT:        function.return %[[VAL_3]], %[[VAL_4]] : !array.type<1 x !felt.type>, !array.type<1 x index>
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

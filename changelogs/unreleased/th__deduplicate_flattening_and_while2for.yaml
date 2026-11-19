@@ -1,0 +1,3 @@
+changed:
+  - Share loop arithmetic, block cloning, and constant construction between while-to-for conversion and flattening.
+  - Skip redundant while-to-for conversion before flattening for eligible annotated loops, preserving overflow checks and annotation semantics.

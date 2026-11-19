@@ -1,0 +1,33 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// Both allocations are proposed together. Their conflicting element types must keep them
+// generic so the equality remains valid, rather than relying on post-pass verification to fail.
+module attributes {llzk.lang} {
+  poly.template @Caller {
+    poly.param @T
+    function.def @caller(%a: !felt.type, %b: index) attributes {function.allow_constraint} {
+      %aa = array.new : !array.type<1 x !poly.tvar<@T>>
+      %bb = array.new : !array.type<1 x !poly.tvar<@T>>
+      %c0 = arith.constant 0 : index
+      array.write %aa[%c0] = %a : !array.type<1 x !poly.tvar<@T>>, !felt.type
+      array.write %bb[%c0] = %b : !array.type<1 x !poly.tvar<@T>>, index
+      constrain.eq %aa, %bb : !array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      function.def @caller(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.new  : <1 x !poly.tvar<@T>>
+// CHECK-NEXT:        array.write %[[VAL_3]]{{\[}}%[[VAL_2]]] = %[[VAL_0]] : <1 x !poly.tvar<@T>>, !felt.type
+// CHECK-NEXT:        array.write %[[VAL_4]]{{\[}}%[[VAL_2]]] = %[[VAL_1]] : <1 x !poly.tvar<@T>>, index
+// CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_4]] : !array.type<1 x !poly.tvar<@T>>, !array.type<1 x !poly.tvar<@T>>
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

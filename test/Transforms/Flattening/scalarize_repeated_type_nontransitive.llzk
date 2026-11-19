@@ -1,0 +1,52 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// Repeated generic element types should be skipped after their first occurrence. The distinct
+// felt and index types must still be compared: each unifies with T, but not with each other.
+module attributes {llzk.lang} {
+  poly.template @RepeatedTypes {
+    poly.param @T
+    struct.def @Holder {
+      struct.member @items : !array.type<4 x !poly.tvar<@T>>
+      function.def @compute(%generic: !poly.tvar<@T>, %felt: !felt.type, %integer: index) -> !struct.type<@RepeatedTypes::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@RepeatedTypes::@Holder<[@T]>>
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %c2 = arith.constant 2 : index
+        %c3 = arith.constant 3 : index
+        %items = array.new : !array.type<4 x !poly.tvar<@T>>
+        array.write %items[%c0] = %generic : !array.type<4 x !poly.tvar<@T>>, !poly.tvar<@T>
+        array.write %items[%c1] = %felt : !array.type<4 x !poly.tvar<@T>>, !felt.type
+        array.write %items[%c2] = %generic : !array.type<4 x !poly.tvar<@T>>, !poly.tvar<@T>
+        array.write %items[%c3] = %integer : !array.type<4 x !poly.tvar<@T>>, index
+        struct.writem %self[@items] = %items : !struct.type<@RepeatedTypes::@Holder<[@T]>>, !array.type<4 x !poly.tvar<@T>>
+        function.return %self : !struct.type<@RepeatedTypes::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@RepeatedTypes::@Holder<[@T]>>, %generic: !poly.tvar<@T>, %felt: !felt.type, %integer: index) {
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    poly.template @RepeatedTypes {
+// CHECK-NEXT:      poly.param @T
+// CHECK-NEXT:      struct.def @Holder {
+// CHECK-NEXT:        struct.member @items_0 : !poly.tvar<@T>
+// CHECK-NEXT:        struct.member @items_1 : !felt.type
+// CHECK-NEXT:        struct.member @items_2 : !poly.tvar<@T>
+// CHECK-NEXT:        struct.member @items_3 : index
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@RepeatedTypes::@Holder<[@T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@RepeatedTypes::@Holder<[@T]>>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@items_0] = %[[VAL_0]] : <@RepeatedTypes::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@items_1] = %[[VAL_1]] : <@RepeatedTypes::@Holder<[@T]>>, !felt.type
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@items_2] = %[[VAL_0]] : <@RepeatedTypes::@Holder<[@T]>>, !poly.tvar<@T>
+// CHECK-NEXT:          struct.writem %[[VAL_3]][@items_3] = %[[VAL_2]] : <@RepeatedTypes::@Holder<[@T]>>, index
+// CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@RepeatedTypes::@Holder<[@T]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@RepeatedTypes::@Holder<[@T]>>, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !poly.tvar<@T>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

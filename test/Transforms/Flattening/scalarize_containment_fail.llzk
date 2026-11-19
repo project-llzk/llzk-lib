@@ -1,0 +1,19 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// An index-specific POD must remain a valid element of the containment table.
+#id = affine_map<(i) -> (i)>
+!Element = !pod.type<[@data: !array.type<#id x !felt.type>]>
+!One = !pod.type<[@data: !array.type<1 x !felt.type>]>
+module attributes {llzk.lang} {
+  function.def @incompatible_table(%table: !array.type<2 x !One>) attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a containment constraint}}
+    %read = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    // expected-note@+1 {{replacement containment operands '!array.type<2 x !pod.type<[@data: !array.type<1 x !felt.type>]>>' and '!pod.type<[@data: !array.type<0 x !felt.type>]>' must form an array and a compatible element or subarray}}
+    constrain.in %table, %read : !array.type<2 x !One>, !Element
+    function.return
+  }
+}

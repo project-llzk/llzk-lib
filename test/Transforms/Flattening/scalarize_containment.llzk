@@ -1,0 +1,51 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+#id = affine_map<(i) -> (i)>
+!Element = !pod.type<[@data: !array.type<#id x !felt.type>]>
+!Zero = !pod.type<[@data: !array.type<0 x !felt.type>]>
+!One = !pod.type<[@data: !array.type<1 x !felt.type>]>
+module attributes {llzk.lang} {
+  // Each static read must use its own specialized POD in the corresponding table.
+  function.def @concrete_tables(%zeros: !array.type<2 x !Zero>, %ones: !array.type<3 x !One>) attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    %read0 = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    %read1 = array.read %array[%c1] : !array.type<2 x !Element>, !Element
+    constrain.in %zeros, %read0 : !array.type<2 x !Zero>, !Element {product_source = "first"}
+    constrain.in %ones, %read1 : !array.type<3 x !One>, !Element {product_source = "second"}
+    function.return
+  }
+
+  // The table may retain an unresolved dimension in its POD element type.
+  function.def @generic_table(%table: !array.type<2 x !Element>) attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    %read = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    constrain.in %table, %read : !array.type<2 x !Element>, !Element
+    function.return
+  }
+}
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @concrete_tables(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !pod.type<[@data: !array.type<0 x !felt.type>]>>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<3 x !pod.type<[@data: !array.type<1 x !felt.type>]>>) attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:      constrain.in %[[VAL_0]], %[[VAL_3]] : <2 x !pod.type<[@data: !array.type<0 x !felt.type>]>>, !pod.type<[@data: !array.type<0 x !felt.type>]> {product_source = "first"}
+// CHECK-NEXT:      constrain.in %[[VAL_1]], %[[VAL_5]] : <3 x !pod.type<[@data: !array.type<1 x !felt.type>]>>, !pod.type<[@data: !array.type<1 x !felt.type>]> {product_source = "second"}
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @generic_table(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !array.type<2 x !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>>) attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      constrain.in %[[VAL_6]], %[[VAL_8]] : <2 x !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>>, !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
