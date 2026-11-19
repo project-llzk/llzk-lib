@@ -1,16 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
 
 // The member is unconstrained if the parallel loop executes zero times.
-// CHECK-LABEL: @ParallelUnknown StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @ParallelUnknown {
     struct.member @value : !felt.type
@@ -30,20 +20,20 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @ParallelUnknown StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
 // The member is unconstrained if the parallel loop executes zero times.
-// CHECK-LABEL: @ForallUnknown StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @ForallUnknown {
     struct.member @value : !felt.type
@@ -63,20 +53,20 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @ForallUnknown StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
 // A write in one switch arm does not initialize the member on the default path.
-// CHECK-LABEL: @IndexSwitchUnknown StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @IndexSwitchUnknown {
     struct.member @value : !felt.type
@@ -98,3 +88,13 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @IndexSwitchUnknown StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
