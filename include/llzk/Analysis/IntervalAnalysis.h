@@ -366,6 +366,8 @@ private:
 
   // Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
   llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> readResults;
+  /// Candidate dynamic reads; restrictions are shared only for proven equal SSA accesses.
+  llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> rangedReadResults;
   // Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 

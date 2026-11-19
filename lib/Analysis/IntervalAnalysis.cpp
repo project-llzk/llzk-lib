@@ -20,6 +20,8 @@
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -70,6 +72,39 @@ bool hasRangedSelection(const SourceRef &ref) {
   return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
     return index.isIndexRange();
   });
+}
+
+/// Prove repeated reads equivalent using their SSA indices, without crossing possible writes.
+bool haveSameReadValue(Value lhs, Value rhs) {
+  if (lhs == rhs) {
+    return true;
+  }
+  Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
+  if (!llvm::isa_and_present<ReadArrayOp, MemberReadOp>(left) ||
+      !llvm::isa_and_present<ReadArrayOp, MemberReadOp>(right) ||
+      left->getBlock() != right->getBlock()) {
+    return false;
+  }
+  auto sameOperand = [](Value a, Value b) {
+    return success(
+        a == b || (llvm::isa<ArrayType, StructType>(a.getType()) && haveSameReadValue(a, b))
+    );
+  };
+  if (!OperationEquivalence::isEquivalentTo(
+          left, right, sameOperand, nullptr, OperationEquivalence::IgnoreLocations
+      )) {
+    return false;
+  }
+  if (right->isBeforeInBlock(left)) {
+    std::swap(left, right);
+  }
+  for (Operation *between = left->getNextNode(); between != right;
+       between = between->getNextNode()) {
+    if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 template <typename Fn>
@@ -1750,9 +1785,30 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     }
   };
 
+  auto propagateRangedRead = [&](const SourceRef &ref) {
+    auto &readers = rangedReadResults[ref];
+    readers.insert(valLattice);
+    SmallVector<Lattice *> aliases;
+    Interval shared = newLatticeVal.getInterval();
+    for (Lattice *reader : readers) {
+      if (haveSameReadValue(val, reader->getAnchor())) {
+        aliases.push_back(reader);
+        shared = shared.intersect(reader->getValue().getScalarValue().getInterval());
+      }
+    }
+    for (Lattice *reader : aliases) {
+      // Share restrictions, preserving each read's expression and independent range selections.
+      ExpressionValue refined = refineReducedInterval(reader->getValue().getScalarValue(), shared);
+      propagateIfChanged(reader, reader->setValue(refined));
+    }
+  };
+
   auto readmCase = [&](MemberReadOp) {
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
+    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
+      propagateRangedRead(sourceRefVal.getSingleValue());
+    }
     if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
@@ -1768,6 +1824,9 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
   auto readArrCase = [&](ReadArrayOp) {
     auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
+    if (succeeded(arrayRef) && hasRangedSelection(*arrayRef)) {
+      propagateRangedRead(*arrayRef);
+    }
     // A constraint on one selection cannot refine other reads of the same possible range.
     if (succeeded(arrayRef) && !hasRangedSelection(*arrayRef)) {
       readResults[*arrayRef].insert(valLattice);
