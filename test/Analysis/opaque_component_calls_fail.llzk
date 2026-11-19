@@ -70,6 +70,84 @@ module attributes {llzk.lang} {
 
 // -----
 
+// Type variables can be instantiated with component handles.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @opaque(!poly.tvar<@T>)
+    function.def @helper(%value: !poly.tvar<@T>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%value) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Arrays can carry component identity through their unresolved element type.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def @helper(%values: !array.type<2 x !poly.tvar<@T>>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%values) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+    function.def nested @opaque(!array.type<2 x !poly.tvar<@T>>)
+  }
+}
+
+// -----
+
+// POD records can also have unresolved types that carry component identity.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @opaque(!pod.type<[@value: !poly.tvar<@T>]>)
+    function.def @helper(%value: !pod.type<[@value: !poly.tvar<@T>]>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%value) : (!pod.type<[@value: !poly.tvar<@T>]>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+// The check recurses through mixed aggregates containing type variables.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @opaque(!pod.type<[@values: !array.type<2 x !poly.tvar<@T>>]>)
+    function.def @helper(%values: !pod.type<[@values: !array.type<2 x !poly.tvar<@T>>]>) {
+      // expected-error @+1 {{cannot analyze an opaque call with component handles in its arguments; callee storage effects are unknown}}
+      function.call @Generic::@opaque(%values) : (!pod.type<[@values: !array.type<2 x !poly.tvar<@T>>]>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Type-variable results and calls to defined generic functions remain supported.
+module attributes {llzk.lang} {
+  poly.template @Generic {
+    poly.param @T
+    function.def nested @produce() -> !poly.tvar<@T>
+    function.def @inspect(%value: !poly.tvar<@T>, %values: !array.type<2 x !poly.tvar<@T>>, %pod: !pod.type<[@value: !poly.tvar<@T>]>) {
+      function.return
+    }
+    function.def @helper(%values: !array.type<2 x !poly.tvar<@T>>, %pod: !pod.type<[@value: !poly.tvar<@T>]>) {
+      %value = function.call @Generic::@produce() : () -> !poly.tvar<@T>
+      function.call @Generic::@inspect(%value, %values, %pod) : (!poly.tvar<@T>, !array.type<2 x !poly.tvar<@T>>, !pod.type<[@value: !poly.tvar<@T>]>) -> ()
+      function.return
+    }
+  }
+}
+
+// -----
+
 // Plain value arguments, handle results, and defined functions remain supported.
 module attributes {llzk.lang} {
   struct.def @Cell {

@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Polymorphic/IR/Types.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -220,7 +221,9 @@ LogicalResult SourceRefAnalysis::visitOperation(
 
 /// Return whether a value can carry shared component identity, including through value aggregates.
 static bool containsComponentHandle(Type type) {
-  if (llvm::isa<StructType>(type)) {
+  // An unresolved type variable may be instantiated with a component handle or an aggregate
+  // containing one, so its storage effects must also be treated conservatively.
+  if (llvm::isa<StructType, polymorphic::TypeVarType>(type)) {
     return true;
   }
   if (auto array = llvm::dyn_cast<ArrayType>(type)) {
