@@ -240,7 +240,7 @@ static bool containsComponentHandle(Type type) {
 LogicalResult SourceRefAnalysis::validateInput(ModuleOp module) {
   auto result = module.walk([](Operation *op) -> WalkResult {
     auto call = llvm::dyn_cast<CallOpInterface>(op);
-    if (!call || !llvm::any_of(call.getArgOperands().getTypes(), containsComponentHandle)) {
+    if (!call || llvm::none_of(call.getArgOperands().getTypes(), containsComponentHandle)) {
       return WalkResult::advance();
     }
     auto callable = llvm::dyn_cast_if_present<CallableOpInterface>(call.resolveCallable());
