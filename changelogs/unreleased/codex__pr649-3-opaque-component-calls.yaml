@@ -1,2 +1,2 @@
 fixed:
-  - Reject opaque calls with shared component-handle arguments before dependency or interval analysis.
+  - Reject opaque calls receiving shared component handles or unresolved type variables, directly or inside arrays or PODs, before dependency or interval analysis.

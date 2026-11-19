@@ -42,6 +42,7 @@ public:
 
   /// Diagnose opaque calls whose arguments contain shared component handles. Their unknown
   /// storage effects cannot be modeled, including when a handle is nested in an array or POD.
+  /// Unresolved type variables are conservatively treated as possible component handles.
   /// Module analyses must validate input before running SourceRef dataflow.
   static mlir::LogicalResult validateInput(mlir::ModuleOp module);
 

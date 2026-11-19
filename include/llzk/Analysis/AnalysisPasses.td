@@ -71,6 +71,8 @@ def ConstraintDependencyGraphPrinterPass
 
     Opaque calls receiving `struct.type` handles, including handles nested in
     arrays or PODs, are rejected because their storage effects are unknown.
+    Unresolved `poly.tvar` arguments are treated as possible component handles,
+    including when nested in arrays or PODs.
   }];
   let options = [OutputStreamOption,
                  Option<"runIntraprocedural", "intraprocedural", "bool",
@@ -95,6 +97,8 @@ def IntervalAnalysisPrinterPass : LLZKPass<"llzk-print-interval-analysis"> {
 
     Opaque calls receiving `struct.type` handles, including handles nested in
     arrays or PODs, are rejected because their storage effects are unknown.
+    Unresolved `poly.tvar` arguments are treated as possible component handles,
+    including when nested in arrays or PODs.
   }];
   let options =
       [OutputStreamOption,
