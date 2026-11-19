@@ -1,0 +1,51 @@
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck --match-full-lines --check-prefix=UNREDUCED %s
+
+// Dependency sets identify inputs, not exact stored values or alternative values.
+// A scalar call needs a conservative interval without an expression summary.
+module attributes {llzk.lang} {
+  function.def @double(%value: !felt.type) -> !felt.type attributes {function.allow_witness} {
+    %sum = felt.add %value, %value
+    function.return %sum : !felt.type
+  }
+  struct.def @ComputedCallResults {
+    struct.member @scalarResult : !felt.type
+    struct.member @localResult : !felt.type
+    function.def @compute() -> !struct.type<@ComputedCallResults> {
+      %self = struct.new : !struct.type<@ComputedCallResults>
+      %two = felt.const 2
+      %three = felt.const 3
+      %scalar = function.call @double(%two) : (!felt.type) -> !felt.type
+      struct.writem %self[@scalarResult] = %scalar : !struct.type<@ComputedCallResults>, !felt.type
+      // Exact local expressions remain precise.
+      %sum = felt.add %two, %three
+      struct.writem %self[@localResult] = %sum : !struct.type<@ComputedCallResults>, !felt.type
+      function.return %self : !struct.type<@ComputedCallResults>
+    }
+    function.def @constrain(%self: !struct.type<@ComputedCallResults>) { function.return }
+  }
+}
+
+
+// CHECK-LABEL: @ComputedCallResults StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(5)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+
+// UNREDUCED-LABEL: @ComputedCallResults StructIntervals {
+// UNREDUCED-NEXT:      compute {
+// UNREDUCED-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(5) ( Unreduced:[ 5, 5 ] )
+// UNREDUCED-NEXT:      }
+// UNREDUCED-NEXT:      constrain {
+// UNREDUCED-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:      }
+// UNREDUCED-NEXT:  }
