@@ -28,22 +28,22 @@ module attributes {llzk.lang} {
 
 // CHECK-LABEL: @ComputedCallResults StructIntervals {
 // CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(5)
+// CHECK-NEXT:          %self.scalarResult in Entire
+// CHECK-NEXT:          %self.localResult in Degenerate(5)
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %self.scalarResult in Entire
+// CHECK-NEXT:          %self.localResult in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
 
 // UNREDUCED-LABEL: @ComputedCallResults StructIntervals {
 // UNREDUCED-NEXT:      compute {
-// UNREDUCED-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire ( Unreduced:[ 0, 2013265920 ] )
-// UNREDUCED-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(5) ( Unreduced:[ 5, 5 ] )
+// UNREDUCED-NEXT:          %self.scalarResult in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %self.localResult in Degenerate(5) ( Unreduced:[ 5, 5 ] )
 // UNREDUCED-NEXT:      }
 // UNREDUCED-NEXT:      constrain {
-// UNREDUCED-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire ( Unreduced:[ 0, 2013265920 ] )
-// UNREDUCED-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %self.scalarResult in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %self.localResult in Entire ( Unreduced:[ 0, 2013265920 ] )
 // UNREDUCED-NEXT:      }
 // UNREDUCED-NEXT:  }
