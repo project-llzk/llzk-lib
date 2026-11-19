@@ -10,6 +10,7 @@
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
 
+#include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Analysis/Intervals.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -671,6 +672,227 @@ module attributes {llzk.lang} {
     return analysis.getSolver().lookupState<IntervalAnalysisLattice>(value);
   }
 };
+
+// Equal-looking values in separate functions must still have separate SMT identities.
+TEST_F(IntervalAnalysisAPITests, ValueSymbolsCacheIdentityAndPreserveSorts) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @first(%felt: !felt.type, %flag: i1, %index: index,
+                      %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+  function.def @second(%felt: !felt.type, %flag: i1, %index: index,
+                       %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto functions = llvm::to_vector(mod->getOps<function::FuncDefOp>());
+  ASSERT_EQ(functions.size(), 2U);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver;
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+
+  for (auto [first, second] : llvm::zip(functions[0].getArguments(), functions[1].getArguments())) {
+    EXPECT_EQ(buildStringViaPrint(first), buildStringViaPrint(second));
+    const auto *symbol = analysis->getOrCreateSymbol(first);
+    EXPECT_EQ(symbol, analysis->getOrCreateSymbol(first));
+    const auto *other = analysis->getOrCreateSymbol(second);
+    EXPECT_FALSE(*symbol == *other);
+    EXPECT_EQ(symbol, analysis->getOrCreateSymbol(first));
+    const auto *sort = smt->getSort(symbol);
+    if (first.getType().isInteger(1)) {
+      EXPECT_TRUE(sort->isBooleanSort());
+    } else {
+      ASSERT_TRUE(sort->isBitvectorSort());
+      EXPECT_EQ(sort->getBitvectorSortSize(), field.bitWidth());
+    }
+
+    // Even a user-supplied SourceRef name matching the internal value name is separate.
+    functions[0].setArgName(first.getArgNumber(), buildStringViaPrint(*symbol));
+    SourceRef ref(first);
+    EXPECT_EQ(buildStringViaPrint(ref), buildStringViaPrint(*symbol));
+    const auto *refSymbol = analysis->getOrCreateSymbol(ref);
+    EXPECT_EQ(refSymbol, analysis->getOrCreateSymbol(ref));
+    EXPECT_FALSE(*symbol == *refSymbol);
+    EXPECT_TRUE(*sort == *smt->getSort(refSymbol));
+  }
+}
+
+// Printed references may coincide across functions, including paths into aggregate arguments.
+TEST_F(IntervalAnalysisAPITests, SourceRefSymbolsCacheIdentityAndPreserveSorts) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @first(%felt: !felt.type, %flag: i1, %index: index,
+                      %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+  function.def @second(%felt: !felt.type, %flag: i1, %index: index,
+                       %array: !array.type<2 x !felt.type>) {
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto functions = llvm::to_vector(mod->getOps<function::FuncDefOp>());
+  ASSERT_EQ(functions.size(), 2U);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver;
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+
+  llvm::SmallVector<SourceRef> firstRefs, secondRefs;
+  for (auto [first, second] : llvm::zip(functions[0].getArguments(), functions[1].getArguments())) {
+    firstRefs.emplace_back(first);
+    secondRefs.emplace_back(second);
+  }
+  for (int64_t index : {0, 1}) {
+    auto first = SourceRef(functions[0].getArgument(3)).createChild(SourceRefIndex(index));
+    auto second = SourceRef(functions[1].getArgument(3)).createChild(SourceRefIndex(index));
+    ASSERT_TRUE(succeeded(first));
+    ASSERT_TRUE(succeeded(second));
+    firstRefs.push_back(*first);
+    secondRefs.push_back(*second);
+  }
+  for (auto [first, second] : llvm::zip(firstRefs, secondRefs)) {
+    EXPECT_NE(first, second);
+    EXPECT_EQ(buildStringViaPrint(first), buildStringViaPrint(second));
+    const auto *symbol = analysis->getOrCreateSymbol(first);
+    const auto *other = analysis->getOrCreateSymbol(second);
+    EXPECT_EQ(symbol, analysis->getOrCreateSymbol(SourceRef(first)));
+    EXPECT_FALSE(*symbol == *other);
+    const auto *sort = smt->getSort(symbol);
+    EXPECT_TRUE(*sort == *smt->getSort(other));
+    if (first.getType().isInteger(1)) {
+      EXPECT_TRUE(sort->isBooleanSort());
+    } else {
+      ASSERT_TRUE(sort->isBitvectorSort());
+      EXPECT_EQ(sort->getBitvectorSortSize(), field.bitWidth());
+    }
+    smt->addConstraint(smt->mkNot(smt->mkEqual(symbol, other)));
+  }
+  EXPECT_EQ(smt->check(), std::optional<bool>(true));
+}
+
+// Namespace allocation outlives an analysis when another owner retains its SMT solver.
+TEST_F(IntervalAnalysisAPITests, ValueSymbolsRemainDistinctAcrossAnalysesSharingSolver) {
+  auto mod = parseModule(kDynamicNonAssertCastModule);
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto value = structDef.getComputeFuncOp().getArguments().front();
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  llvm::SMTExprRef firstSymbol, firstRef;
+  {
+    DataFlowSolver firstSolver, secondSolver;
+    auto *first = firstSolver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    auto *second = secondSolver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    firstSymbol = first->getOrCreateSymbol(value);
+    firstRef = first->getOrCreateSymbol(SourceRef(value));
+    const auto *secondSymbol = second->getOrCreateSymbol(value);
+    const auto *secondRef = second->getOrCreateSymbol(SourceRef(value));
+    EXPECT_FALSE(*firstSymbol == *secondSymbol);
+    EXPECT_FALSE(*firstSymbol == *secondRef);
+    EXPECT_FALSE(*firstRef == *secondSymbol);
+    EXPECT_FALSE(*firstRef == *secondRef);
+    EXPECT_EQ(firstSymbol, first->getOrCreateSymbol(value));
+    EXPECT_EQ(secondSymbol, second->getOrCreateSymbol(value));
+    smt->addConstraint(smt->mkNot(smt->mkEqual(firstSymbol, secondSymbol)));
+    EXPECT_EQ(smt->check(), std::optional<bool>(true));
+  }
+
+  // Solver reset removes constraints, but existing symbol names remain allocated.
+  smt->reset();
+  {
+    DataFlowSolver solver;
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    const auto *symbol = analysis->getOrCreateSymbol(value);
+    EXPECT_FALSE(*firstSymbol == *symbol);
+    EXPECT_FALSE(*firstRef == *symbol);
+    EXPECT_FALSE(*firstRef == *analysis->getOrCreateSymbol(SourceRef(value)));
+  }
+  std::weak_ptr<llvm::SMTSolver> weakSolver = smt;
+  smt.reset();
+  EXPECT_TRUE(weakSolver.expired());
+}
+
+// Inverse equations must remain independent for identical operations in different contexts.
+TEST_F(IntervalAnalysisAPITests, InverseSymbolsRemainDistinctAcrossFunctionsAndAnalyses) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @first(%value: !felt.type) -> (!felt.type, !felt.type)
+      attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %one = felt.const 1 : !felt.type
+    %inverse = felt.inv %value : !felt.type
+    %quotient = felt.div %one, %value : !felt.type, !felt.type
+    function.return %inverse, %quotient : !felt.type, !felt.type
+  }
+  function.def @second(%value: !felt.type) -> (!felt.type, !felt.type)
+      attributes {function.allow_witness, function.allow_non_native_field_ops} {
+    %one = felt.const 1 : !felt.type
+    %inverse = felt.inv %value : !felt.type
+    %quotient = felt.div %one, %value : !felt.type, !felt.type
+    function.return %inverse, %quotient : !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  llvm::SmallVector<felt::InvFeltOp> invOps;
+  llvm::SmallVector<felt::DivFeltOp> divOps;
+  mod->walk([&](felt::InvFeltOp op) { invOps.push_back(op); });
+  mod->walk([&](felt::DivFeltOp op) { divOps.push_back(op); });
+  ASSERT_EQ(invOps.size(), 2U);
+  ASSERT_EQ(divOps.size(), 2U);
+  EXPECT_EQ(buildStringViaInsertionOp(*invOps[0]), buildStringViaInsertionOp(*invOps[1]));
+  EXPECT_EQ(buildStringViaInsertionOp(*divOps[0]), buildStringViaInsertionOp(*divOps[1]));
+
+  const Field &field = Field::getField("babybear");
+  for (bool separateAnalyses : {false, true}) {
+    SCOPED_TRACE(
+        separateAnalyses ? "shared solver, same operation" : "same analysis, two functions"
+    );
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver first(DataFlowConfig().setInterprocedural(false));
+    DataFlowSolver second(DataFlowConfig().setInterprocedural(false));
+    llvm::SmallVector<llvm::SMTExprRef> inputs, inverses, quotients;
+    for (unsigned index = 0; index < 2; ++index) {
+      auto &solver = separateAnalyses && index == 1 ? second : first;
+      if (index == 0 || separateAnalyses) {
+        llzk::dataflow::loadRequiredAnalyses(solver);
+        solver.load<SourceRefAnalysis>();
+        solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+        ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      }
+      unsigned opIndex = separateAnalyses ? 0 : index;
+      auto getExpr = [&](Value value) -> llvm::SMTExprRef {
+        const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+        EXPECT_NE(lattice, nullptr);
+        return lattice ? lattice->getValue().getScalarValue().getExpr() : nullptr;
+      };
+      inputs.push_back(getExpr(invOps[opIndex]->getOperand(0)));
+      inverses.push_back(getExpr(invOps[opIndex].getResult()));
+      quotients.push_back(getExpr(divOps[opIndex].getResult()));
+      ASSERT_NE(inputs.back(), nullptr);
+      ASSERT_NE(inverses.back(), nullptr);
+      ASSERT_NE(quotients.back(), nullptr);
+
+      // Bind the symbolic inputs only after analysis, so constant folding cannot hide a collision.
+      auto input = field.felt(static_cast<int>(index) + 1);
+      const auto *expectedInverse = smt->mkBitvector(toAPSInt(field.inv(input)), field.bitWidth());
+      smt->addConstraint(
+          smt->mkEqual(inputs.back(), smt->mkBitvector(toAPSInt(input), field.bitWidth()))
+      );
+      smt->addConstraint(smt->mkEqual(inverses.back(), expectedInverse));
+      smt->addConstraint(smt->mkEqual(quotients.back(), expectedInverse));
+    }
+    EXPECT_FALSE(*inputs[0] == *inputs[1]);
+    EXPECT_FALSE(*inverses[0] == *inverses[1]);
+    EXPECT_FALSE(*quotients[0] == *quotients[1]);
+    EXPECT_EQ(smt->check(), std::optional<bool>(true));
+  }
+}
 
 TEST_F(IntervalAnalysisAPITests, DynamicNonAssertCastsInitializeResultLattices) {
   auto mod = parseModule(kDynamicNonAssertCastModule);

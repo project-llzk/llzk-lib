@@ -1,0 +1,44 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+// Index-specific POD receivers retain invariant scalar, array, and nested POD
+// records. Every field read remains live through a result or another read.
+#id = affine_map<(i) -> (i)>
+!Nested = !pod.type<[@tag: index]>
+!Element = !pod.type<[@data: !array.type<#id x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !Nested]>
+module attributes {llzk.lang} {
+  function.def @invariant_records() -> (index, !felt.type, index) attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    %zero = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    %one = array.read %array[%c1] : !array.type<2 x !Element>, !Element
+    %tag = pod.read %zero[@tag] : !Element, index
+    %fixed = pod.read %one[@fixed] : !Element, !array.type<2 x !felt.type>
+    %item = array.read %fixed[%c1] : !array.type<2 x !felt.type>, !felt.type
+    %nested = pod.read %zero[@nested] : !Element, !Nested
+    %nestedTag = pod.read %nested[@tag] : !Nested, index
+    function.return %tag, %item, %nestedTag : index, !felt.type, index
+  }
+}
+
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @invariant_records() -> (index, !felt.type, index) attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !pod.type<[@tag: index]>]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<0 x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !pod.type<[@tag: index]>]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !pod.type<[@tag: index]>]>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<1 x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !pod.type<[@tag: index]>]>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = pod.read %[[VAL_2]][@tag] : <[@data: !array.type<0 x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !pod.type<[@tag: index]>]>, index
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = pod.read %[[VAL_4]][@fixed] : <[@data: !array.type<1 x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !pod.type<[@tag: index]>]>, !array.type<2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_6]]{{\[}}%[[VAL_0]]] : <2 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = pod.read %[[VAL_2]][@nested] : <[@data: !array.type<0 x !felt.type>, @tag: index, @fixed: !array.type<2 x !felt.type>, @nested: !pod.type<[@tag: index]>]>, !pod.type<[@tag: index]>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = pod.read %[[VAL_8]][@tag] : <[@tag: index]>, index
+// CHECK-NEXT:      function.return %[[VAL_5]], %[[VAL_7]], %[[VAL_9]] : index, !felt.type, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+

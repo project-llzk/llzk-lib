@@ -1,0 +1,229 @@
+// RUN: llzk-opt -llzk-flatten -split-input-file %s | FileCheck --enable-var-scope %s
+
+// A shape-only observation before element writes must not disqualify the candidate.
+// Both dimensions fold independently, and the width constant preserves provenance.
+#width = affine_map<(i, j) -> (i + j + 1)>
+!Element = !pod.type<[@values: !array.type<#width x !felt.type>]>
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    struct.member @items : !array.type<1,2 x !Element>
+    struct.member @height : index
+    struct.member @width : index
+    function.def @compute(%first: !pod.type<[@values: !array.type<1 x !felt.type>]>, %second: !pod.type<[@values: !array.type<2 x !felt.type>]>) -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %array = array.new : !array.type<1,2 x !Element>
+      %height = array.len %array, %c0 : !array.type<1,2 x !Element>
+      array.write %array[%c0, %c0] = %first : !array.type<1,2 x !Element>, !pod.type<[@values: !array.type<1 x !felt.type>]>
+      array.write %array[%c0, %c1] = %second : !array.type<1,2 x !Element>, !pod.type<[@values: !array.type<2 x !felt.type>]>
+      %width = array.len %array, %c1 : !array.type<1,2 x !Element> {product_source = "width"}
+      struct.writem %self[@height] = %height : !struct.type<@Holder>, index
+      struct.writem %self[@width] = %width : !struct.type<@Holder>, index
+      struct.writem %self[@items] = %array : !struct.type<@Holder>, !array.type<1,2 x !Element>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>, %first: !pod.type<[@values: !array.type<1 x !felt.type>]>, %second: !pod.type<[@values: !array.type<2 x !felt.type>]>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @Holder {
+// CHECK-NEXT:      struct.member @items_0 : !pod.type<[@values: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:      struct.member @items_1 : !pod.type<[@values: !array.type<2 x !felt.type>]>
+// CHECK-NEXT:      struct.member @height : index
+// CHECK-NEXT:      struct.member @width : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<1 x !felt.type>]>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<2 x !felt.type>]>) -> !struct.type<@Holder> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "width"} 2 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Holder>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@height] = %[[VAL_3]] : <@Holder>, index
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@width] = %[[VAL_2]] : <@Holder>, index
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@items_0] = %[[VAL_0]] : <@Holder>, !pod.type<[@values: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:        struct.writem %[[VAL_4]][@items_1] = %[[VAL_1]] : <@Holder>, !pod.type<[@values: !array.type<2 x !felt.type>]>
+// CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Holder>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@Holder>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<1 x !felt.type>]>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<2 x !felt.type>]>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// Initialized heterogeneous candidates support the same constant-dimension observations.
+#width = affine_map<(i, j) -> (i + j + 1)>
+!Element = !pod.type<[@values: !array.type<#width x !felt.type>]>
+module attributes {llzk.lang} {
+  struct.def @InitializedLength {
+    struct.member @items : !array.type<2,1 x !Element>
+    struct.member @length : index
+    function.def @compute() -> !struct.type<@InitializedLength> {
+      %self = struct.new : !struct.type<@InitializedLength>
+      %c0 = arith.constant 0 : index
+      %first = llzk.nondet : !Element
+      %second = llzk.nondet : !Element
+      %array = array.new %first, %second : !array.type<2,1 x !Element>
+      %length = array.len %array, %c0 : !array.type<2,1 x !Element> {product_source = "initialized"}
+      struct.writem %self[@length] = %length : !struct.type<@InitializedLength>, index
+      struct.writem %self[@items] = %array : !struct.type<@InitializedLength>, !array.type<2,1 x !Element>
+      function.return %self : !struct.type<@InitializedLength>
+    }
+    function.def @constrain(%self: !struct.type<@InitializedLength>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @InitializedLength {
+// CHECK-NEXT:      struct.member @items_0 : !pod.type<[@values: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:      struct.member @items_1 : !pod.type<[@values: !array.type<2 x !felt.type>]>
+// CHECK-NEXT:      struct.member @length : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@InitializedLength> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant {product_source = "initialized"} 2 : index
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@InitializedLength>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@values: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@values: !array.type<2 x !felt.type>]>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@length] = %[[VAL_0]] : <@InitializedLength>, index
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@items_0] = %[[VAL_2]] : <@InitializedLength>, !pod.type<[@values: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:        struct.writem %[[VAL_1]][@items_1] = %[[VAL_3]] : <@InitializedLength>, !pod.type<[@values: !array.type<2 x !felt.type>]>
+// CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@InitializedLength>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@InitializedLength>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A dynamic dimension is not guessed; preserve the allocation and its observations.
+#width = affine_map<(i, j) -> (i + j + 1)>
+!Element = !pod.type<[@values: !array.type<#width x !felt.type>]>
+module attributes {llzk.lang} {
+  struct.def @DynamicLength {
+    struct.member @items : !array.type<1,2 x !Element>
+    struct.member @height : index
+    struct.member @width : index
+    function.def @compute(%dim: index, %first: !pod.type<[@values: !array.type<1 x !felt.type>]>, %second: !pod.type<[@values: !array.type<2 x !felt.type>]>) -> !struct.type<@DynamicLength> {
+      %self = struct.new : !struct.type<@DynamicLength>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %array = array.new : !array.type<1,2 x !Element>
+      %height = array.len %array, %dim : !array.type<1,2 x !Element> {product_source = "height"}
+      array.write %array[%c0, %c0] = %first : !array.type<1,2 x !Element>, !pod.type<[@values: !array.type<1 x !felt.type>]>
+      array.write %array[%c0, %c1] = %second : !array.type<1,2 x !Element>, !pod.type<[@values: !array.type<2 x !felt.type>]>
+      %width = array.len %array, %c1 : !array.type<1,2 x !Element> {product_source = "width"}
+      struct.writem %self[@height] = %height : !struct.type<@DynamicLength>, index
+      struct.writem %self[@width] = %width : !struct.type<@DynamicLength>, index
+      struct.writem %self[@items] = %array : !struct.type<@DynamicLength>, !array.type<1,2 x !Element>
+      function.return %self : !struct.type<@DynamicLength>
+    }
+    function.def @constrain(%self: !struct.type<@DynamicLength>, %dim: index, %first: !pod.type<[@values: !array.type<1 x !felt.type>]>, %second: !pod.type<[@values: !array.type<2 x !felt.type>]>) { function.return }
+  }
+}
+
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0, d1) -> (d0 + d1 + 1)>
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @DynamicLength {
+// CHECK-NEXT:      struct.member @items : !array.type<1,2 x !pod.type<[@values: !array.type<#[[$ATTR_0]] x !felt.type>]>>
+// CHECK-NEXT:      struct.member @height : index
+// CHECK-NEXT:      struct.member @width : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<1 x !felt.type>]>, %[[VAL_2:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<2 x !felt.type>]>) -> !struct.type<@DynamicLength> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@DynamicLength>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new  : <1,2 x !pod.type<[@values: !array.type<#[[$ATTR_0]] x !felt.type>]>>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_6]], %[[VAL_0]] : <1,2 x !pod.type<[@values: !array.type<#[[$ATTR_0]] x !felt.type>]>> {product_source = "height"}
+// CHECK-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_4]], %[[VAL_4]]] = %[[VAL_1]] : <1,2 x !pod.type<[@values: !array.type<#[[$ATTR_0]] x !felt.type>]>>, !pod.type<[@values: !array.type<1 x !felt.type>]>
+// CHECK-NEXT:        array.write %[[VAL_6]]{{\[}}%[[VAL_4]], %[[VAL_3]]] = %[[VAL_2]] : <1,2 x !pod.type<[@values: !array.type<#[[$ATTR_0]] x !felt.type>]>>, !pod.type<[@values: !array.type<2 x !felt.type>]>
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_6]], %[[VAL_3]] : <1,2 x !pod.type<[@values: !array.type<#[[$ATTR_0]] x !felt.type>]>> {product_source = "width"}
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@height] = %[[VAL_7]] : <@DynamicLength>, index
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@width] = %[[VAL_8]] : <@DynamicLength>, index
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@items] = %[[VAL_6]] : <@DynamicLength>, !array.type<1,2 x !pod.type<[@values: !array.type<#[[$ATTR_0]] x !felt.type>]>>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@DynamicLength>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_9:[0-9a-zA-Z_.-]+]]: !struct.type<@DynamicLength>, %[[VAL_10:[0-9a-zA-Z_.-]+]]: index, %[[VAL_11:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<1 x !felt.type>]>, %[[VAL_12:[0-9a-zA-Z_.-]+]]: !pod.type<[@values: !array.type<2 x !felt.type>]>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+
+// -----
+
+// A live length must not leave a generic array behind when its Cell elements instantiate.
+#id = affine_map<(i) -> (i)>
+!Cell = !struct.type<@TCell::@Cell<[#id]>>
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+    struct.def @Cell {
+      struct.member @value : !felt.type {column, llzk.pub}
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) { function.return }
+    }
+  }
+  struct.def @CellLength {
+    struct.member @items : !array.type<2 x !Cell> {column}
+    struct.member @length : index
+    function.def @compute() -> !struct.type<@CellLength> {
+      %self = struct.new : !struct.type<@CellLength>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %array = array.new : !array.type<2 x !Cell>
+      %first = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[0]>>
+      %second = function.call @TCell::@Cell::@compute() : () -> !struct.type<@TCell::@Cell<[1]>>
+      array.write %array[%c0] = %first : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %array[%c1] = %second : !array.type<2 x !Cell>, !struct.type<@TCell::@Cell<[1]>>
+      %length = array.len %array, %c0 : !array.type<2 x !Cell>
+      struct.writem %self[@length] = %length : !struct.type<@CellLength>, index
+      struct.writem %self[@items] = %array : !struct.type<@CellLength>, !array.type<2 x !Cell>
+      function.return %self : !struct.type<@CellLength>
+    }
+    function.def @constrain(%self: !struct.type<@CellLength>) { function.return }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    struct.def @TCell_0_Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_0_Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_0_Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_0_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @TCell_1_Cell {
+// CHECK-NEXT:      struct.member @value : !felt.type {column, llzk.pub}
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@TCell_1_Cell> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@TCell_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_2]] : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@TCell_1_Cell>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @CellLength {
+// CHECK-NEXT:      struct.member @items_0 : !struct.type<@TCell_0_Cell> {column}
+// CHECK-NEXT:      struct.member @items_1 : !struct.type<@TCell_1_Cell> {column}
+// CHECK-NEXT:      struct.member @length : index
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@CellLength> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@CellLength>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @TCell_0_Cell::@compute() : () -> !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @TCell_1_Cell::@compute() : () -> !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@length] = %[[VAL_4]] : <@CellLength>, index
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_0] = %[[VAL_6]] : <@CellLength>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        struct.writem %[[VAL_5]][@items_1] = %[[VAL_7]] : <@CellLength>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@CellLength>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !struct.type<@CellLength>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

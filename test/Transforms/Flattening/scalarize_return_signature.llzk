@@ -1,0 +1,81 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Return {
+    poly.param @T : !poly.tvar<@T>
+    poly.param @U : !poly.tvar<@U>
+    // Every use of the same read must receive the hypothetical replacement type.
+    function.def @repeated_read() -> (!poly.tvar<@T>, !poly.tvar<@T>) attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %a = llzk.nondet : !struct.type<@TCell::@Cell<[0]>>
+      %b = llzk.nondet : !struct.type<@TCell::@Cell<[1]>>
+      %array = array.new : !array.type<2 x !poly.tvar<@T>>
+      array.write %array[%c0] = %a : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %array[%c1] = %b : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[1]>>
+      %read0 = array.read %array[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      function.return %read0, %read0 : !poly.tvar<@T>, !poly.tvar<@T>
+    }
+
+    // Distinct reads may share T when their planned specializations agree.
+    function.def @same_specialization() -> (!poly.tvar<@T>, !poly.tvar<@T>) attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %a = llzk.nondet : !struct.type<@TCell::@Cell<[0]>>
+      %b = llzk.nondet : !struct.type<@TCell::@Cell<[1]>>
+      %array = array.new : !array.type<2 x !poly.tvar<@T>>
+      array.write %array[%c0] = %a : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %array[%c1] = %b : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[1]>>
+      %read0 = array.read %array[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      %read1 = array.read %array[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      function.return %read0, %read1 : !poly.tvar<@T>, !poly.tvar<@T>
+    }
+
+    // Independent result variables may bind to distinct specializations.
+    function.def @independent_results() -> (!poly.tvar<@T>, !poly.tvar<@U>) attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %a = llzk.nondet : !struct.type<@TCell::@Cell<[0]>>
+      %b = llzk.nondet : !struct.type<@TCell::@Cell<[1]>>
+      %array = array.new : !array.type<2 x !poly.tvar<@T>>
+      array.write %array[%c0] = %a : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %array[%c1] = %b : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[1]>>
+      %read0 = array.read %array[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      %read1 = array.read %array[%c1] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@U>
+      function.return %read0, %read1 : !poly.tvar<@T>, !poly.tvar<@U>
+    }
+  }
+}
+
+// CHECK-LABEL:     function.def @repeated_read() -> (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]], %[[VAL_0]] : !struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      }
+
+// CHECK-LABEL:     function.def @same_specialization() -> (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>) attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]], %[[VAL_0]] : !struct.type<@TCell_0_Cell>, !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:      }
+
+// CHECK-LABEL:     function.def @independent_results() -> (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_1_Cell>) attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_0_Cell>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:        function.return %[[VAL_0]], %[[VAL_1]] : !struct.type<@TCell_0_Cell>, !struct.type<@TCell_1_Cell>
+// CHECK-NEXT:      }

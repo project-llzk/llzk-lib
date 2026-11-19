@@ -1,0 +1,104 @@
+// RUN: llzk-opt -llzk-flatten -split-input-file -verify-diagnostics %s
+
+// array conflict.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    // expected-note@+1 {{first required type: '!array.type<1 x !felt.type>'}}
+    struct.member @first : !array.type<1 x !felt.type>
+    // expected-note@+1 {{conflicting required type: '!array.type<2 x !felt.type>'}}
+    struct.member @second : !array.type<2 x !felt.type>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !array.type<? x !felt.type> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !array.type<? x !felt.type>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !array.type<? x !felt.type>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// array conflict reverse.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    // expected-note@+1 {{conflicting required type: '!array.type<1 x !felt.type>'}}
+    struct.member @first : !array.type<1 x !felt.type>
+    // expected-note@+1 {{first required type: '!array.type<2 x !felt.type>'}}
+    struct.member @second : !array.type<2 x !felt.type>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !array.type<? x !felt.type> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !array.type<? x !felt.type>
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !array.type<? x !felt.type>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// pod conflict.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    // expected-note@+1 {{first required type: '!pod.type<[@rows: !array.type<1 x !felt.type>, @tag: index]>'}}
+    struct.member @first : !pod.type<[@rows: !array.type<1 x !felt.type>, @tag: index]>
+    // expected-note@+1 {{conflicting required type: '!pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>'}}
+    struct.member @second : !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// pod conflict reverse.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    // expected-note@+1 {{conflicting required type: '!pod.type<[@rows: !array.type<1 x !felt.type>, @tag: index]>'}}
+    struct.member @first : !pod.type<[@rows: !array.type<1 x !felt.type>, @tag: index]>
+    // expected-note@+1 {{first required type: '!pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>'}}
+    struct.member @second : !pod.type<[@rows: !array.type<2 x !felt.type>, @tag: index]>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]>
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !pod.type<[@rows: !array.type<? x !felt.type>, @tag: index]>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// nested conflict.
+module attributes {llzk.lang} {
+  struct.def @Holder {
+    // expected-note@+1 {{first required type: '!array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1 x !felt.type>]>]>>'}}
+    struct.member @first : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<1 x !felt.type>]>]>>
+    // expected-note@+1 {{conflicting required type: '!array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<2 x !felt.type>]>]>>'}}
+    struct.member @second : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<2 x !felt.type>]>]>>
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<? x !felt.type>]>]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<? x !felt.type>]>]>>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !array.type<2 x !pod.type<[@inner: !pod.type<[@rows: !array.type<? x !felt.type>]>]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}

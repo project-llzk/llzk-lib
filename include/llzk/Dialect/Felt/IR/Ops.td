@@ -125,6 +125,14 @@ def LLZK_FeltConstantOp
   let assemblyFormat = [{ $value attr-dict }];
   let hasFolder = 1;
   let hasCanonicalizeMethod = 1;
+
+  /// Build a constant from its declared field type and exact signed literal,
+  /// without reduction.
+  let builders = [OpBuilder<(ins "::llzk::felt::FeltType":$type,
+                                "const ::llvm::DynamicAPInt &":$value),
+                            [{
+    build($_builder, $_state, FeltConstAttr::get($_builder.getContext(), value, type));
+  }]>];
 }
 
 //===------------------------------------------------------------------===//

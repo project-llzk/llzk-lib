@@ -29,6 +29,9 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/AttrTypeSubElements.h>
+#include <mlir/IR/Matchers.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/Transforms/FoldUtils.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -137,25 +140,9 @@ public:
       return op->emitOpError().append("could not convert result type ", origResTy);
     }
 
-    if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
-      replaceOpWithNewOp<FeltConstantOp>(
-          rewriter, op, FeltConstAttr::get(getContext(), integerAttrToDynamicAPInt(a), ty)
-      );
-      return success();
-    }
-
-    if (llvm::isa<IndexType>(newResTy)) {
-      replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-      return success();
-    }
-
     if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
-      if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, false);
-        return success();
-      }
-      if (!attrValue.isOne()) {
+      if (!attrValue.isZero() && !attrValue.isOne()) {
         Location opLoc = op.getLoc();
         Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
         diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
@@ -167,7 +154,10 @@ public:
             << "\" for this specialization";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
+    }
+    if (Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a)) {
+      replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+      rewriter.replaceOp(op, replacement);
       return success();
     }
     return op->emitOpError().append("unexpected result type ", newResTy);
@@ -176,7 +166,15 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
+    }
+    Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a);
+    assert(replacement && "felt template values must materialize as felt constants");
+    replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+    rewriter.replaceOp(op, replacement);
     return success();
   }
 };
@@ -422,12 +420,17 @@ convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> 
 /// constant-folded; otherwise returns `std::nullopt`.
 static std::optional<Attribute>
 evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
-  // Map from SSA value in the expr body to its concrete Attribute.
-  DenseMap<Value, Attribute> valueMap;
-  for (Operation &bodyOp : exprOp.getInitializerRegion().front()) {
+  // Folding may rewrite operations in place. Evaluate a disposable copy so subsequent
+  // specializations and partially instantiated templates retain the original expression.
+  OwningOpRef<TemplateExprOp> evaluation(exprOp.clone());
+  TemplateTypeConverter typeConverter(paramNameToConcrete);
+  IRRewriter rewriter(exprOp.getContext());
+  OperationFolder folder(exprOp.getContext());
+  for (Operation &bodyOp : llvm::make_early_inc_range(evaluation->getInitializerRegion().front())) {
     if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
-      auto it = valueMap.find(yieldOp.getVal());
-      return it != valueMap.end() ? std::make_optional(it->second) : std::nullopt;
+      Attribute result;
+      return matchPattern(yieldOp.getVal(), m_Constant(&result)) ? std::make_optional(result)
+                                                                 : std::nullopt;
     }
 
     if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
@@ -435,41 +438,23 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
       if (it == paramNameToConcrete.end()) {
         return std::nullopt; // a referenced param is not concrete
       }
-      // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
-      // a `FeltConstAttr`.
-      Attribute val = it->second;
-      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
-        if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
-          val = FeltConstAttr::get(bodyOp.getContext(), integerAttrToDynamicAPInt(intAttr), feltTy);
-        }
+      Type resultType = typeConverter.convertType(constReadOp.getType());
+      if (!resultType) {
+        return std::nullopt;
       }
-      valueMap[constReadOp.getResult()] = val;
+      rewriter.setInsertionPoint(constReadOp);
+      Value constant =
+          materializeTemplateConstant(rewriter, constReadOp.getLoc(), resultType, it->second);
+      if (!constant) {
+        return std::nullopt;
+      }
+      rewriter.replaceOp(constReadOp, constant);
       continue;
     }
 
-    // Gather constant attributes for all operands.
-    SmallVector<Attribute> operandAttrs;
-    operandAttrs.reserve(bodyOp.getNumOperands());
-    for (Value operand : bodyOp.getOperands()) {
-      auto it = valueMap.find(operand);
-      if (it == valueMap.end()) {
-        return std::nullopt; // operand not known as a constant
-      }
-      operandAttrs.push_back(it->second);
-    }
-
-    // Try constant folding.
-    SmallVector<OpFoldResult> foldResults;
-    if (succeeded(bodyOp.fold(operandAttrs, foldResults)) &&
-        foldResults.size() == bodyOp.getNumResults()) {
-      for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
-        if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
-          valueMap[result] = a;
-        } else {
-          return std::nullopt;
-        }
-      }
-    }
+    // Use the standard folder for attribute results, existing SSA values and in-place
+    // updates. A non-foldable result remains non-constant and cannot be yielded below.
+    (void)folder.tryToFold(&bodyOp);
   }
   return std::nullopt; // no YieldOp found (shouldn't happen in a valid expr)
 }
@@ -477,6 +462,25 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
 } // namespace
 
 namespace llzk::polymorphic::detail {
+
+Value materializeTemplateConstant(
+    OpBuilder &builder, Location loc, Type resultType, Attribute value
+) {
+  if (auto integer = dyn_cast<IntegerAttr>(value)) {
+    if (auto type = dyn_cast<FeltType>(resultType)) {
+      return FeltConstantOp::create(builder, loc, type, integerAttrToDynamicAPInt(integer));
+    }
+    if (isa<IndexType>(resultType)) {
+      return arith::ConstantIndexOp::create(builder, loc, fromAPInt(integer.getValue()));
+    }
+    if (resultType.isSignlessInteger(1)) {
+      return arith::ConstantIntOp::create(builder, loc, resultType, !integer.getValue().isZero());
+    }
+  } else if (auto felt = dyn_cast<FeltConstAttr>(value)) {
+    return FeltConstantOp::create(builder, loc, felt);
+  }
+  return nullptr;
+}
 
 void reportDelayedDiagnostics(Operation *site, SmallVector<Diagnostic> &&diagnostics) {
   DiagnosticEngine &engine = site->getContext()->getDiagEngine();
@@ -643,11 +647,11 @@ void evaluateTemplateExprs(
   );
 }
 
-/// Return the callee-side unification-derived value for a template parameter, if any.
+/// Return an unambiguous callee-side binding; absent and unresolved entries have no value.
 std::optional<Attribute>
 inferUnifiedParam(const UnificationMap &unifyResult, SymbolRefAttr paramName) {
   auto it = unifyResult.find({paramName, Side::RHS});
-  return (it == unifyResult.end()) ? std::nullopt : std::make_optional(it->second);
+  return (it == unifyResult.end() || !it->second) ? std::nullopt : std::make_optional(it->second);
 }
 
 LogicalResult substituteStructBody(
@@ -690,6 +694,21 @@ LogicalResult substituteFunctionBody(
   bodyPatterns.add<ClonedBodyCreateArrayOpPattern>(tyConv, ctx);
   bodyPatterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   return applyFullConversion(newFunc, target, std::move(bodyPatterns));
+}
+
+LogicalResult substituteTemplateExprBody(
+    TemplateExprOp expr, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &delayedDiagnostics
+) {
+  MLIRContext *ctx = expr.getContext();
+  TemplateTypeConverter tyConv(paramNameToConcrete);
+  ConversionTarget target = newConverterDefinedTarget<YieldOp>(tyConv, ctx);
+  target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp op) {
+    return !tyConv.containsParam(op.getConstNameAttr()) && defaultLegalityCheck(tyConv, op);
+  });
+  RewritePatternSet patterns = newGeneralRewritePatternSet<YieldOp>(tyConv, ctx, target);
+  patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics);
+  return applyFullConversion(expr, target, std::move(patterns));
 }
 
 } // namespace llzk::polymorphic::detail
