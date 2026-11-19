@@ -271,6 +271,16 @@ FuncDefOp FuncDefOp::clone() {
   return clone(mapper);
 }
 
+bool FuncDefOp::hasDeterministicAttr() { return getOperation()->hasAttr(DeterministicAttr::name); }
+
+void FuncDefOp::setDeterministicAttr(bool newValue) {
+  if (newValue) {
+    getOperation()->setAttr(DeterministicAttr::name, UnitAttr::get(getContext()));
+  } else {
+    getOperation()->removeAttr(DeterministicAttr::name);
+  }
+}
+
 void FuncDefOp::setAllowConstraintAttr(bool newValue) {
   setUnitAttr(getOperation(), AllowConstraintAttr::name, newValue);
 }
