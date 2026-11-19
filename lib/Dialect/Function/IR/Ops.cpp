@@ -272,35 +272,19 @@ FuncDefOp FuncDefOp::clone() {
 }
 
 void FuncDefOp::setAllowConstraintAttr(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(AllowConstraintAttr::name, UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(AllowConstraintAttr::name);
-  }
+  setUnitAttr(getOperation(), AllowConstraintAttr::name, newValue);
 }
 
 void FuncDefOp::setAllowWitnessAttr(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(AllowWitnessAttr::name, UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(AllowWitnessAttr::name);
-  }
+  setUnitAttr(getOperation(), AllowWitnessAttr::name, newValue);
 }
 
 void FuncDefOp::setAllowNonNativeFieldOpsAttr(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(AllowNonNativeFieldOpsAttr::name, UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(AllowNonNativeFieldOpsAttr::name);
-  }
+  setUnitAttr(getOperation(), AllowNonNativeFieldOpsAttr::name, newValue);
 }
 
 void FuncDefOp::setAllowVerifOpsAttr(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(AllowVerifOpsAttr::name, UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(AllowVerifOpsAttr::name);
-  }
+  setUnitAttr(getOperation(), AllowVerifOpsAttr::name, newValue);
 }
 
 bool FuncDefOp::hasArgPublicAttr(unsigned index) {

@@ -3,6 +3,7 @@
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
 // Copyright 2025 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -92,6 +93,9 @@ inline int64_t fromAPInt(const llvm::APInt &i) {
 inline bool isNullOrEmpty(mlir::ArrayAttr a) { return !a || a.empty(); }
 inline bool isNullOrEmpty(mlir::DenseArrayAttr a) { return !a || a.empty(); }
 inline bool isNullOrEmpty(mlir::DictionaryAttr a) { return !a || a.empty(); }
+
+/// Set a unit attribute when enabled; otherwise remove it.
+void setUnitAttr(mlir::Operation *op, llvm::StringRef name, bool enabled);
 
 inline void appendWithoutType(mlir::raw_ostream &os, mlir::Attribute a) { a.print(os, true); }
 inline std::string stringWithoutType(mlir::Attribute a) {
