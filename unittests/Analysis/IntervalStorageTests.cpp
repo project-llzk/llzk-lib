@@ -103,10 +103,46 @@ module attributes {llzk.lang} {
   }
 }
 
+// The same address does not imply the same value when a write separates the reads.
+TEST_F(IntervalStorageTests, DynamicReadConstraintsDoNotCrossWrites) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %input: !felt.type) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    array.write %array[%i] = %input : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %leftCheck = bool.cmp eq(%left, %seven)
+    bool.assert %leftCheck
+    %rightCheck = bool.cmp eq(%right, %nine)
+    bool.assert %rightCheck
+    function.return %left, %right : !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  for (auto [i, value] : llvm::enumerate(fn.getBody().front().getTerminator()->getOperands())) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    const auto &actual = lattice->getValue().getScalarValue();
+    auto expected = Interval::Degenerate(field, field.felt(i == 0 ? 7 : 9));
+    EXPECT_TRUE(checkCond(expected, actual.getInterval(), expected == actual.getInterval()));
+    EXPECT_EQ(actual.getExpr(), analysis->getOrCreateSymbol(value));
+  }
+}
+
 // Constraints on separate dynamic selections must not flow through equal-looking ranges.
 TEST_F(IntervalStorageTests, RangedReadConstraintsStayIndependent) {
-  for (bool concrete : {false, true}) {
-    SCOPED_TRACE(concrete ? "same concrete location" : "independent dynamic selections");
+  for (unsigned selection : {0U, 1U, 2U}) {
+    SCOPED_TRACE(selection); // Independent indices, same concrete index, same SSA index.
     auto mod = parseModule(R"mlir(
 module attributes {llzk.lang} {
   struct.def @Cell {
@@ -143,26 +179,34 @@ module attributes {llzk.lang} {
 )mlir");
     ASSERT_TRUE(mod);
     auto fn = *mod->getOps<function::FuncDefOp>().begin();
-    if (concrete) {
-      Value zero = fn.getBody().front().front().getResult(0);
+    if (selection != 0) {
+      Value index = fn.getArgument(2);
+      if (selection == 1) {
+        index = fn.getBody().front().front().getResult(0);
+      }
       for (auto read : fn.getOps<array::ReadArrayOp>()) {
-        read->setOperand(1, zero);
+        read->setOperand(1, index);
       }
     }
     auto smt = llvm::CreateZ3Solver();
     DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
     llzk::dataflow::loadRequiredAnalyses(solver);
     solver.load<SourceRefAnalysis>();
-    solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
     ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
     for (auto [i, value] : llvm::enumerate(fn.getBody().front().getTerminator()->getOperands())) {
       SCOPED_TRACE(i);
       const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
       ASSERT_NE(lattice, nullptr);
       const auto &actual = lattice->getValue().getScalarValue().getInterval();
-      auto expected = concrete ? Interval::Empty(field)
-                               : Interval::Degenerate(field, field.felt(i % 2 == 0 ? 7 : 9));
+      auto expected = selection != 0 ? Interval::Empty(field)
+                                     : Interval::Degenerate(field, field.felt(i % 2 == 0 ? 7 : 9));
       EXPECT_TRUE(checkCond(expected, actual, expected == actual));
+      if (selection != 1) {
+        EXPECT_EQ(
+            lattice->getValue().getScalarValue().getExpr(), analysis->getOrCreateSymbol(value)
+        );
+      }
     }
   }
 }
