@@ -484,6 +484,8 @@ private:
   /// @brief Return the best known ExpressionValue for a SourceRef, reusing an exact
   /// written value when available and otherwise pairing a fresh SSA symbol with the
   /// SourceRef's current interval.
+  /// Ranged selections always retain the read's SSA symbol because matching ranges
+  /// do not establish equality between independently selected values.
   ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
 
   /// @brief Record a write to the given SourceRef and eagerly refine any reads that
