@@ -62,7 +62,8 @@ class PassImpl : public llzk::impl::InferDeterminismAttributePassBase<PassImpl> 
             return;
           }
           funcDef->emitWarning(
-                     "removing " + DeterministicAttr::name + " applied to non-deterministic function"
+                     "removing " + DeterministicAttr::name +
+                     " applied to non-deterministic function"
           )
                   .attachNote(op->getLoc())
               << reason;
