@@ -947,15 +947,16 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     std::optional<LatticeValue> resolvedValue;
     if (auto argument = llvm::dyn_cast<BlockArgument>(val)) {
       resolvedValue = LatticeValue(getRefValue(SourceRef(argument), val));
-    } else if (
-        Operation *definition = val.getDefiningOp(); isReadOp(definition) || isConstOp(definition)
-    ) {
-      resolvedValue = resolveRefStateValue(val, refSet);
     } else {
-      // Dependency sets erase the operation that produced a value. In particular,
-      // a call returning `a + a` cannot inherit the exact value or interval of `a`.
-      // Without an interval expression, keep an independent unknown SSA value.
-      resolvedValue = LatticeValue(createUnknownValue(val));
+      Operation *definition = val.getDefiningOp();
+      if (isReadOp(definition) || isConstOp(definition)) {
+        resolvedValue = resolveRefStateValue(val, refSet);
+      } else {
+        // Dependency sets erase the operation that produced a value. In particular,
+        // a call returning `a + a` cannot inherit the exact value or interval of `a`.
+        // Without an interval expression, keep an independent unknown SSA value.
+        resolvedValue = LatticeValue(createUnknownValue(val));
+      }
     }
     if (!resolvedValue.has_value()) {
       // We still return success so we can return overapproximated and partial
