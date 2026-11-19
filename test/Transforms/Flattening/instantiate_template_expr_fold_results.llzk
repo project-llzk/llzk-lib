@@ -1,0 +1,101 @@
+// RUN: llzk-opt -llzk-flatten=cleanup=disabled -verify-diagnostics %s | FileCheck %s
+
+// Select folds to an existing SSA value rather than an attribute.
+// Each specialization must evaluate its own bindings.
+module attributes {llzk.lang} {
+  poly.template @Choose {
+    poly.param @Pick : i1
+    poly.param @N : index
+    poly.expr @Selected {
+      %pick = poly.read_const @Pick : i1
+      %value = poly.read_const @N : index
+      %zero = arith.constant 0 : index
+      %selected = arith.select %pick, %value, %zero : index
+      poly.yield %selected : index
+    }
+    function.def @value() -> index {
+      %selected = poly.read_const @Selected : index
+      function.return %selected : index
+    }
+  }
+  // An extension chain can fold in place by bypassing its inner extension.
+  // Keeping templates verifies that evaluation leaves their expressions generic
+  // while distinct specializations receive their own concrete results.
+  poly.template @Extend {
+    poly.param @N : index
+    poly.expr @Extended {
+      %n = poly.read_const @N : index
+      %byte = arith.index_castui %n : index to i8
+      %half = arith.extui %byte : i8 to i16
+      %word = arith.extui %half : i16 to i32
+      %result = arith.index_castui %word : i32 to index
+      poly.yield %result : index
+    }
+    function.def @value() -> index {
+      %extended = poly.read_const @Extended : index
+      function.return %extended : index
+    }
+  }
+  function.def @entry() -> (index, index, index, index) {
+    %selected = function.call @Choose::@value<[true, 8]>() : () -> index
+    %zero = function.call @Choose::@value<[false, 13]>() : () -> index
+    %one = function.call @Extend::@value<[1]>() : () -> index
+    %two = function.call @Extend::@value<[2]>() : () -> index
+    function.return %selected, %zero, %one, %two : index, index, index, index
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @Choose_1_8_value() -> index {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 8 : index
+// CHECK-NEXT:      function.return %[[VAL_0]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Choose_0_13_value() -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      function.return %[[VAL_1]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Choose {
+// CHECK-NEXT:      poly.param @Pick : i1
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.expr @Selected {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = poly.read_const @Pick : i1
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.select %[[VAL_3]], %[[VAL_4]], %[[VAL_2]] : index
+// CHECK-NEXT:        poly.yield %[[VAL_5]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @value() -> index {
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = poly.read_const @Selected : index
+// CHECK-NEXT:        function.return %[[VAL_6]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Extend_1_value() -> index {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      function.return %[[VAL_7]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @Extend_2_value() -> index {
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:      function.return %[[VAL_8]] : index
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Extend {
+// CHECK-NEXT:      poly.param @N : index
+// CHECK-NEXT:      poly.expr @Extended {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = arith.index_castui %[[VAL_9]] : index to i8
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = arith.extui %[[VAL_10]] : i8 to i32
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = arith.index_castui %[[VAL_11]] : i32 to index
+// CHECK-NEXT:        poly.yield %[[VAL_12]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @value() -> index {
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = poly.read_const @Extended : index
+// CHECK-NEXT:        function.return %[[VAL_13]] : index
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @entry() -> (index, index, index, index) {
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_.-]+]] = function.call @Choose_1_8_value() : () -> index
+// CHECK-NEXT:      %[[VAL_15:[0-9a-zA-Z_.-]+]] = function.call @Choose_0_13_value() : () -> index
+// CHECK-NEXT:      %[[VAL_16:[0-9a-zA-Z_.-]+]] = function.call @Extend_1_value() : () -> index
+// CHECK-NEXT:      %[[VAL_17:[0-9a-zA-Z_.-]+]] = function.call @Extend_2_value() : () -> index
+// CHECK-NEXT:      function.return %[[VAL_14]], %[[VAL_15]], %[[VAL_16]], %[[VAL_17]] : index, index, index, index
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

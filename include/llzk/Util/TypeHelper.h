@@ -249,6 +249,14 @@ bool functionTypesUnify(
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
 );
 
+/// Unify a complete signature with transitive, side-qualified symbolic bindings.
+/// Unlike UnificationMap's null entries, this distinguishes compatible unresolved bindings from
+/// conflicts, including alias chains and repeated parameters within aggregate arguments/results.
+bool functionTypesUnifyConsistently(
+    mlir::FunctionType lhs, mlir::FunctionType rhs,
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}
+);
+
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full
 /// instantiation of template parameters (if applicable within the given types).
 bool typesUnify(

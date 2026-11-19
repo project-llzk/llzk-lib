@@ -1,0 +1,20 @@
+// RUN: llzk-opt -llzk-flatten -verify-diagnostics %s
+
+// A selected index-dependent record changes type. pod.read requires an exact
+// result type, so reject before replacing its receiver and invalidating the read.
+#next = affine_map<(i) -> (i + 1)>
+!Element = !pod.type<[@data: !array.type<#next x !felt.type>, @tag: index]>
+module attributes {llzk.lang} {
+  function.def @dependent_record() -> !felt.type attributes {function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific receiver type is incompatible with a POD read}}
+    %read = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    // expected-note@+1 {{POD read requires exactly '!array.type<affine_map<(d0) -> (d0 + 1)> x !felt.type>', but the replacement receiver's record has type '!array.type<1 x !felt.type>'}}
+    %data = pod.read %read[@data] : !Element, !array.type<#next x !felt.type>
+    %item = array.read %data[%c0] : !array.type<#next x !felt.type>, !felt.type
+    function.return %item : !felt.type
+  }
+}
