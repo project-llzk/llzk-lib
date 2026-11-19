@@ -26,7 +26,6 @@ module attributes {llzk.lang} {
   }
 }
 
-
 // CHECK-LABEL: @ComputedCallResults StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
@@ -37,7 +36,6 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
-
 
 // UNREDUCED-LABEL: @ComputedCallResults StructIntervals {
 // UNREDUCED-NEXT:      compute {
