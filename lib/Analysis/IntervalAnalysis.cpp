@@ -872,6 +872,12 @@ IntervalDataFlowAnalysis::IntervalDataFlowAnalysis(
       trackUnreducedIntervals(shouldTrackUnreducedIntervals) {}
 
 SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
+  if (llvm::isa<ArrayType, StructType, pod::PodType>(val.getType()) &&
+      llvm::isa_and_present<scf::IfOp, scf::IndexSwitchOp>(val.getDefiningOp())) {
+    // Conditional aggregate intervals belong to the merged result, even when SourceRef
+    // analysis has only propagated one branch's storage identity so far.
+    return SourceRefLatticeValue(SourceRef(llvm::cast<OpResult>(val)));
+  }
   // Components copy handles, so constraints must retain their original storage identity.
   if (llvm::isa<StructType>(val.getType())) {
     auto aliases = SourceRefAnalysis::getValueState(_dataflowSolver, val);
@@ -1183,6 +1189,19 @@ bool IntervalDataFlowAnalysis::recordRefWrite(
   return changed;
 }
 
+bool IntervalDataFlowAnalysis::markAggregateInitialized(OpResult result) {
+  if (!initializedAggregates.insert(result).second) {
+    return false;
+  }
+  if (auto readers = aggregateReaders.find(SourceRef(result));
+      readers != aggregateReaders.end()) {
+    for (Operation *yield : readers->second) {
+      _dataflowSolver.enqueue({getProgramPointAfter(yield), this});
+    }
+  }
+  return true;
+}
+
 void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield) {
   Operation *parent = yield->getParentOp();
   auto isAggregate = [](Type type) { return llvm::isa<ArrayType, StructType, pod::PodType>(type); };
@@ -1217,10 +1236,7 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
     for (scf::YieldOp alternative : alternatives) {
       Value value = alternative.getOperand(result.getResultNumber());
       SourceRefLatticeValue refs = getSourceRefState(value);
-      // Nested conditional results have their merged intervals recorded at the result root.
-      if (llvm::isa_and_present<scf::IfOp, scf::IndexSwitchOp>(value.getDefiningOp())) {
-        sources.insert(SourceRef(llvm::cast<OpResult>(value)));
-      } else if (refs.isScalar()) {
+      if (refs.isScalar()) {
         sources.join(refs.getScalarValue());
         unknownSource |= refs.getScalarValue().empty();
       } else if (auto root = SourceRefLattice::getSourceRef(value); succeeded(root)) {
@@ -1231,7 +1247,21 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
     }
 
     SourceRefSet destinations;
+    bool pendingSource = false;
     for (const SourceRef &source : sources) {
+      aggregateReaders[source].insert(yield);
+      if (auto root = source.getRoot(); succeeded(root)) {
+        if (auto sourceResult = llvm::dyn_cast<OpResult>(*root);
+            sourceResult &&
+            llvm::isa<pod::NewPodOp, CreateArrayOp, CreateStructOp, scf::IfOp, scf::IndexSwitchOp>(
+                sourceResult.getOwner()
+            ) &&
+            !initializedAggregates.contains(sourceResult)) {
+          // Wait for the producer instead of treating its not-yet-published fields as unknown.
+          aggregateReaders[SourceRef(sourceResult)].insert(yield);
+          pendingSource = true;
+        }
+      }
       for (const auto &[writtenRef, writtenVal] : writeResults) {
         if (writtenRef.isValidPrefix(source)) {
           auto translated = writtenRef.translate(source, resultRef);
@@ -1239,6 +1269,9 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
           destinations.insert(*translated);
         }
       }
+    }
+    if (pendingSource) {
+      continue;
     }
 
     bool changed = false;
@@ -1269,13 +1302,13 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
       for (const SourceRef &source : sources) {
         auto selected = destination.translate(resultRef, source);
         ensure(succeeded(selected), "could not select conditional aggregate alternative");
-        aggregateReaders[*selected].insert(yield);
         // An absent write is an unknown value on this path, not an absent alternative.
         mergeAlternative(getRefValue(*selected, getOrCreateSymbol(destination)));
       }
       ensure(merged.has_value(), "conditional aggregate result must have an alternative");
       changed |= recordRefWrite(destination, *merged, /*mayBeSkipped=*/false, /*publisher=*/parent);
     }
+    changed |= markAggregateInitialized(result);
     if (changed) {
       // Aggregate SSA lattices do not encode their stored fields. Explicitly revisit users
       // so copies made before the merged storage state was available are recomputed.
@@ -1779,6 +1812,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     op->emitWarning("unhandled operation, analysis may be incomplete").report();
   }
 
+  for (OpResult result : op->getResults()) {
+    if (llvm::isa<ArrayType, StructType, pod::PodType>(result.getType())) {
+      markAggregateInitialized(result);
+    }
+  }
   return success();
 }
 
