@@ -301,6 +301,65 @@ static std::vector<SourceRefIndex> getArrayAccessIndices(
   return indices;
 }
 
+/// Recognize a complete elementwise copy with an unconditional write and a unit-step induction.
+/// More general loops retain the existing conservative storage dependencies.
+static WriteArrayOp getFullyOverwrittenLoopArrayWrite(Value value) {
+  auto read = value.getDefiningOp<ReadArrayOp>();
+  auto whileResult = read ? llvm::dyn_cast<OpResult>(read.getArrRef()) : OpResult();
+  auto whileOp = whileResult ? whileResult.getDefiningOp<scf::WhileOp>() : scf::WhileOp();
+  if (!whileOp || whileResult.getResultNumber() >= whileOp.getInits().size()) {
+    return nullptr;
+  }
+
+  Value initializer = whileOp.getInits()[whileResult.getResultNumber()];
+  auto arrayType = llvm::dyn_cast<ArrayType>(initializer.getType());
+  if (!initializer.getDefiningOp<NonDetOp>() || !arrayType || !arrayType.hasStaticShape() ||
+      arrayType.getShape().size() != 1) {
+    return nullptr;
+  }
+
+  unsigned resultNumber = whileResult.getResultNumber();
+  Value carried = whileOp.getAfter().front().getArgument(whileResult.getResultNumber());
+  if (whileOp.getConditionOp().getArgs()[resultNumber] !=
+          whileOp.getBeforeArguments()[resultNumber] ||
+      whileOp.getYieldOp().getOperand(resultNumber) != carried) {
+    return nullptr;
+  }
+  WriteArrayOp coveringWrite;
+  for (auto write : whileOp.getAfter().front().getOps<WriteArrayOp>()) {
+    if (write.getArrRef() != carried || write.getIndices().size() != 1 || coveringWrite) {
+      return nullptr;
+    }
+    auto range = getStaticLoopIndexRange(write.getIndices().front());
+    auto indexCast = write.getIndices().front().getDefiningOp<cast::FeltToIndexOp>();
+    auto index = indexCast ? llvm::dyn_cast<BlockArgument>(indexCast.getValue()) : BlockArgument();
+    if (!range || range->first != 0 || range->second != arrayType.getDimSize(0) || !index ||
+        index.getOwner() != &whileOp.getAfter().front()) {
+      return nullptr;
+    }
+    auto initial = whileOp.getInits()[index.getArgNumber()].getDefiningOp<felt::FeltConstantOp>();
+    auto next =
+        whileOp.getYieldOp().getOperand(index.getArgNumber()).getDefiningOp<felt::AddFeltOp>();
+    if (!initial || initial.getValue().getReducedValueOrRaw() != 0 || !next) {
+      return nullptr;
+    }
+    Value stepValue = next.getLhs() == index   ? next.getRhs()
+                      : next.getRhs() == index ? next.getLhs()
+                                               : Value();
+    auto step =
+        stepValue ? stepValue.getDefiningOp<felt::FeltConstantOp>() : felt::FeltConstantOp();
+    auto source = write.getRvalue().getDefiningOp<ReadArrayOp>();
+    if (!step || step.getValue().getReducedValueOrRaw() != 1 || !source ||
+        source.getArrRef() == carried || !llvm::equal(source.getIndices(), write.getIndices())) {
+      return nullptr;
+    }
+    coveringWrite = write;
+  }
+  bool hasOtherWrites = false;
+  whileOp.getAfter().walk([&](WriteArrayOp write) { hasOtherWrites |= write != coveringWrite; });
+  return hasOtherWrites ? WriteArrayOp() : coveringWrite;
+}
+
 /// Recognize the field-independent literals zero and one, including fieldless constants.
 static bool isBooleanLiteral(const SourceRef &ref, int64_t literal) {
   if (auto value = ref.getConstant(); succeeded(value)) {
@@ -310,6 +369,18 @@ static bool isBooleanLiteral(const SourceRef &ref, int64_t literal) {
   }
   auto index = ref.getConstantIndexValue();
   return succeeded(index) && *index == literal;
+}
+
+/// Recognize a literal zero written to this array before the loop.
+static bool isZeroInitializerWrite(const SourceRef &ref, Value initializer) {
+  auto value = ref.getConstant();
+  if (!isBooleanLiteral(ref, 0) || failed(value)) {
+    return false;
+  }
+  return llvm::any_of(value->getUsers(), [initializer](Operation *user) {
+    auto write = llvm::dyn_cast<WriteArrayOp>(user);
+    return write && write.getArrRef() == initializer;
+  });
 }
 
 /// Collect POD record positions used to distinguish indexed aggregate alternatives.
@@ -392,6 +463,37 @@ static bool isCompatibleIndexedAlternative(const SourceRef &candidate, const Sou
     }
   }
   return true;
+}
+
+/// Recognize a zero initializer used only as the identity of a loop-carried sum.
+static std::optional<SourceRef> getNeutralWhileInitializer(Value value) {
+  auto result = llvm::dyn_cast<OpResult>(value);
+  auto whileOp =
+      result ? llvm::dyn_cast_if_present<scf::WhileOp>(result.getDefiningOp()) : scf::WhileOp();
+  if (!whileOp) {
+    return std::nullopt;
+  }
+
+  unsigned resultNumber = result.getResultNumber();
+  if (resultNumber >= whileOp.getInits().size() ||
+      resultNumber >= whileOp.getYieldOp().getNumOperands() ||
+      whileOp.getConditionOp().getArgs()[resultNumber] !=
+          whileOp.getBeforeArguments()[resultNumber]) {
+    return std::nullopt;
+  }
+  Value init = whileOp.getInits()[resultNumber];
+  auto zero = init.getDefiningOp<felt::FeltConstantOp>();
+  if (!zero || zero.getValue().getReducedValueOrRaw() != 0) {
+    return std::nullopt;
+  }
+
+  Value carried = whileOp.getAfter().front().getArgument(resultNumber);
+  Value yielded = whileOp.getYieldOp().getOperand(resultNumber);
+  auto add = yielded.getDefiningOp<felt::AddFeltOp>();
+  if (!add || !llvm::is_contained(add->getOperands(), carried)) {
+    return std::nullopt;
+  }
+  return SourceRef(zero);
 }
 
 } // namespace
@@ -887,6 +989,41 @@ static SourceRefLatticeValue getObservedDependencies(DataFlowSolver &solver, Val
     );
   };
   SourceRefLatticeValue result = compute();
+  if (std::optional<SourceRef> neutralInitializer = getNeutralWhileInitializer(val)) {
+    (void)result.remove(*neutralInitializer);
+    auto whileResult = llvm::cast<OpResult>(val);
+    auto whileOp = llvm::cast<scf::WhileOp>(whileResult.getDefiningOp());
+    Value carried = whileOp.getAfter().front().getArgument(whileResult.getResultNumber());
+    auto add = whileOp.getYieldOp()
+                   .getOperand(whileResult.getResultNumber())
+                   .getDefiningOp<felt::AddFeltOp>();
+    for (Value operand : add->getOperands()) {
+      if (operand != carried) {
+        (void)result.update(getObservedDependencies(solver, operand));
+      }
+    }
+  }
+  if (WriteArrayOp write = getFullyOverwrittenLoopArrayWrite(val)) {
+    auto read = val.getDefiningOp<ReadArrayOp>();
+    auto loopResult = llvm::cast<OpResult>(read.getArrRef());
+    auto loop = loopResult.getDefiningOp<scf::WhileOp>();
+    Value initializer = loop.getInits()[loopResult.getResultNumber()];
+    SourceRefSet writtenDependencies =
+        getObservedDependencies(solver, write.getRvalue()).foldToScalar();
+    SourceRefLatticeValue normalized;
+    auto selected = SourceRefAnalysis::getValueState(solver, val);
+    for (const SourceRef &ref : result.foldToScalar()) {
+      if (isZeroInitializerWrite(ref, initializer) && !writtenDependencies.contains(ref)) {
+        continue;
+      }
+      (void)normalized.insert(
+          selected.isSingleValue() && writtenDependencies.contains(ref)
+              ? ref.narrowRanges(selected.getSingleValue())
+              : ref
+      );
+    }
+    result = std::move(normalized);
+  }
   if (llvm::isa<StructType>(val.getType())) {
     result = captureComponentHandles(result);
   }
@@ -2619,10 +2756,13 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = SourceRefAnalysis::getDependencyState(solver, operand, emitOp);
+    std::optional<SourceRef> neutralInitializer = getNeutralWhileInitializer(operand);
     SourceRefSet currentOperandSignals;
     for (const auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant() || ref.isTemplateConstant()) {
-        constUsages.push_back(ref);
+        if (!neutralInitializer || ref != *neutralInitializer) {
+          constUsages.push_back(ref);
+        }
       } else {
         signalUsages.push_back(ref);
       }
