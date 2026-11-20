@@ -1,0 +1,221 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-ssa-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Only an unambiguous conditional component alias may refine the visible self member.
+!H = !struct.type<@IfSameHandle>
+module attributes {llzk.lang} {
+  struct.def @IfSameHandle {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
+      %self = struct.new : !H
+      function.return %self : !H
+    }
+    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
+      %alias = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      %selected = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      %value = struct.readm %selected[@value] : !H, !felt.type
+      %seven = felt.const 7
+      constrain.eq %value, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IfSameHandle StructIntervals {
+// CHECK:      %self.value in Degenerate(7)
+// CHECK:      %arg3.value in Entire
+// CHECK-LABEL: @IfSameHandle SSAIntervals {
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [struct.readm] in Degenerate(7)
+
+// -----
+
+// Only an unambiguous conditional component alias may refine the visible self member.
+!H = !struct.type<@IfNestedAlias>
+module attributes {llzk.lang} {
+  struct.def @IfNestedAlias {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
+      %self = struct.new : !H
+      function.return %self : !H
+    }
+    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
+      %alias = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      %selected = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %alias : !H
+      }
+      %value = struct.readm %selected[@value] : !H, !felt.type
+      %seven = felt.const 7
+      constrain.eq %value, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IfNestedAlias StructIntervals {
+// CHECK:      %self.value in Degenerate(7)
+// CHECK:      %arg3.value in Entire
+// CHECK-LABEL: @IfNestedAlias SSAIntervals {
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [struct.readm] in Degenerate(7)
+
+// -----
+
+// Only an unambiguous conditional component alias may refine the visible self member.
+!H = !struct.type<@IfAmbiguousHandles>
+module attributes {llzk.lang} {
+  struct.def @IfAmbiguousHandles {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
+      %self = struct.new : !H
+      function.return %self : !H
+    }
+    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
+      %alias = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      %selected = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %other : !H
+      }
+      %value = struct.readm %selected[@value] : !H, !felt.type
+      %seven = felt.const 7
+      constrain.eq %value, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IfAmbiguousHandles StructIntervals {
+// CHECK:      %self.value in Entire
+// CHECK:      %arg3.value in Entire
+// CHECK-LABEL: @IfAmbiguousHandles SSAIntervals {
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [struct.readm] in Degenerate(7)
+
+// -----
+
+// Only an unambiguous conditional component alias may refine the visible self member.
+!H = !struct.type<@SwitchSameHandle>
+module attributes {llzk.lang} {
+  struct.def @SwitchSameHandle {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
+      %self = struct.new : !H
+      function.return %self : !H
+    }
+    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
+      %alias = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      %selected = scf.index_switch %selector -> !H
+      case 0 {
+        scf.yield %self : !H
+      }
+      default {
+        scf.yield %self : !H
+      }
+      %value = struct.readm %selected[@value] : !H, !felt.type
+      %seven = felt.const 7
+      constrain.eq %value, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @SwitchSameHandle StructIntervals {
+// CHECK:      %self.value in Degenerate(7)
+// CHECK:      %arg3.value in Entire
+// CHECK-LABEL: @SwitchSameHandle SSAIntervals {
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [struct.readm] in Degenerate(7)
+
+// -----
+
+// Only an unambiguous conditional component alias may refine the visible self member.
+!H = !struct.type<@SwitchNestedAlias>
+module attributes {llzk.lang} {
+  struct.def @SwitchNestedAlias {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
+      %self = struct.new : !H
+      function.return %self : !H
+    }
+    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
+      %alias = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      %selected = scf.index_switch %selector -> !H
+      case 0 {
+        scf.yield %self : !H
+      }
+      default {
+        scf.yield %alias : !H
+      }
+      %value = struct.readm %selected[@value] : !H, !felt.type
+      %seven = felt.const 7
+      constrain.eq %value, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @SwitchNestedAlias StructIntervals {
+// CHECK:      %self.value in Degenerate(7)
+// CHECK:      %arg3.value in Entire
+// CHECK-LABEL: @SwitchNestedAlias SSAIntervals {
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [struct.readm] in Degenerate(7)
+
+// -----
+
+// Only an unambiguous conditional component alias may refine the visible self member.
+!H = !struct.type<@SwitchAmbiguousHandles>
+module attributes {llzk.lang} {
+  struct.def @SwitchAmbiguousHandles {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
+      %self = struct.new : !H
+      function.return %self : !H
+    }
+    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
+      %alias = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      %selected = scf.index_switch %selector -> !H
+      case 0 {
+        scf.yield %self : !H
+      }
+      default {
+        scf.yield %other : !H
+      }
+      %value = struct.readm %selected[@value] : !H, !felt.type
+      %seven = felt.const 7
+      constrain.eq %value, %seven : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @SwitchAmbiguousHandles StructIntervals {
+// CHECK:      %self.value in Entire
+// CHECK:      %arg3.value in Entire
+// CHECK-LABEL: @SwitchAmbiguousHandles SSAIntervals {
+// CHECK:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [struct.readm] in Degenerate(7)

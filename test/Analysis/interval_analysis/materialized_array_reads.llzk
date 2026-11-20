@@ -1,0 +1,26 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-ssa-intervals print-compute-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Dynamic reads require complete initialized coverage; partial and unbounded arrays retain unknowns.
+module attributes {llzk.lang} {
+  struct.def @MaterializedArrayCoverage {
+    function.def @product(%i: index, %j: index, %dynamic: !array.type<2,? x !felt.type>) -> !struct.type<@MaterializedArrayCoverage> {
+      %self = struct.new : !struct.type<@MaterializedArrayCoverage>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %complete = array.new %seven, %nine, %seven, %nine : !array.type<2,2 x !felt.type>
+      %partial = array.new : !array.type<2,2 x !felt.type>
+      array.write %partial[%zero, %zero] = %seven : !array.type<2,2 x !felt.type>, !felt.type
+      array.write %dynamic[%zero, %zero] = %nine : !array.type<2,? x !felt.type>, !felt.type
+      %a = array.read %complete[%i, %j] : !array.type<2,2 x !felt.type>, !felt.type
+      %b = array.read %partial[%i, %j] : !array.type<2,2 x !felt.type>, !felt.type
+      %c = array.read %dynamic[%i, %j] : !array.type<2,? x !felt.type>, !felt.type
+      function.return %self : !struct.type<@MaterializedArrayCoverage>
+    }
+  }
+}
+
+// CHECK-LABEL: @MaterializedArrayCoverage SSAIntervals {
+// CHECK:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
