@@ -922,16 +922,21 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     );
   };
 
-  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
-    it->second = joinStoredWrite(it->second, writeVal);
-  } else if (mayBeSkipped) {
+  auto [it, inserted] =
+      writeContributions.try_emplace(writtenRef, WriteContribution {writeVal, mayBeSkipped});
+  if (!inserted) {
+    it->second.value = joinStoredWrite(it->second.value, writeVal);
+    it->second.mayBeSkipped &= mayBeSkipped;
+  }
+  const WriteContribution &contribution = it->second;
+  if (contribution.mayBeSkipped) {
     ExpressionValue noWrite(
-        getOrCreateSymbol(writtenRef), getRefInterval(writtenRef),
-        getRefUnreducedInterval(writtenRef)
+        getOrCreateSymbol(writtenRef), getDefaultIntervalForType(writtenRef.getType()),
+        getDefaultUnreducedIntervalForType(writtenRef.getType())
     );
-    writeResults[writtenRef] = joinStoredWrite(noWrite, writeVal);
+    writeResults[writtenRef] = joinStoredWrite(noWrite, contribution.value);
   } else {
-    writeResults[writtenRef] = writeVal;
+    writeResults[writtenRef] = contribution.value;
   }
 
   const ExpressionValue &readerUpdate = mayBeSkipped ? writeResults[writtenRef] : writeVal;
