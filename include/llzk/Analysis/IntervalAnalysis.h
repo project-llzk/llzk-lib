@@ -564,6 +564,7 @@ private:
 
   /// @brief Resolve storage used by reads and copies, retaining original component handle
   /// identities and addressing materialized value arrays at their result roots.
+  /// Conditional component handles retain their original identity when it is unambiguous.
   SourceRefLatticeValue getSourceRefState(mlir::Value val);
 };
 

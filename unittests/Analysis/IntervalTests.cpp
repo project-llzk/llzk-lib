@@ -1900,6 +1900,104 @@ TEST_F(IntervalAnalysisAPITests, DynamicTruncationReducesToFieldRange) {
   EXPECT_EQ(memberCount, 2U);
 }
 
+// Known component aliases retain constraints on visible members; ambiguous choices do not.
+TEST_F(IntervalAnalysisAPITests, ConditionalComponentAliasesPreserveVisibleConstraints) {
+  for (bool useSwitch : {false, true}) {
+    for (unsigned selection : {0U, 1U, 2U}) {
+      SCOPED_TRACE(useSwitch ? "index switch" : "if");
+      SCOPED_TRACE(selection); // Same SSA handle, nested alias of that handle, distinct handles.
+      std::string source = R"mlir(
+!H = !struct.type<@ConditionalAlias>
+module attributes {llzk.lang} {
+  struct.def @ConditionalAlias {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
+      %self = struct.new : !H
+      function.return %self : !H
+    }
+    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
+      %alias = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %self : !H
+      }
+      // SELECT
+      %value = struct.readm %selected[@value] : !H, !felt.type
+      %seven = felt.const 7
+      constrain.eq %value, %seven : !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+      source.replace(
+          source.find("// SELECT"), std::string("// SELECT").size(),
+          useSwitch ? R"mlir(
+      %selected = scf.index_switch %selector -> !H
+      case 0 {
+        scf.yield %self : !H
+      }
+      default {
+        scf.yield %other : !H
+      }
+)mlir"
+                    : R"mlir(
+      %selected = scf.if %condition -> (!H) {
+        scf.yield %self : !H
+      } else {
+        scf.yield %other : !H
+      }
+)mlir"
+      );
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      auto structDef = *mod->getOps<StructDefOp>().begin();
+      auto fn = structDef.getConstrainFuncOp();
+      auto conditionals = llvm::to_vector(fn.getOps<scf::IfOp>());
+      Operation *selected = conditionals.back();
+      if (useSwitch) {
+        selected = *fn.getOps<scf::IndexSwitchOp>().begin();
+      }
+      if (selection < 2) {
+        Value alternative =
+            selection == 0 ? Value(fn.getArgument(0)) : conditionals.front().getResult(0);
+        for (Region &region : selected->getRegions()) {
+          Operation *yield = region.front().getTerminator();
+          if (yield->getOperand(0) == fn.getArgument(3)) {
+            yield->setOperand(0, alternative);
+          }
+        }
+      }
+
+      ModuleAnalysisManager mam(*mod, nullptr);
+      AnalysisManager am = mam;
+      ModuleIntervalAnalysis analysis(mod->getOperation());
+      const Field &field = Field::getField("babybear");
+      analysis.setField(field);
+      ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
+      auto read = *fn.getOps<MemberReadOp>().begin();
+      const auto *lattice = lookupLattice(analysis, read.getResult());
+      ASSERT_NE(lattice, nullptr);
+      EXPECT_EQ(
+          lattice->getValue().getScalarValue().getInterval(),
+          Interval::Degenerate(field, field.felt(7))
+      );
+
+      auto member = *structDef.getOps<MemberDefOp>().begin();
+      const auto &intervals = analysis.getResult(structDef).getConstrainIntervals();
+      for (unsigned argument : {0U, 3U}) {
+        SourceRef ref(fn.getArgument(argument), {SourceRefIndex(member)});
+        const auto *it = intervals.find(ref);
+        ASSERT_NE(it, intervals.end());
+        EXPECT_EQ(
+            it->second, selection < 2 && argument == 0 ? Interval::Degenerate(field, field.felt(7))
+                                                       : Interval::Entire(field)
+        );
+      }
+    }
+  }
+}
+
 TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
   auto mod = parseModule(kArrayIntervalModule);
   auto structDef = *mod->getOps<StructDefOp>().begin();

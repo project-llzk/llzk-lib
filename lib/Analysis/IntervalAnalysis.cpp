@@ -908,6 +908,13 @@ IntervalDataFlowAnalysis::IntervalDataFlowAnalysis(
 SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
   if (llvm::isa<ArrayType, StructType, pod::PodType>(val.getType()) &&
       llvm::isa_and_present<scf::IfOp, scf::IndexSwitchOp>(val.getDefiningOp())) {
+    if (llvm::isa<StructType>(val.getType())) {
+      auto aliases = SourceRefAnalysis::getValueState(_dataflowSolver, val);
+      if (aliases.isSingleValue() && !hasRangedSelection(aliases.getSingleValue())) {
+        // A known component handle must retain its identity for constraint attribution.
+        return aliases;
+      }
+    }
     // Conditional aggregate intervals belong to the merged result, even when SourceRef
     // analysis has only propagated one branch's storage identity so far.
     return SourceRefLatticeValue(SourceRef(llvm::cast<OpResult>(val)));
