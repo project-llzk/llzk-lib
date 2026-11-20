@@ -1,0 +1,2 @@
+fixed:
+  - Keep unknown concrete reads independent across potentially overlapping writes in interval analysis, including solver symbols, constraint propagation, and product decomposition.

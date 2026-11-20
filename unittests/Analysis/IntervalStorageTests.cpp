@@ -153,6 +153,160 @@ module attributes {llzk.lang} {
   EXPECT_EQ(smt->check(), std::optional<bool>(false));
 }
 
+// A concrete location retains its value only along paths without an overlapping write.
+TEST_F(IntervalStorageTests, ConcreteReadSymbolsRespectWriteBarriers) {
+  for (unsigned write : {0U, 1U, 2U, 3U}) {
+    SCOPED_TRACE(write); // No write, disjoint element, ranged write, conditional ranged write.
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %before = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    scf.if %condition {
+      array.write %array[%i] = %input : !array.type<2 x !felt.type>, !felt.type
+    }
+    %otherZero = arith.constant 0 : index
+    %after = array.read %array[%otherZero] : !array.type<2 x !felt.type>, !felt.type
+    %again = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    function.return %before, %after, %again : !felt.type, !felt.type, !felt.type
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto conditional = *fn.getOps<scf::IfOp>().begin();
+    auto store = *conditional.thenBlock()->getOps<array::WriteArrayOp>().begin();
+    if (write < 3) {
+      if (write != 0) {
+        store->moveBefore(conditional);
+        if (write == 1) {
+          auto indices = llvm::to_vector(fn.getOps<arith::ConstantIndexOp>());
+          store->setOperand(1, indices[1].getResult());
+        }
+      }
+      conditional.erase();
+    }
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    SmallVector<llvm::SMTExprRef> expressions;
+    for (Value value : fn.getBody().front().getTerminator()->getOperands()) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+      ASSERT_NE(lattice, nullptr);
+      const auto &stored = lattice->getValue().getScalarValue();
+      EXPECT_EQ(stored.getInterval(), Interval::Entire(field));
+      EXPECT_EQ(stored.getOptionalUnreducedInterval(), Interval::Entire(field).firstUnreduced());
+      ASSERT_NE(stored.getExpr(), nullptr);
+      expressions.push_back(stored.getExpr());
+    }
+    EXPECT_EQ(*expressions[0] == *expressions[1], write < 2);
+    EXPECT_TRUE(*expressions[1] == *expressions[2]);
+    smt->addConstraint(smt->mkNot(smt->mkEqual(expressions[0], expressions[1])));
+    EXPECT_EQ(smt->check(), std::optional<bool>(write >= 2));
+  }
+}
+
+// POD fields also need separate identities across a conditional overwrite of that field.
+TEST_F(IntervalStorageTests, ConcretePodReadSymbolsRespectWriteBarriers) {
+  for (bool sameField : {false, true}) {
+    SCOPED_TRACE(sameField ? "same field" : "disjoint field");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%pod: !P, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type) {
+    %before = pod.read %pod[@value] : !P, !felt.type
+    scf.if %condition {
+      pod.write %pod[@value] = %input : !P, !felt.type
+    }
+    %after = pod.read %pod[@value] : !P, !felt.type
+    function.return %before, %after : !felt.type, !felt.type
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    if (!sameField) {
+      fn.walk([&](pod::WritePodOp write) { write.setRecordName("other"); });
+    }
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    SmallVector<llvm::SMTExprRef> expressions;
+    for (Value value : fn.getBody().front().getTerminator()->getOperands()) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+      ASSERT_NE(lattice, nullptr);
+      const auto &stored = lattice->getValue().getScalarValue();
+      EXPECT_EQ(stored.getInterval(), Interval::Entire(field));
+      EXPECT_EQ(stored.getOptionalUnreducedInterval(), Interval::Entire(field).firstUnreduced());
+      ASSERT_NE(stored.getExpr(), nullptr);
+      expressions.push_back(stored.getExpr());
+    }
+    EXPECT_EQ(*expressions[0] == *expressions[1], !sameField);
+    smt->addConstraint(smt->mkNot(smt->mkEqual(expressions[0], expressions[1])));
+    EXPECT_EQ(smt->check(), std::optional<bool>(sameField));
+  }
+}
+
+// Refining one concrete read must not constrain a different value read after a write.
+TEST_F(IntervalStorageTests, ConcreteReadConstraintsRespectWriteBarriers) {
+  for (bool overlappingWrite : {false, true}) {
+    SCOPED_TRACE(overlappingWrite ? "overlapping write" : "disjoint write");
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %input: !felt.type) -> (!felt.type, !felt.type) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %before = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    array.write %array[WRITE_INDEX] = %input : !array.type<2 x !felt.type>, !felt.type
+    %after = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    %left = bool.cmp eq(%before, %seven)
+    bool.assert %left
+    %right = bool.cmp eq(%after, %nine)
+    bool.assert %right
+    function.return %before, %after : !felt.type, !felt.type
+  }
+}
+)mlir";
+    source.replace(
+        source.find("WRITE_INDEX"), StringRef("WRITE_INDEX").size(),
+        overlappingWrite ? "%i" : "%one"
+    );
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    for (auto [i, value] : llvm::enumerate(fn.getBody().front().getTerminator()->getOperands())) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+      ASSERT_NE(lattice, nullptr);
+      auto expected = overlappingWrite ? Interval::Degenerate(field, field.felt(i == 0 ? 7 : 9))
+                                       : Interval::Empty(field);
+      EXPECT_EQ(lattice->getValue().getScalarValue().getInterval(), expected);
+    }
+    for (auto comparison : fn.getOps<boolean::CmpOp>()) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(comparison.getResult());
+      ASSERT_NE(lattice, nullptr);
+      for (const ExpressionValue &constraint : lattice->getConstraints()) {
+        smt->addConstraint(constraint.getExpr());
+      }
+    }
+    EXPECT_EQ(smt->check(), std::optional<bool>(overlappingWrite));
+  }
+}
+
 // A ranged write does not make independent selections equal to its stored expression.
 TEST_F(IntervalStorageTests, RangedReadsKeepIndependentSymbols) {
   for (bool storedRange : {false, true}) {
@@ -504,7 +658,9 @@ TEST_F(IntervalStorageTests, DecompositionRejectsIndependentRangedMembers) {
       "same aggregate SSA value",
       "intervening array write",
       "disjoint write between array reads",
-      "disjoint write between member reads"
+      "disjoint write between member reads",
+      "concrete reads across overlapping write",
+      "concrete reads across disjoint write"
   };
   for (auto [selection, name] : llvm::enumerate(cases)) {
     SCOPED_TRACE(name.str());
@@ -540,14 +696,14 @@ module attributes {llzk.lang} {
   }
 }
 )mlir";
-    if (selection == 5) {
+    if (selection == 5 || selection == 8) {
       source.replace(
           source.find("// WRITE"), std::string("// WRITE").size(),
           "array.write %array[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, "
           "!struct.type<@Cell>"
       );
-    } else if (selection == 6 || selection == 7) {
-      StringRef marker = selection == 6 ? "// WRITE" : "// MEMBER_WRITE";
+    } else if (selection == 6 || selection == 7 || selection == 9) {
+      StringRef marker = selection == 7 ? "// MEMBER_WRITE" : "// WRITE";
       source.replace(source.find(marker), marker.size(), R"mlir(
         %scratch = array.new : !array.type<2 x !felt.type>
         array.write %scratch[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
@@ -560,9 +716,12 @@ module attributes {llzk.lang} {
     if (selection == 1) {
       auto subtractions = llvm::to_vector(fn.getOps<felt::SubFeltOp>());
       subtractions.back()->setOperand(0, members.front().getResult());
-    } else if (selection == 2 || selection == 3 || selection == 5 || selection == 6) {
+    } else if (
+        selection == 2 || selection == 3 || selection == 5 || selection == 6 || selection == 8 ||
+        selection == 9
+    ) {
       Value index = fn.getArgument(1);
-      if (selection == 2) {
+      if (selection == 2 || selection == 8 || selection == 9) {
         index = fn.getBody().front().front().getResult(0);
       }
       for (auto read : fn.getOps<array::ReadArrayOp>()) {
@@ -582,11 +741,11 @@ module attributes {llzk.lang} {
       ASSERT_NE(lattice, nullptr);
       const auto &actual = lattice->getValue().getScalarValue().getInterval();
       auto expected = selection == 2 || selection == 3 || selection == 4 || selection == 6 ||
-                              selection == 7 || (selection == 1 && i == 0)
+                              selection == 7 || selection == 9 || (selection == 1 && i == 0)
                           ? UnreducedInterval(7, 9).reduce(field)
                           : Interval::Entire(field);
       EXPECT_TRUE(checkCond(expected, actual, expected == actual));
-      if (selection == 0 || selection == 5) {
+      if (selection == 0 || selection == 5 || selection == 8) {
         auto witness = Interval::Degenerate(field, field.felt(i == 0 ? 11 : 9));
         EXPECT_FALSE(actual.intersect(witness).isEmpty());
       }
