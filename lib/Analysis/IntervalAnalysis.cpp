@@ -913,8 +913,10 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
 
 ExpressionValue
 IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, llvm::SMTExprRef selectionSymbol) {
+  const bool rangedSelection = hasRangedSelection(ref);
   std::optional<ExpressionValue> result;
-  if (auto it = writeResults.find(ref); it != writeResults.end()) {
+  // Exact ranged entries also need coverage checks before discarding their no-write default.
+  if (auto it = writeResults.find(ref); it != writeResults.end() && !rangedSelection) {
     result = it->second;
   } else {
     // A bounded selection needs no default if every concrete element has a stored value.
@@ -959,17 +961,20 @@ IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, llvm::SMTExprRef sel
     );
   };
   for (const auto &[writtenRef, writtenVal] : writeResults) {
-    if (writtenRef == ref || writtenRef.getPath().size() != ref.getPath().size() ||
+    if ((writtenRef == ref && !rangedSelection) ||
+        writtenRef.getPath().size() != ref.getPath().size() ||
         !hasOverlappingPrefix(writtenRef, ref)) {
       continue;
     }
-    // A concrete selection already includes its own no-write alternative. The range's
-    // default also covers other candidates and must not replace that known value.
-    joinWrite(hasRangedSelection(ref) ? writtenVal : writeContributions.at(writtenRef).value);
+    // Concrete entries retain their own no-write alternatives. Ranged entries contribute
+    // only actual writes; uncovered selections already received a fallback above.
+    joinWrite(
+        hasRangedSelection(writtenRef) ? writeContributions.at(writtenRef).value : writtenVal
+    );
   }
   ensure(result.has_value(), "covered storage selection must have a value");
   // Equal ranges describe possible locations, not equality of independently selected values.
-  return hasRangedSelection(ref) ? result->withExpression(selectionSymbol) : *result;
+  return rangedSelection ? result->withExpression(selectionSymbol) : *result;
 }
 
 SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::getAggregateWrites(
