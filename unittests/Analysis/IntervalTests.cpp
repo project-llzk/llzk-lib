@@ -825,6 +825,131 @@ module attributes {llzk.lang} {
   }
 }
 
+namespace {
+
+/// Count real interval transfer visits to test dependency invalidation independently of precision.
+class CountingIntervalAnalysis : public IntervalDataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CountingIntervalAnalysis)
+  using IntervalDataFlowAnalysis::IntervalDataFlowAnalysis;
+
+  /// Count each scheduled transfer before running the normal analysis implementation.
+  LogicalResult visitOperation(
+      Operation *op, ArrayRef<const IntervalAnalysisLattice *> operands,
+      ArrayRef<IntervalAnalysisLattice *> results
+  ) override {
+    ++visits[op];
+    return IntervalDataFlowAnalysis::visitOperation(op, operands, results);
+  }
+
+  /// Return the number of transfers performed for an operation.
+  unsigned getVisits(Operation *op) const { return visits.lookup(op); }
+
+private:
+  llvm::DenseMap<Operation *, unsigned> visits;
+};
+
+} // namespace
+
+// Ranged subscriptions must observe writes through concrete aliases of the same storage.
+TEST_F(IntervalAnalysisAPITests, OverlappingArrayWritesNotifyRangedSubscribers) {
+  for (unsigned sourceKind : {0U, 1U, 2U}) {
+    for (bool rangedWrite : {false, true}) {
+      SCOPED_TRACE(sourceKind); // Argument, owned array, and array nested in a POD.
+      SCOPED_TRACE(rangedWrite ? "ranged write" : "concrete write");
+      auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%index: index, %condition: i1, %argument: !array.type<2 x !pod.type<[@value: !felt.type]>>) {
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %owned = array.new : !array.type<2 x !pod.type<[@value: !felt.type]>>
+    %container = pod.new { @items = %owned } : !pod.type<[@items: !array.type<2 x !pod.type<[@value: !felt.type]>>]>
+    %nested = pod.read %container[@items] : !pod.type<[@items: !array.type<2 x !pod.type<[@value: !felt.type]>>]>, !array.type<2 x !pod.type<[@value: !felt.type]>>
+    %other = array.new : !array.type<2 x !pod.type<[@value: !felt.type]>>
+    %slice = array.read %argument[%index] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    %copy = pod.new { @slice = %slice } : !pod.type<[@slice: !pod.type<[@value: !felt.type]>]>
+    %otherSlice = array.read %other[%index] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    %unrelated = pod.new { @slice = %otherSlice } : !pod.type<[@slice: !pod.type<[@value: !felt.type]>]>
+    %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+      scf.yield %slice : !pod.type<[@value: !felt.type]>
+    } else {
+      scf.yield %slice : !pod.type<[@value: !felt.type]>
+    }
+    %fixed = array.read %argument[%one] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    pod.write %fixed[@value] = %seven : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+}
+)mlir");
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
+      auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+      auto read = *fn.getOps<array::ReadArrayOp>().begin();
+      auto write = *fn.getOps<pod::WritePodOp>().begin();
+      auto selections = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+      auto fixed = selections.back();
+      auto conditional = *fn.getOps<scf::IfOp>().begin();
+      auto nested = *fn.getOps<pod::ReadPodOp>().begin();
+      std::array<Value, 3> sources {
+          fn.getArgument(2), arrays.front().getResult(), nested.getResult()
+      };
+      read->setOperand(0, sources[sourceKind]);
+      fixed->setOperand(0, sources[sourceKind]);
+      if (rangedWrite) {
+        fixed->setOperand(1, fn.getArgument(0));
+      }
+
+      const Field &field = Field::getField("babybear");
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      auto *analysis = solver.load<CountingIntervalAnalysis>(smt, field, false, false);
+      auto visit = [&](Operation *op) {
+        SmallVector<const IntervalAnalysisLattice *> operands;
+        SmallVector<IntervalAnalysisLattice *> results;
+        for (Value value : op->getOperands()) {
+          operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        for (Value value : op->getResults()) {
+          results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        return analysis->visitOperation(op, operands, results);
+      };
+      auto *thenYield = conditional.thenBlock()->getTerminator();
+      auto *elseYield = conditional.elseBlock()->getTerminator();
+      auto *driver = solver.load<IntervalTestInitialization>([&] {
+        // Initialize roots before subscribing ranged consumers: pending-producer root
+        // subscriptions would otherwise conceal the missing overlapping-path dependency.
+        for (Operation &op : fn.getBody().front()) {
+          if (&op == write.getOperation()) {
+            continue;
+          }
+          if (&op == conditional.getOperation()) {
+            ASSERT_TRUE(succeeded(visit(thenYield)));
+            ASSERT_TRUE(succeeded(visit(elseYield)));
+          } else {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        EXPECT_EQ(analysis->getVisits(pods[1]), 1U);
+        EXPECT_EQ(analysis->getVisits(thenYield), 1U);
+        EXPECT_EQ(analysis->getVisits(elseYield), 1U);
+        ASSERT_TRUE(succeeded(visit(write)));
+      });
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+        return &candidate == driver;
+      })));
+      EXPECT_GT(analysis->getVisits(pods[1]), 1U);
+      EXPECT_GT(analysis->getVisits(thenYield), 1U);
+      EXPECT_GT(analysis->getVisits(elseYield), 1U);
+      EXPECT_EQ(analysis->getVisits(pods[2]), 1U);
+    }
+  }
+}
+
 // A join can run before aggregate initializers when the worklist discovers new live regions.
 TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsRevisitConditionalYield) {
   auto mod = parseModule(R"mlir(
