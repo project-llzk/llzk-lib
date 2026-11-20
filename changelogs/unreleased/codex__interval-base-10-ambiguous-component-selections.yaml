@@ -1,0 +1,2 @@
+fixed:
+  - Retain storage selections for ambiguous component reads so repeated uses of the same SSA value preserve valid decomposition bounds in interval analysis.
