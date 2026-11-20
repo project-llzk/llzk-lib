@@ -1,5 +1,5 @@
-// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
-// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines --check-prefixes=CHECK,INTER %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines --check-prefixes=CHECK,INTRA %s
 
 // An array argument has no known initializer for its captured component.
 module attributes {llzk.lang} {
@@ -135,7 +135,7 @@ module attributes {llzk.lang} {
 
 // -----
 
-// Nested constraint graphs must preserve the supplied captured handle.
+// The nested call alone must constrain the captured handle; intra mode supplies no parent constraint.
 module attributes {llzk.lang} {
   struct.def @Cell {
     struct.member @value : !felt.type {llzk.pub}
@@ -163,9 +163,6 @@ module attributes {llzk.lang} {
       %saved = pod.read %cells[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
       pod.write %cells[@cell] = %replacement : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
       function.call @Cell::@constrain(%saved) : (!struct.type<@Cell>) -> ()
-      %value = struct.readm %saved[@value] : !struct.type<@Cell>, !felt.type
-      %zero = felt.const 0
-      constrain.eq %value, %zero : !felt.type
       function.return
     }
   }
@@ -175,9 +172,10 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      { %self.value, <felt.const: 0> }
 // CHECK-NEXT:  }
 
-// CHECK-LABEL: @NestedCapturedArgumentHandle ConstraintDependencyGraph {
-// CHECK-NEXT:      { cells.cell.value, <felt.const: 0> }
-// CHECK-NEXT:  }
+// INTER-LABEL: @NestedCapturedArgumentHandle ConstraintDependencyGraph {
+// INTER-NEXT:      { cells.cell.value, <felt.const: 0> }
+// INTER-NEXT:  }
+// INTRA-LABEL: @NestedCapturedArgumentHandle ConstraintDependencyGraph { }
 
 // -----
 
