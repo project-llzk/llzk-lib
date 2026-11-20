@@ -399,6 +399,9 @@ private:
   /// fields that were not stored when an aggregate was first copied.
   llvm::DenseMap<SourceRef, llvm::DenseSet<mlir::Operation *>> aggregateReaders;
 
+  /// Conditional aggregate results are materialized only after every live yield is visited.
+  llvm::DenseSet<mlir::Operation *> visitedConditionalYields;
+
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
     (void)lattice->setValue(ExpressionValue(field.get()));
@@ -539,10 +542,14 @@ private:
   /// of unconditional, so the stored value also keeps the prior/no-write state.
   /// Retain that default only until a guaranteed write to this location is analyzed.
   /// A non-null publisher replaces its previous contribution when a copy is recomputed.
-  void recordRefWrite(
+  /// @return Whether the stored expression or interval changed.
+  bool recordRefWrite(
       const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false,
       mlir::Operation *publisher = nullptr
   );
+
+  /// Merge every live conditional aggregate alternative, including unwritten fields.
+  void recordConditionalAggregateYields(mlir::Operation *yield);
 
   /// @brief Resolve storage used by reads and copies, retaining original component handle
   /// identities and addressing materialized value arrays at their result roots.

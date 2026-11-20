@@ -1,0 +1,232 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
+
+// An unwritten argument on the first path must remain a possible value.
+// CHECK-LABEL: @UnknownThen StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @UnknownThen {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+    function.def @compute(%condition: i1, %unknown: !pod.type<[@value: !felt.type]>) -> !struct.type<@UnknownThen> {
+      %self = struct.new : !struct.type<@UnknownThen>
+      %zero = felt.const 0
+      %known = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+      %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+        scf.yield %unknown : !pod.type<[@value: !felt.type]>
+      } else {
+        scf.yield %known : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@UnknownThen>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@UnknownThen>
+    }
+    function.def @constrain(%self: !struct.type<@UnknownThen>, %condition: i1, %unknown: !pod.type<[@value: !felt.type]>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Reversing branch order must not make the known initializer unconditional.
+// CHECK-LABEL: @UnknownElse StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @UnknownElse {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+    function.def @compute(%condition: i1, %unknown: !pod.type<[@value: !felt.type]>) -> !struct.type<@UnknownElse> {
+      %self = struct.new : !struct.type<@UnknownElse>
+      %zero = felt.const 0
+      %known = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+      %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+        scf.yield %known : !pod.type<[@value: !felt.type]>
+      } else {
+        scf.yield %unknown : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@UnknownElse>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@UnknownElse>
+    }
+    function.def @constrain(%self: !struct.type<@UnknownElse>, %condition: i1, %unknown: !pod.type<[@value: !felt.type]>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Wait for both branch-local initializers and preserve their precise union.
+// CHECK-LABEL: @KnownBranches StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 7 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @KnownBranches {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+    function.def @compute(%condition: i1) -> !struct.type<@KnownBranches> {
+      %self = struct.new : !struct.type<@KnownBranches>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+        %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+        scf.yield %left : !pod.type<[@value: !felt.type]>
+      } else {
+        %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+        scf.yield %right : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@KnownBranches>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@KnownBranches>
+    }
+    function.def @constrain(%self: !struct.type<@KnownBranches>, %condition: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Unreachable unknown alternatives must not weaken a known result.
+// CHECK-LABEL: @DeadUnknownBranch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @DeadUnknownBranch {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+    function.def @compute(%unknown: !pod.type<[@value: !felt.type]>) -> !struct.type<@DeadUnknownBranch> {
+      %self = struct.new : !struct.type<@DeadUnknownBranch>
+      %true = arith.constant true
+      %zero = felt.const 0
+      %known = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+      %selected = scf.if %true -> (!pod.type<[@value: !felt.type]>) {
+        scf.yield %known : !pod.type<[@value: !felt.type]>
+      } else {
+        scf.yield %unknown : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@DeadUnknownBranch>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@DeadUnknownBranch>
+    }
+    function.def @constrain(%self: !struct.type<@DeadUnknownBranch>, %unknown: !pod.type<[@value: !felt.type]>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Static-array result paths retain unknown elements from another branch.
+// CHECK-LABEL: @UnknownArrayBranch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_1]][1] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_2]][1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_3]][1] in Entire
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_5]][1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @UnknownArrayBranch {
+    struct.member @storage : !array.type<2 x !felt.type>
+    function.def @compute(%condition: i1, %unknown: !array.type<2 x !felt.type>) -> !struct.type<@UnknownArrayBranch> {
+      %self = struct.new : !struct.type<@UnknownArrayBranch>
+      %zero = felt.const 0
+      %one = felt.const 1
+      %known = array.new %zero, %one : !array.type<2 x !felt.type>
+      %selected = scf.if %condition -> (!array.type<2 x !felt.type>) {
+        scf.yield %known : !array.type<2 x !felt.type>
+      } else {
+        scf.yield %unknown : !array.type<2 x !felt.type>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@UnknownArrayBranch>, !array.type<2 x !felt.type>
+      function.return %self : !struct.type<@UnknownArrayBranch>
+    }
+    function.def @constrain(%self: !struct.type<@UnknownArrayBranch>, %condition: i1, %unknown: !array.type<2 x !felt.type>) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Index-switch joins preserve nested paths and use Boolean defaults for i1 fields.
+// CHECK-LABEL: @SwitchUnknownBranch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_2]][1] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_4]][1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_6]][1] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]][0] in Entire
+// CHECK-NEXT:          %[[VAL_9]][1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @SwitchUnknownBranch {
+    struct.member @storage : !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>
+    function.def @compute(%selector: index, %unknown: !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>) -> !struct.type<@SwitchUnknownBranch> {
+      %self = struct.new : !struct.type<@SwitchUnknownBranch>
+      %false = arith.constant false
+      %zero = felt.const 0
+      %one = felt.const 1
+      %values = array.new %zero, %one : !array.type<2 x !felt.type>
+      %known = pod.new { @flag = %false, @values = %values } : !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>
+      %selected = scf.index_switch %selector -> !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>
+      case 0 {
+        scf.yield %known : !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>
+      }
+      default {
+        scf.yield %unknown : !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@SwitchUnknownBranch>, !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>
+      function.return %self : !struct.type<@SwitchUnknownBranch>
+    }
+    function.def @constrain(%self: !struct.type<@SwitchUnknownBranch>, %selector: index, %unknown: !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>) {
+      function.return
+    }
+  }
+}

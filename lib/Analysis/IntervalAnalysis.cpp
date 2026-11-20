@@ -1153,7 +1153,7 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
   return writes;
 }
 
-void IntervalDataFlowAnalysis::recordRefWrite(
+bool IntervalDataFlowAnalysis::recordRefWrite(
     const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped,
     Operation *publisher
 ) {
@@ -1199,7 +1199,7 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     combined = combined ? joinStoredWrite(*combined, contribution.value) : contribution.value;
   }
   if (previous && *previous == *combined) {
-    return;
+    return false;
   }
   writeResults[writtenRef] = *combined;
   // Recompute from every possible source instead of intersecting with stale read bounds.
@@ -1219,6 +1219,7 @@ void IntervalDataFlowAnalysis::recordRefWrite(
       }
     }
   }
+  return true;
 }
 
 void IntervalDataFlowAnalysis::updateComputedValue(
@@ -1249,6 +1250,109 @@ IntervalDataFlowAnalysis::setRefinedValue(Lattice *lattice, const ExpressionValu
     refinementBases.try_emplace(lattice, prior);
   }
   return lattice->setValue(value);
+}
+
+void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield) {
+  Operation *parent = yield->getParentOp();
+  auto isAggregate = [](Type type) { return llvm::isa<ArrayType, StructType, pod::PodType>(type); };
+  if (!llvm::any_of(parent->getResultTypes(), isAggregate)) {
+    return;
+  }
+
+  visitedConditionalYields.insert(yield);
+  SmallVector<scf::YieldOp> alternatives;
+  for (Region &region : parent->getRegions()) {
+    for (Block &block : region) {
+      auto terminator = llvm::cast<scf::YieldOp>(block.getTerminator());
+      if (!dataflow::isOperationLive(_dataflowSolver, terminator)) {
+        continue;
+      }
+      // Do not publish a partial set of alternatives while another live branch's
+      // initializers have not been visited yet.
+      if (!visitedConditionalYields.contains(terminator)) {
+        return;
+      }
+      alternatives.push_back(terminator);
+    }
+  }
+
+  for (OpResult result : parent->getResults()) {
+    if (!isAggregate(result.getType())) {
+      continue;
+    }
+    SourceRef resultRef(result);
+    SourceRefSet sources;
+    bool unknownSource = false;
+    for (scf::YieldOp alternative : alternatives) {
+      Value value = alternative.getOperand(result.getResultNumber());
+      SourceRefLatticeValue refs = getSourceRefState(value);
+      // Nested conditional results have their merged intervals recorded at the result root.
+      if (llvm::isa_and_present<scf::IfOp, scf::IndexSwitchOp>(value.getDefiningOp())) {
+        sources.insert(SourceRef(llvm::cast<OpResult>(value)));
+      } else if (refs.isScalar()) {
+        sources.join(refs.getScalarValue());
+        unknownSource |= refs.getScalarValue().empty();
+      } else if (auto root = SourceRefLattice::getSourceRef(value); succeeded(root)) {
+        sources.insert(*root);
+      } else {
+        unknownSource = true;
+      }
+    }
+
+    SourceRefSet destinations;
+    for (const SourceRef &source : sources) {
+      for (const auto &[writtenRef, writtenVal] : writeResults) {
+        if (writtenRef.isValidPrefix(source)) {
+          auto translated = writtenRef.translate(source, resultRef);
+          ensure(succeeded(translated), "could not translate conditional aggregate yield");
+          destinations.insert(*translated);
+        }
+      }
+    }
+
+    bool changed = false;
+    for (const SourceRef &destination : destinations) {
+      std::optional<ExpressionValue> merged;
+      auto mergeAlternative = [&](const ExpressionValue &next) {
+        if (!merged) {
+          merged = next;
+          return;
+        }
+        const auto *expr = merged->getExpr();
+        if (expr == nullptr || next.getExpr() == nullptr || *expr != *next.getExpr()) {
+          expr = getOrCreateSymbol(destination);
+        }
+        merged = ExpressionValue(
+            expr, merged->getInterval().join(next.getInterval()),
+            mergeUnreducedIntervals(
+                merged->getOptionalUnreducedInterval(), next.getOptionalUnreducedInterval()
+            )
+        );
+      };
+      if (unknownSource) {
+        mergeAlternative(ExpressionValue(
+            getOrCreateSymbol(destination), getDefaultIntervalForType(destination.getType()),
+            getDefaultUnreducedIntervalForType(destination.getType())
+        ));
+      }
+      for (const SourceRef &source : sources) {
+        auto selected = destination.translate(resultRef, source);
+        ensure(succeeded(selected), "could not select conditional aggregate alternative");
+        aggregateReaders[*selected].insert(yield);
+        // An absent write is an unknown value on this path, not an absent alternative.
+        mergeAlternative(getRefValue(*selected, getOrCreateSymbol(destination)));
+      }
+      ensure(merged.has_value(), "conditional aggregate result must have an alternative");
+      changed |= recordRefWrite(destination, *merged, /*mayBeSkipped=*/false, /*publisher=*/parent);
+    }
+    if (changed) {
+      // Aggregate SSA lattices do not encode their stored fields. Explicitly revisit users
+      // so copies made before the merged storage state was available are recomputed.
+      for (Operation *user : result.getUsers()) {
+        _dataflowSolver.enqueue({getProgramPointAfter(user), this});
+      }
+    }
+  }
 }
 
 mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
@@ -1677,6 +1781,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         );
       }
       propagateIfChanged(resLattice, resLattice->setValue(newResVal));
+    }
+
+    if (llvm::isa<scf::IfOp, scf::IndexSwitchOp>(parent)) {
+      recordConditionalAggregateYields(yieldOp);
+      return success();
     }
 
     // Aggregate intervals are tracked in `writeResults`, so remap writes
