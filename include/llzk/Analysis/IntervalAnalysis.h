@@ -364,11 +364,12 @@ private:
   /// Cached symbol tables used to resolve struct member definitions.
   mlir::SymbolTableCollection tables;
 
-  // Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
+  /// Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
   llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> readResults;
   /// Candidate dynamic reads; restrictions are shared only for proven equal SSA accesses.
   llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> rangedReadResults;
-  // Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
+
+  /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
   /// Actual writes, excluding the default for executions that perform no write.
@@ -376,6 +377,7 @@ private:
     ExpressionValue value;
     bool mayBeSkipped;
   };
+
   /// Keep recomputed publications separate from actual writes to the same location.
   /// The null key accumulates ordinary writes; operation keys hold replaceable publications.
   llvm::DenseMap<SourceRef, llvm::DenseMap<mlir::Operation *, WriteContribution>>
@@ -387,6 +389,7 @@ private:
 
   /// Conditional aggregate results are materialized only after every live yield is visited.
   llvm::DenseSet<mlir::Operation *> visitedConditionalYields;
+
   /// Distinguish unwritten aggregate fields from producers that have not been analyzed yet.
   llvm::DenseSet<mlir::Value> initializedAggregates;
 
