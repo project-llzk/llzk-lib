@@ -1410,19 +1410,6 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
 
-    if (auto readArr = llvm::dyn_cast_if_present<ReadArrayOp>(val.getDefiningOp())) {
-      auto arrayRef = getArrayAccessRef(op, readArr);
-      if (succeeded(arrayRef)) {
-        if (auto it = writeResults.find(*arrayRef); it != writeResults.end()) {
-          auto stored = getRefValue(*arrayRef, getOrCreateSymbol(val));
-          operandVals.emplace_back(stored);
-          Lattice *operandLattice = getLatticeElement(val);
-          (void)operandLattice->setValue(stored);
-          continue;
-        }
-      }
-    }
-
     // Else, look up the stored value by `SourceRef`.
     // We only care about scalar type values here, so ignore aggregate storage values.
     Type valTy = val.getType();
