@@ -602,6 +602,83 @@ module attributes {llzk.lang} {
   }
 }
 
+// Exact ranged writes lose their defaults only when concrete writes cover every candidate.
+TEST_F(IntervalStorageTests, ExactRangedWritesRecomputeDefaultsFromConcreteCoverage) {
+  for (bool rangedFirst : {false, true}) {
+    SCOPED_TRACE(rangedFirst ? "ranged writes first" : "concrete writes first");
+    auto mod = parseModule(R"mlir(
+!Arrays = !pod.type<[@full: !array.type<2 x !felt.type>, @partial: !array.type<2 x !felt.type>, @optional: !array.type<2 x !felt.type>, @unbounded: !array.type<? x !felt.type>]>
+!Values = !pod.type<[@full: !felt.type, @partial: !felt.type, @optional: !felt.type, @unbounded: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%full: !array.type<2 x !felt.type>, %partial: !array.type<2 x !felt.type>, %optional: !array.type<2 x !felt.type>, %unbounded: !array.type<? x !felt.type>, %i: index, %condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %full[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %partial[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %optional[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %unbounded[%i] = %nine : !array.type<? x !felt.type>, !felt.type
+    array.write %full[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %full[%one] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %partial[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %optional[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %unbounded[%zero] = %seven : !array.type<? x !felt.type>, !felt.type
+    array.write %unbounded[%one] = %seven : !array.type<? x !felt.type>, !felt.type
+    scf.if %condition {
+      array.write %optional[%one] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    %fullRead = array.read %full[%i] : !array.type<2 x !felt.type>, !felt.type
+    %partialRead = array.read %partial[%i] : !array.type<2 x !felt.type>, !felt.type
+    %optionalRead = array.read %optional[%i] : !array.type<2 x !felt.type>, !felt.type
+    %unboundedRead = array.read %unbounded[%i] : !array.type<? x !felt.type>, !felt.type
+    %reads = pod.new { @full = %fullRead, @partial = %partialRead, @optional = %optionalRead, @unbounded = %unboundedRead } : !Values
+    %copies = pod.new { @full = %full, @partial = %partial, @optional = %optional, @unbounded = %unbounded } : !Arrays
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto writes = llvm::to_vector(fn.getOps<array::WriteArrayOp>());
+    auto conditional = *fn.getOps<scf::IfOp>().begin();
+    auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op == writes.front().getOperation()) {
+          break;
+        }
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+      auto visitWrites = [&](bool ranged) {
+        for (auto [i, write] : llvm::enumerate(writes)) {
+          if ((i < 4) == ranged) {
+            ASSERT_TRUE(succeeded(visit(write)));
+          }
+        }
+        if (!ranged) {
+          ASSERT_TRUE(succeeded(visit(&conditional.thenBlock()->front())));
+        }
+      };
+      visitWrites(rangedFirst);
+      visitWrites(!rangedFirst);
+      // Read and copy only after all writes, independently of storage notifications.
+      for (Operation *op = conditional->getNextNode(); op; op = op->getNextNode()) {
+        ASSERT_TRUE(succeeded(visit(op)));
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      llvm::StringRef names[] = {"full", "partial", "optional", "unbounded"};
+      for (auto [i, name] : llvm::enumerate(names)) {
+        SourceRefIndex record(StringAttr::get(&ctx, name));
+        auto range = SourceRefIndex::forArrayDimension(i == 3 ? ShapedType::kDynamic : 2);
+        auto expected = i == 0 ? UnreducedInterval(7, 9).reduce(field) : Interval::Entire(field);
+        expectStored(analysis, SourceRef(pods[0]->getResult(0), {record}), expected);
+        expectStored(analysis, SourceRef(pods[1]->getResult(0), {record, range}), expected);
+      }
+    });
+  }
+}
+
 // Neither a ranged target nor one of several possible aliases is guaranteed to be written.
 TEST_F(IntervalStorageTests, AmbiguousArrayWritesKeepNoWriteDefaults) {
   for (bool optionalFirst : {false, true}) {
