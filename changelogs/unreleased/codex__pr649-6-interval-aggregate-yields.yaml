@@ -2,5 +2,3 @@ fixed:
   - Preserve all live alternatives of scf.if and scf.index_switch aggregate results, including type-appropriate defaults for fields left unwritten.
   - Prevent incomplete or stale intervals in conditional aggregate results and dependent copies when source initialization or field writes are analyzed later.
   - Resolve scalar reads through merged aggregate storage while preserving visible member constraints through unambiguous conditional component aliases.
-  - Retain storage selections for ambiguous component reads so repeated uses of the same SSA value preserve valid decomposition bounds.
-  - Share symbolic identity between repeated reads of an unwritten concrete storage location.
