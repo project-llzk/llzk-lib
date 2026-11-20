@@ -220,6 +220,91 @@ module attributes {llzk.lang} {
   }
 }
 
+// Unrelated array reads cannot change repeated reads of the same dynamic selection.
+TEST_F(IntervalStorageTests, InterveningArrayReadsPreserveDynamicAliases) {
+  for (bool memberReads : {false, true}) {
+    SCOPED_TRACE(memberReads ? "component members" : "array elements");
+    for (bool relational : {false, true}) {
+      SCOPED_TRACE(relational ? "inequality" : "conflicting constants");
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %other: !array.type<2 x !felt.type>, %i: index, %j: index) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %betweenElements = array.read %other[%j] : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %leftCell = array.read %cells[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %betweenCells = array.read %other[%j] : !array.type<2 x !felt.type>, !felt.type
+    %rightCell = array.read %cells[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %leftMember = struct.readm %leftCell[@value] : !struct.type<@Cell>, !felt.type
+    %betweenMembers = array.read %other[%j] : !array.type<2 x !felt.type>, !felt.type
+    %rightMember = struct.readm %rightCell[@value] : !struct.type<@Cell>, !felt.type
+    // CONSTRAINTS
+    function.return
+  }
+}
+)mlir";
+      source.replace(
+          source.find("// CONSTRAINTS"), std::string("// CONSTRAINTS").size(),
+          relational ? R"mlir(
+    %different = bool.cmp ne(%left, %right)
+    bool.assert %different
+)mlir"
+                     : R"mlir(
+    %leftCheck = bool.cmp eq(%left, %seven)
+    bool.assert %leftCheck
+    %rightCheck = bool.cmp eq(%right, %nine)
+    bool.assert %rightCheck
+)mlir"
+      );
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto comparisons = llvm::to_vector(fn.getOps<boolean::CmpOp>());
+      if (memberReads) {
+        auto members = llvm::to_vector(fn.getOps<component::MemberReadOp>());
+        comparisons[0]->setOperand(0, members[0]->getResult(0));
+        if (relational) {
+          comparisons[0]->setOperand(1, members[1]->getResult(0));
+        } else {
+          comparisons[1]->setOperand(0, members[1]->getResult(0));
+        }
+      }
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      for (auto comparison : comparisons) {
+        const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(comparison.getResult());
+        ASSERT_NE(lattice, nullptr);
+        ASSERT_FALSE(lattice->getConstraints().empty());
+        for (const ExpressionValue &constraint : lattice->getConstraints()) {
+          smt->addConstraint(constraint.getExpr());
+        }
+        if (!relational) {
+          const auto *read = solver.lookupState<IntervalAnalysisLattice>(comparison.getLhs());
+          ASSERT_NE(read, nullptr);
+          EXPECT_EQ(read->getValue().getScalarValue().getInterval(), Interval::Empty(field));
+        }
+      }
+      EXPECT_EQ(smt->check(), std::optional<bool>(false));
+    }
+  }
+}
+
 // Constraints on separate dynamic selections must not flow through equal-looking ranges.
 TEST_F(IntervalStorageTests, RangedReadConstraintsStayIndependent) {
   for (unsigned selection : {0U, 1U, 2U}) {

@@ -74,7 +74,7 @@ bool hasRangedSelection(const SourceRef &ref) {
   });
 }
 
-/// Prove repeated reads equivalent using their SSA indices, without crossing possible writes.
+/// Prove same-block reads equivalent using their SSA indices, without crossing possible writes.
 bool haveSameReadValue(Value lhs, Value rhs) {
   if (lhs == rhs) {
     return true;
@@ -100,6 +100,10 @@ bool haveSameReadValue(Value lhs, Value rhs) {
   }
   for (Operation *between = left->getNextNode(); between != right;
        between = between->getNextNode()) {
+    auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(between);
+    if (arrayAccess && arrayAccess.isRead()) {
+      continue;
+    }
     if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
       return false;
     }
