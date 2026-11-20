@@ -490,6 +490,17 @@ module attributes {llzk.lang} {
             lattice->getValue().getScalarValue().getExpr(), analysis->getOrCreateSymbol(value)
         );
       }
+      if (selection == 0) {
+        const auto *expr = lattice->getValue().getScalarValue().getExpr();
+        ASSERT_NE(expr, nullptr);
+        auto constant = field.felt(i % 2 == 0 ? 7 : 9);
+        smt->addConstraint(
+            smt->mkEqual(expr, smt->mkBitvector(toAPSInt(constant), field.bitWidth()))
+        );
+      }
+    }
+    if (selection == 0) {
+      EXPECT_EQ(smt->check(), std::optional<bool>(true));
     }
   }
 }

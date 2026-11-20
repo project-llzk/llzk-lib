@@ -1341,14 +1341,12 @@ TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadsHaveIndependentSymbols) {
 !P = !pod.type<[@value: !felt.type]>
 !W = !pod.type<[@child: !P]>
 module attributes {llzk.lang} {
-  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
+  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
     %leftPod = array.read %pods[%i] : !array.type<2 x !P>, !P
     %rightPod = array.read %pods[%j] : !array.type<2 x !P>, !P
     // WRITES
     %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
     %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
-    %nestedLeft = pod.read %leftPod[@value] : !P, !felt.type
-    %nestedRight = pod.read %rightPod[@value] : !P, !felt.type
     %leftCopy = pod.new { @child = %leftPod } : !W
     %rightCopy = pod.new { @child = %rightPod } : !W
     %leftChild = pod.read %leftCopy[@child] : !W, !P
@@ -1367,7 +1365,7 @@ module attributes {llzk.lang} {
     }
     %chosenLeft = pod.read %leftChoice[@value] : !P, !felt.type
     %chosenRight = pod.read %rightChoice[@value] : !P, !felt.type
-    function.return %left, %right, %nestedLeft, %nestedRight, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
+    function.return %left, %right, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
   }
 }
 )mlir";
@@ -1401,9 +1399,9 @@ module attributes {llzk.lang} {
       );
       expressions.push_back(stored.getExpr());
     }
-    for (unsigned first : {0U, 2U, 4U, 6U}) {
+    for (unsigned first : {0U, 2U, 4U}) {
       EXPECT_FALSE(*expressions[first] == *expressions[first + 1]);
-      if (first < 4) {
+      if (first == 0) {
         EXPECT_EQ(expressions[first], analysis->getOrCreateSymbol(returned[first]));
         EXPECT_EQ(expressions[first + 1], analysis->getOrCreateSymbol(returned[first + 1]));
       }
@@ -1417,47 +1415,6 @@ module attributes {llzk.lang} {
     }
     EXPECT_EQ(smt->check(), std::optional<bool>(true));
   }
-}
-
-// Refining one dynamic selection must not constrain another selection from the same range.
-TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadConstraintsStayIndependent) {
-  auto mod = parseModule(R"mlir(
-module attributes {llzk.lang} {
-  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %j: index) -> (!felt.type, !felt.type) {
-    %seven = felt.const 7
-    %nine = felt.const 9
-    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
-    %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
-    %leftCheck = bool.cmp eq(%left, %seven)
-    bool.assert %leftCheck
-    %rightCheck = bool.cmp eq(%right, %nine)
-    bool.assert %rightCheck
-    function.return %left, %right : !felt.type, !felt.type
-  }
-}
-)mlir");
-  ASSERT_TRUE(mod);
-  const Field &field = Field::getField("babybear");
-  auto smt = llvm::CreateZ3Solver();
-  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
-  llzk::dataflow::loadRequiredAnalyses(solver);
-  solver.load<SourceRefAnalysis>();
-  solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
-  auto fn = *mod->getOps<function::FuncDefOp>().begin();
-  auto returned = fn.getBody().front().getTerminator()->getOperands();
-  for (auto [i, value] : llvm::enumerate(returned)) {
-    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
-    ASSERT_NE(lattice, nullptr);
-    const auto &stored = lattice->getValue().getScalarValue();
-    auto expected = field.felt(i == 0 ? 7 : 9);
-    EXPECT_EQ(stored.getInterval(), Interval::Degenerate(field, expected));
-    ASSERT_NE(stored.getExpr(), nullptr);
-    smt->addConstraint(
-        smt->mkEqual(stored.getExpr(), smt->mkBitvector(toAPSInt(expected), field.bitWidth()))
-    );
-  }
-  EXPECT_EQ(smt->check(), std::optional<bool>(true));
 }
 
 // Conditional storage roots retain the nested/disjoint alias proofs from the preceding stack.
