@@ -20,6 +20,8 @@
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -70,6 +72,43 @@ bool hasRangedSelection(const SourceRef &ref) {
   return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
     return index.isIndexRange();
   });
+}
+
+/// Prove same-block reads equivalent using their SSA indices, without crossing possible writes.
+bool haveSameReadValue(Value lhs, Value rhs) {
+  if (lhs == rhs) {
+    return true;
+  }
+  Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
+  if (!llvm::isa_and_present<ReadArrayOp, MemberReadOp>(left) ||
+      !llvm::isa_and_present<ReadArrayOp, MemberReadOp>(right) ||
+      left->getBlock() != right->getBlock()) {
+    return false;
+  }
+  auto sameOperand = [](Value a, Value b) {
+    return success(
+        a == b || (llvm::isa<ArrayType, StructType>(a.getType()) && haveSameReadValue(a, b))
+    );
+  };
+  if (!OperationEquivalence::isEquivalentTo(
+          left, right, sameOperand, nullptr, OperationEquivalence::IgnoreLocations
+      )) {
+    return false;
+  }
+  if (right->isBeforeInBlock(left)) {
+    std::swap(left, right);
+  }
+  for (Operation *between = left->getNextNode(); between != right;
+       between = between->getNextNode()) {
+    auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(between);
+    if (arrayAccess && arrayAccess.isRead()) {
+      continue;
+    }
+    if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 template <typename Fn>
@@ -1750,10 +1789,36 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     }
   };
 
+  auto propagateRangedRead = [&](const SourceRef &ref) {
+    auto &readers = rangedReadResults[ref];
+    readers.insert(valLattice);
+    SmallVector<Lattice *> aliases;
+    Interval shared = newLatticeVal.getInterval();
+    for (Lattice *reader : readers) {
+      if (haveSameReadValue(val, reader->getAnchor())) {
+        aliases.push_back(reader);
+        shared = shared.intersect(reader->getValue().getScalarValue().getInterval());
+      }
+    }
+    for (Lattice *reader : aliases) {
+      // Keep per-read symbols, but equate proven aliases for relational solver constraints.
+      if (reader != valLattice) {
+        smtSolver->addConstraint(smtSolver->mkEqual(
+            newLatticeVal.getExpr(), reader->getValue().getScalarValue().getExpr()
+        ));
+      }
+      ExpressionValue refined = refineReducedInterval(reader->getValue().getScalarValue(), shared);
+      propagateIfChanged(reader, reader->setValue(refined));
+    }
+  };
+
   auto readmCase = [&](MemberReadOp) {
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue()) {
+    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
+      propagateRangedRead(sourceRefVal.getSingleValue());
+    }
+    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
 
@@ -1768,7 +1833,11 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
   auto readArrCase = [&](ReadArrayOp) {
     auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
-    if (succeeded(arrayRef)) {
+    if (succeeded(arrayRef) && hasRangedSelection(*arrayRef)) {
+      propagateRangedRead(*arrayRef);
+    }
+    // A constraint on one selection cannot refine other reads of the same possible range.
+    if (succeeded(arrayRef) && !hasRangedSelection(*arrayRef)) {
       readResults[*arrayRef].insert(valLattice);
 
       for (Lattice *l : readResults[*arrayRef]) {
@@ -1780,7 +1849,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue()) {
+    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
 

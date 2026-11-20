@@ -1,0 +1,4 @@
+fixed:
+  - Interval Analysis:
+    - Prevent false contradictions between independently indexed array elements and component members.
+    - Detect contradictory interval and relational constraints on repeated dynamic reads with the same SSA indices in the same block when no possible write intervenes.
