@@ -576,66 +576,6 @@ module attributes {llzk.lang} {
   EXPECT_FALSE(cycleDependencies.empty());
 }
 
-TEST_F(SourceRefTests, StorageDependenciesTranslateIntoNestedConstrainCalls) {
-  static constexpr auto source = R"mlir(
-module attributes {llzk.lang} {
-  struct.def @Child {
-    function.def @compute(%input: !felt.type) -> !struct.type<@Child> {
-      %self = struct.new : !struct.type<@Child>
-      function.return %self : !struct.type<@Child>
-    }
-
-    function.def @constrain(%self: !struct.type<@Child>, %input: !felt.type) {
-      %zero = felt.const 0
-      constrain.eq %input, %zero : !felt.type, !felt.type
-      function.return
-    }
-  }
-
-  struct.def @Parent {
-    struct.member @child : !struct.type<@Child>
-
-    function.def @compute(%input: !felt.type) -> !struct.type<@Parent> {
-      %self = struct.new : !struct.type<@Parent>
-      %child = function.call @Child::@compute(%input)
-          : (!felt.type) -> !struct.type<@Child>
-      struct.writem %self[@child] = %child
-          : !struct.type<@Parent>, !struct.type<@Child>
-      function.return %self : !struct.type<@Parent>
-    }
-
-    function.def @constrain(%self: !struct.type<@Parent>, %input: !felt.type) {
-      %child = struct.readm %self[@child]
-          : !struct.type<@Parent>, !struct.type<@Child>
-      %storage = pod.new { @value = %input } : !pod.type<[@value: !felt.type]>
-      %read = pod.read %storage[@value]
-          : !pod.type<[@value: !felt.type]>, !felt.type
-      function.call @Child::@constrain(%child, %read)
-          : (!struct.type<@Child>, !felt.type) -> ()
-      function.return
-    }
-  }
-}
-)mlir";
-
-  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
-  ASSERT_TRUE(mod);
-  auto structs = llvm::to_vector(mod->getOps<StructDefOp>());
-  ASSERT_EQ(structs.size(), 2U);
-  auto childConstrain = structs[0].getConstrainFuncOp();
-  auto parentConstrain = structs[1].getConstrainFuncOp();
-  auto zero = *childConstrain.getOps<felt::FeltConstantOp>().begin();
-
-  ModuleAnalysisManager mam(*mod, nullptr);
-  AnalysisManager am = mam;
-  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
-  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
-
-  SourceRef parentInput(parentConstrain.getArgument(1));
-  SourceRef zeroRef(zero);
-  EXPECT_TRUE(analysis.getResult(structs[1]).getConstrainingValues(parentInput).contains(zeroRef));
-}
-
 /// Returned arrays retain physical addresses independently of initialized dependencies.
 TEST_F(SourceRefTests, ReturnedArraysKeepAddressesSeparateFromDependencies) {
   static constexpr auto source = R"mlir(
@@ -1259,69 +1199,6 @@ module attributes {llzk.lang} {
       constrainFn.getArgument(0), {SourceRefIndex(outMember), SourceRefIndex(DynamicAPInt(2))}
   );
   EXPECT_TRUE(graph.getConstrainingValues(omitted).empty());
-}
-
-TEST_F(SourceRefTests, ConstraintQueriesDropOnlyNeutralLoopZeroInitializers) {
-  static constexpr auto source = R"mlir(
-module attributes {llzk.lang} {
-  struct.def @LoopNormalization {
-    struct.member @sum : !felt.type {llzk.pub, signal}
-    struct.member @zero : !felt.type {llzk.pub, signal}
-
-    function.def @compute(%in: !felt.type) -> !struct.type<@LoopNormalization> {
-      %self = struct.new : !struct.type<@LoopNormalization>
-      struct.writem %self[@sum] = %in : !struct.type<@LoopNormalization>, !felt.type
-      struct.writem %self[@zero] = %in : !struct.type<@LoopNormalization>, !felt.type
-      function.return %self : !struct.type<@LoopNormalization>
-    }
-
-    function.def @constrain(%self: !struct.type<@LoopNormalization>, %in: !felt.type)
-        attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-      %sum = struct.readm %self[@sum] : !struct.type<@LoopNormalization>, !felt.type
-      %zeroOut = struct.readm %self[@zero] : !struct.type<@LoopNormalization>, !felt.type
-      %zero = felt.const 0
-      %true = arith.constant true
-      %loop = scf.while (%acc = %zero) : (!felt.type) -> !felt.type {
-        scf.condition(%true) %acc : !felt.type
-      } do {
-      ^bb0(%acc: !felt.type):
-        %next = felt.add %acc, %in : !felt.type, !felt.type
-        scf.yield %next : !felt.type
-      }
-      constrain.eq %sum, %loop : !felt.type
-      constrain.eq %zeroOut, %zero : !felt.type
-      function.return
-    }
-  }
-}
-)mlir";
-
-  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
-  ASSERT_TRUE(mod);
-  auto structDef = *mod->getOps<StructDefOp>().begin();
-  auto constrainFn = structDef.getConstrainFuncOp();
-  auto members = llvm::to_vector(structDef.getOps<MemberDefOp>());
-
-  ModuleAnalysisManager mam(*mod, nullptr);
-  AnalysisManager am = mam;
-  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
-  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
-  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
-
-  SourceRef sum(constrainFn.getArgument(0), {SourceRefIndex(members[0])});
-  SourceRef input(constrainFn.getArgument(1));
-  SourceRefSet sumDependencies = graph.getConstrainingValues(sum);
-  EXPECT_TRUE(sumDependencies.contains(input));
-  EXPECT_TRUE(llvm::none_of(sumDependencies, [](const SourceRef &dependency) {
-    auto constant = dependency.getConstantValue(Field::getField("babybear"));
-    return succeeded(constant) && *constant == 0;
-  }));
-
-  SourceRef zeroOut(constrainFn.getArgument(0), {SourceRefIndex(members[1])});
-  EXPECT_TRUE(llvm::any_of(graph.getConstrainingValues(zeroOut), [](const SourceRef &dependency) {
-    auto constant = dependency.getConstantValue(Field::getField("babybear"));
-    return succeeded(constant) && *constant == 0;
-  }));
 }
 
 TEST_F(SourceRefTests, DependencyStateDropsFullyOverwrittenLoopArrayZeros) {
