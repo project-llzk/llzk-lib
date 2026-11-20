@@ -686,8 +686,8 @@ public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalTestInitialization)
 
   /// Own the callback that establishes the test's initial visitation order.
-  IntervalTestInitialization(DataFlowSolver &solver, std::function<void()> callback)
-      : DataFlowAnalysis(solver), initializeCallback(std::move(callback)) {}
+  IntervalTestInitialization(DataFlowSolver &dataflowSolver, std::function<void()> callback)
+      : DataFlowAnalysis(dataflowSolver), initializeCallback(std::move(callback)) {}
 
   /// Execute the callback while the solver is running, stopping on fatal test assertions.
   LogicalResult initialize(Operation *) override {
