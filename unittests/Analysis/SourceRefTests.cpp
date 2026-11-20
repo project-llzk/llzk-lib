@@ -686,3 +686,68 @@ module attributes {llzk.lang} {
   );
   EXPECT_TRUE(graph.getConstrainingValues(omitted).empty());
 }
+
+TEST_F(SourceRefTests, ConditionalMarkersRequireBothBooleanConstraints) {
+  auto runCase = [&](bool includeTrueConstraint) {
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Conditional {
+    struct.member @out : !felt.type {llzk.pub, signal}
+    struct.member @helper : !felt.type {signal}
+    function.def @compute(%out: !felt.type, %helper: !felt.type)
+        -> !struct.type<@Conditional> {
+      %self = struct.new : !struct.type<@Conditional>
+      struct.writem %self[@out] = %out : !struct.type<@Conditional>, !felt.type
+      struct.writem %self[@helper] = %helper : !struct.type<@Conditional>, !felt.type
+      function.return %self : !struct.type<@Conditional>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Conditional>, %outArg: !felt.type, %helperArg: !felt.type
+    )
+        attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %out = struct.readm %self[@out] : !struct.type<@Conditional>, !felt.type
+      %helper = struct.readm %self[@helper] : !struct.type<@Conditional>, !felt.type
+      %zero = felt.const 0
+      %one = felt.const 1
+      %condition = bool.cmp eq(%helper, %zero)
+      scf.if %condition {
+        scf.yield
+      } else {
+        scf.yield
+      }
+      constrain.eq %out, %zero : !felt.type
+)mlir";
+    if (includeTrueConstraint) {
+      source += "      constrain.eq %out, %one : !felt.type\n";
+    }
+    source += R"mlir(
+      function.return
+    }
+  }
+}
+)mlir";
+
+    auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+    EXPECT_TRUE(mod);
+    if (!mod) {
+      return false;
+    }
+    auto structDef = *mod->getOps<StructDefOp>().begin();
+    auto constrainFn = structDef.getConstrainFuncOp();
+    auto members = llvm::to_vector(structDef.getOps<MemberDefOp>());
+    ModuleAnalysisManager mam(*mod, nullptr);
+    AnalysisManager am = mam;
+    ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+    if (failed(analysis.ensureAnalysisRun(am))) {
+      ADD_FAILURE() << "could not construct conditional dependency graph";
+      return false;
+    }
+    const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+    SourceRef out(constrainFn.getArgument(0), {SourceRefIndex(members[0])});
+    SourceRef helper(constrainFn.getArgument(0), {SourceRefIndex(members[1])});
+    return graph.getConstrainingValues(out).contains(helper);
+  };
+
+  EXPECT_TRUE(runCase(/*includeTrueConstraint=*/true));
+  EXPECT_FALSE(runCase(/*includeTrueConstraint=*/false));
+}

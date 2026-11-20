@@ -129,6 +129,17 @@ static std::vector<SourceRefIndex> getArrayAccessIndices(
   return indices;
 }
 
+/// Recognize the field-independent literals zero and one, including fieldless constants.
+static bool isBooleanLiteral(const SourceRef &ref, int64_t literal) {
+  if (auto value = ref.getConstant(); succeeded(value)) {
+    if (auto constant = value->getDefiningOp<felt::FeltConstantOp>()) {
+      return constant.getValue().getReducedValueOrRaw() == literal;
+    }
+  }
+  auto index = ref.getConstantIndexValue();
+  return succeeded(index) && *index == literal;
+}
+
 } // namespace
 
 /* SourceRefAnalysis */
@@ -589,6 +600,9 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     for (const auto &[source, targets] : translatedCDG.dependencyEdges) {
       dependencyEdges[source].insert(targets.begin(), targets.end());
     }
+    for (const auto &[source, targets] : translatedCDG.conditionalDependencyEdges) {
+      conditionalDependencyEdges[source].insert(targets.begin(), targets.end());
+    }
     // And update the constant sets
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
@@ -605,11 +619,39 @@ void ConstraintDependencyGraph::walkConstrainOp(
     mlir::DataFlowSolver &solver, mlir::Operation *emitOp
 ) {
   std::vector<SourceRef> signalUsages, constUsages;
+  std::vector<SourceRef> conditionalUsages;
+
+  // Some frontends preserve a witness-only conditional in @constrain as an empty scf.if marker.
+  // Associate that marker's condition with the next emitted constraint in the block.
+  for (Operation *previous = emitOp->getPrevNode(); previous != nullptr;
+       previous = previous->getPrevNode()) {
+    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(previous)) {
+      break;
+    }
+    auto ifOp = llvm::dyn_cast<scf::IfOp>(previous);
+    if (!ifOp) {
+      continue;
+    }
+    auto hasOnlyTerminator = [](Region &region) {
+      return region.hasOneBlock() && region.front().without_terminator().empty();
+    };
+    if (!hasOnlyTerminator(ifOp.getThenRegion()) || !hasOnlyTerminator(ifOp.getElseRegion())) {
+      continue;
+    }
+    for (const SourceRef &conditionRef :
+         SourceRefAnalysis::getValueState(solver, ifOp.getCondition()).foldToScalar()) {
+      if (conditionRef.isConstant() || conditionRef.isTemplateConstant()) {
+        constUsages.push_back(conditionRef);
+      } else if (!conditionRef.isBlockArgument() || *conditionRef.getInputNum() == 0) {
+        conditionalUsages.push_back(conditionRef);
+      }
+    }
+  }
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = SourceRefAnalysis::getValueState(solver, operand);
     for (const auto &ref : latticeVal.foldToScalar()) {
-      if (ref.isConstant()) {
+      if (ref.isConstant() || ref.isTemplateConstant()) {
         constUsages.push_back(ref);
       } else {
         signalUsages.push_back(ref);
@@ -629,6 +671,14 @@ void ConstraintDependencyGraph::walkConstrainOp(
     auto leader = signalSets.getOrInsertLeaderValue(signalUsages.front());
     for (const SourceRef &signal : llvm::drop_begin(signalUsages)) {
       signalSets.unionSets(leader, signal);
+    }
+  }
+  for (const SourceRef &conditionRef : conditionalUsages) {
+    for (const SourceRef &signalRef : signalUsages) {
+      if (conditionRef != signalRef) {
+        conditionalDependencyEdges[conditionRef].insert(signalRef);
+        conditionalDependencyEdges[signalRef].insert(conditionRef);
+      }
     }
   }
   // Also update constant references for each value.
@@ -743,6 +793,8 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
   };
   translateEdges(dependencyEdges, res.dependencyEdges);
 
+  translateEdges(conditionalDependencyEdges, res.conditionalDependencyEdges);
+
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
@@ -760,6 +812,18 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   SourceRefSet res;
   SourceRefSet visited;
   llvm::SmallVector<SourceRef> worklist = {ref};
+  bool hasBooleanZero = false;
+  bool hasBooleanOne = false;
+  for (const auto &[source, constants] : constantSets) {
+    if (!source.overlaps(ref)) {
+      continue;
+    }
+    for (const SourceRef &constant : constants) {
+      hasBooleanZero |= isBooleanLiteral(constant, 0);
+      hasBooleanOne |= isBooleanLiteral(constant, 1);
+    }
+  }
+  const bool followConditionalDependencies = hasBooleanZero && hasBooleanOne;
   const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(ref.getType());
 
   // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
@@ -794,7 +858,23 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
           }
         }
       }
-
+      if (followConditionalDependencies) {
+        for (const auto &[source, targets] : conditionalDependencyEdges) {
+          if ((!source.overlaps(*currRef) &&
+               !(includeDescendants && source.isValidPrefix(*currRef)))) {
+            continue;
+          }
+          for (const SourceRef &target : targets) {
+            SourceRef narrowed = target.narrowRanges(*currRef);
+            if (!visited.contains(narrowed)) {
+              worklist.push_back(narrowed);
+            }
+            if (!narrowed.overlaps(ref)) {
+              res.insert(narrowed);
+            }
+          }
+        }
+      }
       for (const auto &[constantSource, constants] : constantSets) {
         if ((constantSource.overlaps(*currRef) ||
              (includeDescendants && constantSource.isValidPrefix(*currRef)))) {
