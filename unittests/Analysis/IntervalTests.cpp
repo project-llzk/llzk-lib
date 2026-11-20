@@ -738,6 +738,81 @@ module attributes {llzk.lang} {
   EXPECT_EQ(stored->second.getOptionalUnreducedInterval(), UnreducedInterval(0, 7));
 }
 
+// Copies made before a conditional publishes its fields must update through every consumer.
+TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsPropagateThroughCopyChains) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = felt.const 0
+    %seven = felt.const 7
+    %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+    %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+    %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+      scf.yield %left : !pod.type<[@value: !felt.type]>
+    } else {
+      scf.yield %right : !pod.type<[@value: !felt.type]>
+    }
+    %copy1 = pod.new { @child = %selected } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+    %alias = pod.read %copy1[@child] : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+    %copy2 = pod.new { @child = %alias } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+    %array = array.new %copy2, %copy2 : !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>
+    %copy3 = pod.new { @values = %array } : !pod.type<[@values: !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>]>
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+  auto visit = [&](Operation *op) {
+    SmallVector<const IntervalAnalysisLattice *> operands;
+    SmallVector<IntervalAnalysisLattice *> results;
+    for (Value value : op->getOperands()) {
+      operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    for (Value value : op->getResults()) {
+      results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    return analysis->visitOperation(op, operands, results);
+  };
+
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto conditional = *fn.getOps<scf::IfOp>().begin();
+  auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+  // Visit the entire consumer chain first, so every later copy needs a storage notification.
+  for (Operation *op = conditional->getNextNode(); op != nullptr; op = op->getNextNode()) {
+    ASSERT_TRUE(succeeded(visit(op)));
+  }
+  ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+  ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+  for (Operation &op : fn.getBody().front()) {
+    if (&op == conditional.getOperation()) {
+      break;
+    }
+    ASSERT_TRUE(succeeded(visit(&op)));
+  }
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [](DataFlowAnalysis &) { return false; })));
+
+  const auto &writes = analysis->getWriteResults();
+  for (int64_t index : {0, 1}) {
+    SourceRef leaf(
+        pods.back()->getResult(0),
+        {SourceRefIndex(StringAttr::get(&ctx, "values")), SourceRefIndex(index),
+         SourceRefIndex(StringAttr::get(&ctx, "child")),
+         SourceRefIndex(StringAttr::get(&ctx, "value"))}
+    );
+    auto stored = writes.find(leaf);
+    ASSERT_NE(stored, writes.end());
+    EXPECT_EQ(stored->second.getInterval(), UnreducedInterval(0, 7).reduce(field));
+    EXPECT_EQ(stored->second.getOptionalUnreducedInterval(), UnreducedInterval(0, 7));
+  }
+}
+
 // Equal-looking values in separate functions must still have separate SMT identities.
 TEST_F(IntervalAnalysisAPITests, ValueSymbolsCacheIdentityAndPreserveSorts) {
   auto mod = parseModule(R"mlir(

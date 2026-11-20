@@ -553,9 +553,13 @@ private:
   /// Merge every live conditional aggregate alternative, including unwritten fields.
   void recordConditionalAggregateYields(mlir::Operation *yield);
 
-  /// Publish completion of an aggregate's initial storage state, including empty states.
-  /// Returns true on its first publication and wakes yields waiting for that producer.
-  bool markAggregateInitialized(mlir::OpResult result);
+  /// Subscribe a consumer to a storage prefix and its producer's initial publication.
+  /// Returns false while the source producer has not yet published its initial state.
+  bool subscribeToAggregate(const SourceRef &source, mlir::Operation *consumer);
+
+  /// Publish completion of an aggregate's initial storage state, including empty states,
+  /// and wake consumers waiting for that producer.
+  void markAggregateInitialized(mlir::OpResult result);
 
   /// @brief Resolve storage used by reads and copies, retaining original component handle
   /// identities and addressing materialized value arrays at their result roots.

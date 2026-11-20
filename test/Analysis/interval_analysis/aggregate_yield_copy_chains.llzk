@@ -1,0 +1,203 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --check-prefixes=CHECK,UNREDUCED --implicit-check-not=error:
+
+// Storage updates must reach every aggregate initializer and alias in a copy chain.
+// CHECK-LABEL: @PodCopyChain StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage.child.child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @PodCopyChain {
+    struct.member @storage : !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
+    function.def @compute(%condition: i1) -> !struct.type<@PodCopyChain> {
+      %self = struct.new : !struct.type<@PodCopyChain>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %choice = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+        %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+        scf.yield %left : !pod.type<[@value: !felt.type]>
+      } else {
+        %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+        scf.yield %right : !pod.type<[@value: !felt.type]>
+      }
+      %copy1 = pod.new { @child = %choice } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+      %selected = pod.new { @child = %copy1 } : !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
+      struct.writem %self[@storage] = %selected : !struct.type<@PodCopyChain>, !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
+      function.return %self : !struct.type<@PodCopyChain>
+    }
+    function.def @constrain(%self: !struct.type<@PodCopyChain>, %condition: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// CHECK-LABEL: @ArrayCopyChain StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage[0].child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:          %self.storage[1].child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage[0].child.value in Entire
+// CHECK-NEXT:          %self.storage[1].child.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @ArrayCopyChain {
+    struct.member @storage : !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>
+    function.def @compute(%condition: i1) -> !struct.type<@ArrayCopyChain> {
+      %self = struct.new : !struct.type<@ArrayCopyChain>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %choice = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+        %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+        scf.yield %left : !pod.type<[@value: !felt.type]>
+      } else {
+        %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+        scf.yield %right : !pod.type<[@value: !felt.type]>
+      }
+      %copy1 = pod.new { @child = %choice } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+      %selected = array.new %copy1, %copy1 : !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>
+      struct.writem %self[@storage] = %selected : !struct.type<@ArrayCopyChain>, !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>
+      function.return %self : !struct.type<@ArrayCopyChain>
+    }
+    function.def @constrain(%self: !struct.type<@ArrayCopyChain>, %condition: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// CHECK-LABEL: @PodReadCopyChain StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage.child.child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @PodReadCopyChain {
+    struct.member @storage : !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
+    function.def @compute(%condition: i1) -> !struct.type<@PodReadCopyChain> {
+      %self = struct.new : !struct.type<@PodReadCopyChain>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %choice = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+        %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+        scf.yield %left : !pod.type<[@value: !felt.type]>
+      } else {
+        %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+        scf.yield %right : !pod.type<[@value: !felt.type]>
+      }
+      %copy1 = pod.new { @child = %choice } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+      %alias = pod.read %copy1[@child] : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %copy2 = pod.new { @child = %alias } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+      %selected = pod.new { @child = %copy2 } : !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
+      struct.writem %self[@storage] = %selected : !struct.type<@PodReadCopyChain>, !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
+      function.return %self : !struct.type<@PodReadCopyChain>
+    }
+    function.def @constrain(%self: !struct.type<@PodReadCopyChain>, %condition: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// CHECK-LABEL: @ArrayReadCopyChain StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage.child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @ArrayReadCopyChain {
+    struct.member @storage : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+    function.def @compute(%condition: i1) -> !struct.type<@ArrayReadCopyChain> {
+      %self = struct.new : !struct.type<@ArrayReadCopyChain>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %index = arith.constant 0 : index
+      %choice = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+        %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+        scf.yield %left : !pod.type<[@value: !felt.type]>
+      } else {
+        %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+        scf.yield %right : !pod.type<[@value: !felt.type]>
+      }
+      %copy1 = array.new %choice, %choice : !array.type<2 x !pod.type<[@value: !felt.type]>>
+      %alias = array.read %copy1[%index] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+      %selected = pod.new { @child = %alias } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+      struct.writem %self[@storage] = %selected : !struct.type<@ArrayReadCopyChain>, !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+      function.return %self : !struct.type<@ArrayReadCopyChain>
+    }
+    function.def @constrain(%self: !struct.type<@ArrayReadCopyChain>, %condition: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// CHECK-LABEL: @UnknownCopyChain StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.flag in Entire
+// CHECK-NEXT:          %arg1.value in Entire
+// CHECK-NEXT:          %self.storage.child.child.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.child.flag in Entire
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.flag in Entire
+// CHECK-NEXT:          %arg2.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @UnknownCopyChain {
+    struct.member @storage : !pod.type<[@child: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>]>]>
+    function.def @compute(%condition: i1, %unknown: !pod.type<[@flag: i1, @value: !felt.type]>) -> !struct.type<@UnknownCopyChain> {
+      %self = struct.new : !struct.type<@UnknownCopyChain>
+      %zero = felt.const 0
+      %false = arith.constant false
+      %choice = scf.if %condition -> (!pod.type<[@flag: i1, @value: !felt.type]>) {
+        %known = pod.new { @flag = %false, @value = %zero } : !pod.type<[@flag: i1, @value: !felt.type]>
+        scf.yield %known : !pod.type<[@flag: i1, @value: !felt.type]>
+      } else {
+        scf.yield %unknown : !pod.type<[@flag: i1, @value: !felt.type]>
+      }
+      %copy1 = pod.new { @child = %choice } : !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>]>
+      %selected = pod.new { @child = %copy1 } : !pod.type<[@child: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>]>]>
+      struct.writem %self[@storage] = %selected : !struct.type<@UnknownCopyChain>, !pod.type<[@child: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>]>]>
+      function.return %self : !struct.type<@UnknownCopyChain>
+    }
+    function.def @constrain(%self: !struct.type<@UnknownCopyChain>, %condition: i1, %unknown: !pod.type<[@flag: i1, @value: !felt.type]>) {
+      function.return
+    }
+  }
+}
