@@ -1255,7 +1255,7 @@ IntervalDataFlowAnalysis::setRefinedValue(Lattice *lattice, const ExpressionValu
 void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield) {
   Operation *parent = yield->getParentOp();
   auto isAggregate = [](Type type) { return llvm::isa<ArrayType, StructType, pod::PodType>(type); };
-  if (!llvm::any_of(parent->getResultTypes(), isAggregate)) {
+  if (llvm::none_of(parent->getResultTypes(), isAggregate)) {
     return;
   }
 
