@@ -19,14 +19,17 @@
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
 #include <array>
+#include <functional>
 #include <gtest/gtest.h>
 #include <string>
 #include <unordered_set>
+#include <utility>
 
 using namespace mlir;
 using namespace llzk;
@@ -674,6 +677,33 @@ module attributes {llzk.lang} {
   }
 };
 
+namespace {
+
+/// Run ordered test visits during solver initialization so lattice updates can propagate.
+/// Only this driver is initialized; the solver then drains dependencies queued by the visits.
+class IntervalTestInitialization : public DataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalTestInitialization)
+
+  /// Own the callback that establishes the test's initial visitation order.
+  IntervalTestInitialization(DataFlowSolver &solver, std::function<void()> callback)
+      : DataFlowAnalysis(solver), initializeCallback(std::move(callback)) {}
+
+  /// Execute the callback while the solver is running, stopping on fatal test assertions.
+  LogicalResult initialize(Operation *) override {
+    initializeCallback();
+    return success(!testing::Test::HasFatalFailure());
+  }
+
+  /// The driver creates no dependencies of its own.
+  LogicalResult visit(ProgramPoint *) override { return success(); }
+
+private:
+  std::function<void()> initializeCallback;
+};
+
+} // namespace
+
 // A join can run before aggregate initializers when the worklist discovers new live regions.
 TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsRevisitConditionalYield) {
   auto mod = parseModule(R"mlir(
@@ -716,21 +746,25 @@ module attributes {llzk.lang} {
   };
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
   auto conditional = *fn.getOps<scf::IfOp>().begin();
-  ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
-  ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
   auto resultField = SourceRef(conditional->getResult(0))
                          .createChild(SourceRefIndex(StringAttr::get(&ctx, "value")));
   ASSERT_TRUE(succeeded(resultField));
-  EXPECT_FALSE(analysis->getWriteResults().contains(*resultField));
+  auto *driver = solver.load<IntervalTestInitialization>([&] {
+    ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+    ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+    EXPECT_FALSE(analysis->getWriteResults().contains(*resultField));
 
-  for (Operation &op : fn.getBody().front()) {
-    if (isa<felt::FeltConstantOp, pod::NewPodOp>(op)) {
-      ASSERT_TRUE(succeeded(visit(&op)));
+    for (Operation &op : fn.getBody().front()) {
+      if (isa<felt::FeltConstantOp, pod::NewPodOp>(op)) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
     }
-  }
+  });
   // Drain only queued dependencies. Reinitializing the analysis would revisit every yield
   // and mask a missing storage subscription.
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [](DataFlowAnalysis &) { return false; })));
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+    return &candidate == driver;
+  })));
   const auto &writes = analysis->getWriteResults();
   auto stored = writes.find(*resultField);
   ASSERT_NE(stored, writes.end());
@@ -784,19 +818,23 @@ module attributes {llzk.lang} {
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
   auto conditional = *fn.getOps<scf::IfOp>().begin();
   auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
-  // Visit the entire consumer chain first, so every later copy needs a storage notification.
-  for (Operation *op = conditional->getNextNode(); op != nullptr; op = op->getNextNode()) {
-    ASSERT_TRUE(succeeded(visit(op)));
-  }
-  ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
-  ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
-  for (Operation &op : fn.getBody().front()) {
-    if (&op == conditional.getOperation()) {
-      break;
+  auto *driver = solver.load<IntervalTestInitialization>([&] {
+    // Visit the entire consumer chain first, so every later copy needs a storage notification.
+    for (Operation *op = conditional->getNextNode(); op != nullptr; op = op->getNextNode()) {
+      ASSERT_TRUE(succeeded(visit(op)));
     }
-    ASSERT_TRUE(succeeded(visit(&op)));
-  }
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [](DataFlowAnalysis &) { return false; })));
+    ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+    ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+    for (Operation &op : fn.getBody().front()) {
+      if (&op == conditional.getOperation()) {
+        break;
+      }
+      ASSERT_TRUE(succeeded(visit(&op)));
+    }
+  });
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+    return &candidate == driver;
+  })));
 
   const auto &writes = analysis->getWriteResults();
   for (int64_t index : {0, 1}) {
