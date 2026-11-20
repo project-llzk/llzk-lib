@@ -1,4 +1,2 @@
 fixed:
   - Fix aggregate interval propagation through conditional yields and copies, preserving unknown alternatives and type defaults.
-  - Replace stale conditional aggregate publications while preserving independent writes to the same storage.
-  - Revisit aggregate consumers of ranged array aliases when overlapping concrete writes update their storage.
