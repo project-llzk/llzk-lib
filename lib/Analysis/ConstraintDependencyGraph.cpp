@@ -28,6 +28,7 @@
 #include <mlir/IR/Value.h>
 
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/SetVector.h>
 #include <llvm/Support/Debug.h>
 
@@ -265,6 +266,29 @@ static std::optional<std::pair<DynamicAPInt, DynamicAPInt>> getStaticLoopIndexRa
   // The backedge need not be monotone. The condition proves an upper bound, while a felt's
   // representative is nonnegative regardless of the initializer or recurrence.
   return std::pair(DynamicAPInt(0), upper.getValue().getReducedValueOrRaw());
+}
+
+/// Select constant indices, known loop ranges, or whole dimensions from operand states.
+static std::vector<SourceRefIndex> getArrayAccessIndices(
+    ArrayAccessOpInterface access,
+    llvm::function_ref<const SourceRefLatticeValue &(Value)> getIndexState
+) {
+  std::vector<SourceRefIndex> indices;
+  for (auto [i, index] : llvm::enumerate(access.getIndices())) {
+    auto constantIndex = getIndexState(index).getConstantValue();
+    if (succeeded(constantIndex)) {
+      indices.emplace_back(*constantIndex);
+    } else if (auto bounds = getStaticLoopIndexRange(index)) {
+      indices.emplace_back(bounds->first, bounds->second);
+    } else {
+      ArrayType arrayType = access.getArrRef().getType();
+      assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
+      indices.push_back(
+          SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
+      );
+    }
+  }
+  return indices;
 }
 
 /// Recognize a complete elementwise copy with an unconditional write and a unit-step induction.
@@ -2146,25 +2170,12 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
       ensure(it != operandVals.end(), "improperly constructed operandVals map");
       const auto &currVals = it->second;
 
-      std::vector<SourceRefIndex> indices;
-      for (auto [i, idxOperand] : llvm::enumerate(arrayAccessOp.getIndices())) {
-        auto idxIt = operandVals.find(idxOperand);
+      auto indices =
+          getArrayAccessIndices(arrayAccessOp, [&](Value index) -> const SourceRefLatticeValue & {
+        auto idxIt = operandVals.find(index);
         ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-        const auto &idxVals = idxIt->second;
-
-        auto constantIndex = idxVals.getConstantValue();
-        if (succeeded(constantIndex)) {
-          indices.emplace_back(*constantIndex);
-        } else if (auto bounds = getStaticLoopIndexRange(idxOperand)) {
-          indices.emplace_back(bounds->first, bounds->second);
-        } else {
-          ArrayType arrayType = array.getType();
-          assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
-          indices.push_back(
-              SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
-          );
-        }
-      }
+        return idxIt->second;
+      });
 
       auto newValsRes = currVals.extract(indices);
       ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
@@ -2565,25 +2576,12 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
   ensure(it != operandVals.end(), "improperly constructed operandVals map");
   const auto &currVals = it->second->getValue();
 
-  std::vector<SourceRefIndex> indices;
-  for (auto [i, idxOperand] : llvm::enumerate(arrayAccessOp.getIndices())) {
-    auto idxIt = operandVals.find(idxOperand);
+  auto indices =
+      getArrayAccessIndices(arrayAccessOp, [&](Value index) -> const SourceRefLatticeValue & {
+    auto idxIt = operandVals.find(index);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-    const auto &idxVals = idxIt->second->getValue();
-
-    auto constantIndex = idxVals.getConstantValue();
-    if (succeeded(constantIndex)) {
-      indices.emplace_back(*constantIndex);
-    } else if (auto bounds = getStaticLoopIndexRange(idxOperand)) {
-      indices.emplace_back(bounds->first, bounds->second);
-    } else {
-      ArrayType arrayType = array.getType();
-      assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
-      indices.push_back(
-          SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
-      );
-    }
-  }
+    return idxIt->second->getValue();
+  });
 
   auto newValsRes = currVals.extract(indices);
   ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
@@ -2996,26 +2994,30 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
     }
   }
 
-  for (const auto &[source, targets] : dependencyEdges) {
-    auto translatedSources = translate(source);
-    if (failed(translatedSources)) {
-      continue;
-    }
-    for (const SourceRef &target : targets) {
-      auto translatedTargets = translate(target);
-      if (failed(translatedTargets)) {
+  // Translate direct and conditional edges with the same filtering.
+  auto translateEdges = [&translate](const auto &edges, auto &translatedEdges) {
+    for (const auto &[source, targets] : edges) {
+      auto translatedSources = translate(source);
+      if (failed(translatedSources)) {
         continue;
       }
-      for (const SourceRef &translatedSource : *translatedSources) {
-        for (const SourceRef &translatedTarget : *translatedTargets) {
-          if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
-              translatedSource != translatedTarget) {
-            res.dependencyEdges[translatedSource].insert(translatedTarget);
+      for (const SourceRef &target : targets) {
+        auto translatedTargets = translate(target);
+        if (failed(translatedTargets)) {
+          continue;
+        }
+        for (const SourceRef &translatedSource : *translatedSources) {
+          for (const SourceRef &translatedTarget : *translatedTargets) {
+            if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
+                translatedSource != translatedTarget) {
+              translatedEdges[translatedSource].insert(translatedTarget);
+            }
           }
         }
       }
     }
-  }
+  };
+  translateEdges(dependencyEdges, res.dependencyEdges);
 
   for (const auto *leaderIt : directAliases) {
     if (!leaderIt->isLeader()) {
@@ -3043,26 +3045,7 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
     }
   }
 
-  for (const auto &[source, targets] : conditionalDependencyEdges) {
-    auto translatedSources = translate(source);
-    if (failed(translatedSources)) {
-      continue;
-    }
-    for (const SourceRef &target : targets) {
-      auto translatedTargets = translate(target);
-      if (failed(translatedTargets)) {
-        continue;
-      }
-      for (const SourceRef &translatedSource : *translatedSources) {
-        for (const SourceRef &translatedTarget : *translatedTargets) {
-          if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
-              translatedSource != translatedTarget) {
-            res.conditionalDependencyEdges[translatedSource].insert(translatedTarget);
-          }
-        }
-      }
-    }
-  }
+  translateEdges(conditionalDependencyEdges, res.conditionalDependencyEdges);
 
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {

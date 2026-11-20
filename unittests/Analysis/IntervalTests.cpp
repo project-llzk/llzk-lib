@@ -9,6 +9,7 @@
 
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
+#include "IntervalTestUtils.h"
 
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
@@ -25,11 +26,9 @@
 #include <mlir/Parser/Parser.h>
 
 #include <array>
-#include <functional>
 #include <gtest/gtest.h>
 #include <string>
 #include <unordered_set>
-#include <utility>
 
 using namespace mlir;
 using namespace llzk;
@@ -724,33 +723,6 @@ module attributes {llzk.lang} {
   }
 };
 
-namespace {
-
-/// Run ordered test visits during solver initialization so lattice updates can propagate.
-/// Only this driver is initialized; the solver then drains dependencies queued by the visits.
-class IntervalTestInitialization : public DataFlowAnalysis {
-public:
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalTestInitialization)
-
-  /// Own the callback that establishes the test's initial visitation order.
-  IntervalTestInitialization(DataFlowSolver &dataflowSolver, std::function<void()> callback)
-      : DataFlowAnalysis(dataflowSolver), initializeCallback(std::move(callback)) {}
-
-  /// Execute the callback while the solver is running, stopping on fatal test assertions.
-  LogicalResult initialize(Operation *) override {
-    initializeCallback();
-    return success(!testing::Test::HasFatalFailure());
-  }
-
-  /// The driver creates no dependencies of its own.
-  LogicalResult visit(ProgramPoint *) override { return success(); }
-
-private:
-  std::function<void()> initializeCallback;
-};
-
-} // namespace
-
 // Scalar reads must use the same materialized aggregate roots as subsequent writes.
 TEST_F(IntervalAnalysisAPITests, ScalarReadsUseMaterializedAggregateRoots) {
   for (bool useSwitch : {false, true}) {
@@ -836,7 +808,7 @@ module attributes {llzk.lang} {
         }
       };
       SmallVector<Operation *> writes;
-      auto *driver = solver.load<IntervalTestInitialization>([&] {
+      auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
         for (Operation &op : fn.getBody().front()) {
           if (isa<pod::WritePodOp, array::WriteArrayOp>(op)) {
             writes.push_back(&op);
@@ -928,7 +900,7 @@ module attributes {llzk.lang} {
                              .createChild(SourceRefIndex(StringAttr::get(&ctx, "value")));
       ASSERT_TRUE(succeeded(resultField));
       SmallVector<Operation *> writes;
-      auto *driver = solver.load<IntervalTestInitialization>([&] {
+      auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
         for (Operation &op : fn.getBody().front()) {
           if (&op == conditional.getOperation()) {
             break;
@@ -1097,7 +1069,7 @@ module attributes {llzk.lang} {
       };
       auto *thenYield = conditional.thenBlock()->getTerminator();
       auto *elseYield = conditional.elseBlock()->getTerminator();
-      auto *driver = solver.load<IntervalTestInitialization>([&] {
+      auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
         // Initialize roots before subscribing ranged consumers: pending-producer root
         // subscriptions would otherwise conceal the missing overlapping-path dependency.
         for (Operation &op : fn.getBody().front()) {
@@ -1240,7 +1212,7 @@ module attributes {llzk.lang} {
           ASSERT_TRUE(succeeded(visit(writer)));
         }
       };
-      auto *driver = solver.load<IntervalTestInitialization>([&] {
+      auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
         for (Operation &op : fn.getBody().front()) {
           if (&op == concrete.getOperation() && !delayedWrite) {
             visitWrites();
@@ -1315,7 +1287,7 @@ module attributes {llzk.lang} {
   auto resultField = SourceRef(conditional->getResult(0))
                          .createChild(SourceRefIndex(StringAttr::get(&ctx, "value")));
   ASSERT_TRUE(succeeded(resultField));
-  auto *driver = solver.load<IntervalTestInitialization>([&] {
+  auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
     ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
     ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
     EXPECT_FALSE(analysis->getWriteResults().contains(*resultField));
@@ -1384,7 +1356,7 @@ module attributes {llzk.lang} {
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
   auto conditional = *fn.getOps<scf::IfOp>().begin();
   auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
-  auto *driver = solver.load<IntervalTestInitialization>([&] {
+  auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
     // Visit the entire consumer chain first, so every later copy needs a storage notification.
     for (Operation *op = conditional->getNextNode(); op != nullptr; op = op->getNextNode()) {
       ASSERT_TRUE(succeeded(visit(op)));
