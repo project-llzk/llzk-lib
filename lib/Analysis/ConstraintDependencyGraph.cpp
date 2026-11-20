@@ -682,12 +682,18 @@ private:
     /// Ranges whose every element has contents, including conditional alternatives.
     DenseSet<SourceRef> coveredRanges;
 
+    /// Addresses in `values`, grouped by their storage root for dependency lookups.
+    DenseMap<Value, SmallVector<SourceRef>> valuesByRoot;
+
     void materializeOperation(
         const StorageState &state, Operation *op, TranslationMap &aliases, bool forceMayBeSkipped,
         Operation *replayedLoop = nullptr
     );
 
   private:
+    /// Add or remove an address from the root index when `values` changes.
+    void indexAddress(const SourceRef &address);
+    void unindexAddress(const SourceRef &address);
     void eraseValue(const SourceRef &address);
 
     /// Remove the portion of earlier writes superseded by a definite point or range write.
@@ -720,10 +726,14 @@ private:
     MaterializedStorage storage;
   };
 
-  /// Recursion guards qualified by source observation point.
+  /// Per-query snapshots and recursion guards, qualified by source observation point.
   struct ResolutionState {
+    DenseMap<Operation *, std::unique_ptr<MaterializedSnapshot>> snapshots;
     DenseSet<std::pair<Operation *, SourceRef>> active;
   };
+
+  /// Bound replay work while avoiding a full state copy at every query point.
+  static constexpr size_t checkpointStride = 64;
 
   /// Apply all known aggregate-storage aliases to a lattice value.
   static SourceRefLatticeValue
@@ -734,8 +744,11 @@ private:
       Operation *op, TranslationMap &aliases, bool forceMayBeSkipped = false
   ) const;
 
-  /// Materialize storage and aliases at `before` by replaying earlier operations.
+  /// Materialize storage and aliases at `before`, replaying from a sparse checkpoint.
   MaterializedSnapshot materializeSnapshot(Operation *before) const;
+
+  /// Discard checkpoints whose program-order replay includes `op`.
+  void invalidateCheckpointsFrom(Operation *op);
 
   static SourceRefLatticeValue projectChild(
       const SourceRefLatticeValue &value, const SourceRef &storedAddress,
@@ -748,8 +761,7 @@ private:
       bool handlesOnly = false
   ) const;
 
-  /// Resolve a selection at its observation point, sharing recursion guards across copies and
-  /// calls.
+  /// Resolve a selection in a cached snapshot, sharing recursion guards across copies and calls.
   SourceRefLatticeValue resolveAt(
       const SourceRefLatticeValue &input, Operation *before, ResolutionState &state,
       bool handlesOnly = false
@@ -807,6 +819,7 @@ private:
     if (!notified.insert(op).second) {
       return;
     }
+    invalidateCheckpointsFrom(op);
     auto notify = [&](Operation *anchorOp) {
       auto *state = solver->getOrCreateState<ScopeState>(solver->getProgramPointBefore(anchorOp));
       state->advance();
@@ -864,7 +877,7 @@ private:
   DenseMap<Operation *, SmallVector<AggregateAlias>> aggregateAliases;
 
   /// Operation-to-index lookup for the traversal recorded in `operations` by `setTop`.
-  /// Used to order storage effects and identify affected consumers.
+  /// Used to order storage effects, identify affected consumers, and locate checkpoints.
   DenseMap<Operation *, size_t> operationOrder;
 
   /// Operations in the traversal order recorded by `setTop`, used for storage replay.
@@ -873,6 +886,12 @@ private:
   /// First traversal index for each enclosing function, or nullptr for operations outside one.
   /// Bounds the initial replay needed to materialize that scope's snapshots.
   DenseMap<Operation *, size_t> scopeBegins;
+
+  /// Sparse snapshots keyed by enclosing function (nullptr outside functions), then traversal
+  /// index. Each snapshot precedes its indexed operation and excludes query-specific loop
+  /// backedge effects. Function-local snapshots include other functions' effects only through
+  /// translated calls, avoiding copies of unrelated allocations for each query.
+  mutable DenseMap<Operation *, std::map<size_t, MaterializedSnapshot>> checkpoints;
 };
 
 const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &solver, Value val) {
@@ -902,8 +921,13 @@ static SourceRefLatticeValue captureComponentHandles(const SourceRefLatticeValue
   return captured;
 }
 
-/// Resolve one SSA dependency expression at each operand's observation point.
-static SourceRefLatticeValue getObservedDependencies(DataFlowSolver &solver, Value val) {
+/// Resolve one SSA dependency expression, sharing repeated subexpressions within the query.
+static SourceRefLatticeValue getObservedDependencies(
+    DataFlowSolver &solver, Value val, DenseMap<Value, SourceRefLatticeValue> &cache
+) {
+  if (auto found = cache.find(val); found != cache.end()) {
+    return found->second;
+  }
   auto compute = [&]() -> SourceRefLatticeValue {
     if (Operation *def = val.getDefiningOp(); def && !isAggregateType(val.getType())) {
       // Calls already translate scalar dependencies from their return sites. Resolving that
@@ -918,7 +942,7 @@ static SourceRefLatticeValue getObservedDependencies(DataFlowSolver &solver, Val
           failed(SourceRefLattice::getSourceRef(val))) {
         SourceRefLatticeValue dependencies;
         for (Value operand : def->getOperands()) {
-          (void)dependencies.update(getObservedDependencies(solver, operand));
+          (void)dependencies.update(getObservedDependencies(solver, operand, cache));
         }
         return dependencies;
       }
@@ -958,7 +982,7 @@ static SourceRefLatticeValue getObservedDependencies(DataFlowSolver &solver, Val
                       ? SourceRefAnalysis::getDependencyState(
                             solver, yieldedOperands[resultNumber], terminator
                         )
-                      : getObservedDependencies(solver, yieldedOperands[resultNumber])
+                      : getObservedDependencies(solver, yieldedOperands[resultNumber], cache)
               );
               foundYield = true;
             };
@@ -999,7 +1023,7 @@ static SourceRefLatticeValue getObservedDependencies(DataFlowSolver &solver, Val
                    .getDefiningOp<felt::AddFeltOp>();
     for (Value operand : add->getOperands()) {
       if (operand != carried) {
-        (void)result.update(getObservedDependencies(solver, operand));
+        (void)result.update(getObservedDependencies(solver, operand, cache));
       }
     }
   }
@@ -1009,7 +1033,7 @@ static SourceRefLatticeValue getObservedDependencies(DataFlowSolver &solver, Val
     auto loop = loopResult.getDefiningOp<scf::WhileOp>();
     Value initializer = loop.getInits()[loopResult.getResultNumber()];
     SourceRefSet writtenDependencies =
-        getObservedDependencies(solver, write.getRvalue()).foldToScalar();
+        getObservedDependencies(solver, write.getRvalue(), cache).foldToScalar();
     SourceRefLatticeValue normalized;
     auto selected = SourceRefAnalysis::getValueState(solver, val);
     for (const SourceRef &ref : result.foldToScalar()) {
@@ -1027,11 +1051,13 @@ static SourceRefLatticeValue getObservedDependencies(DataFlowSolver &solver, Val
   if (llvm::isa<StructType>(val.getType())) {
     result = captureComponentHandles(result);
   }
+  cache.try_emplace(val, result);
   return result;
 }
 
 SourceRefLatticeValue SourceRefAnalysis::getDependencyState(DataFlowSolver &solver, Value val) {
-  return getObservedDependencies(solver, val);
+  DenseMap<Value, SourceRefLatticeValue> cache;
+  return getObservedDependencies(solver, val, cache);
 }
 
 SourceRefLatticeValue
@@ -1166,48 +1192,49 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolve(
     }
     auto addressRoot = address.getRoot();
     if (succeeded(addressRoot)) {
-      for (const auto &[storedAddress, storedValue] : storage.values) {
-        auto storedRoot = storedAddress.getRoot();
-        if (failed(storedRoot) || *storedRoot != *addressRoot) {
-          continue;
-        }
-        if (address.protectsCapturedComponent(storedAddress)) {
-          continue;
-        }
-        if (handlesOnly && !llvm::isa<StructType>(storedAddress.getType())) {
-          continue;
-        }
-        if (!storedAddress.overlaps(address) && !address.isValidPrefix(storedAddress)) {
-          continue;
-        }
-        foundWrite = true;
-        SourceRefLatticeValue projectedValue =
-            projectChild(storedValue.dependencies, storedAddress, address);
-        for (const DeferredCopy &copy : storedValue.copies) {
-          (void)projectedValue.update(resolveCopy(copy, storedAddress, address, state));
-        }
-        if (hasRangeIndex(storedAddress) && storedAddress.overlaps(address)) {
-          preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
-        }
-        if (llvm::isa<StructType>(storedAddress.getType())) {
-          (void)writtenValues.update(projectedValue);
-        } else {
-          // Copied scalar dependencies are snapshots. They must not be re-read after a
-          // later mutation, even if an unwritten source is represented by its address.
-          (void)result.update(projectedValue);
-        }
-
-        if (!hasRangeIndex(storedAddress) || storage.coveredRanges.contains(storedAddress)) {
-          SmallVector<SourceRef> nextUncoveredRanges;
-          for (const SourceRef &uncovered : uncoveredRanges) {
-            if (!storedAddress.overlaps(uncovered)) {
-              nextUncoveredRanges.push_back(uncovered);
-              continue;
-            }
-            auto residuals = subtractAddress(uncovered, storedAddress);
-            nextUncoveredRanges.append(residuals);
+      auto writesForRoot = storage.valuesByRoot.find(*addressRoot);
+      if (writesForRoot != storage.valuesByRoot.end()) {
+        for (const SourceRef &storedAddress : writesForRoot->second) {
+          if (address.protectsCapturedComponent(storedAddress)) {
+            continue;
           }
-          uncoveredRanges = std::move(nextUncoveredRanges);
+          if (handlesOnly && !llvm::isa<StructType>(storedAddress.getType())) {
+            continue;
+          }
+          auto storedValue = storage.values.find(storedAddress);
+          ensure(storedValue != storage.values.end(), "storage root index is out of sync");
+          if (!storedAddress.overlaps(address) && !address.isValidPrefix(storedAddress)) {
+            continue;
+          }
+          foundWrite = true;
+          SourceRefLatticeValue projectedValue =
+              projectChild(storedValue->second.dependencies, storedAddress, address);
+          for (const DeferredCopy &copy : storedValue->second.copies) {
+            (void)projectedValue.update(resolveCopy(copy, storedAddress, address, state));
+          }
+          if (hasRangeIndex(storedAddress) && storedAddress.overlaps(address)) {
+            preservesAddress |= projectedValue.remove(address) == ChangeResult::Change;
+          }
+          if (llvm::isa<StructType>(storedAddress.getType())) {
+            (void)writtenValues.update(projectedValue);
+          } else {
+            // Copied scalar dependencies are snapshots. They must not be re-read after a
+            // later mutation, even if an unwritten source is represented by its address.
+            (void)result.update(projectedValue);
+          }
+
+          if (!hasRangeIndex(storedAddress) || storage.coveredRanges.contains(storedAddress)) {
+            SmallVector<SourceRef> nextUncoveredRanges;
+            for (const SourceRef &uncovered : uncoveredRanges) {
+              if (!storedAddress.overlaps(uncovered)) {
+                nextUncoveredRanges.push_back(uncovered);
+                continue;
+              }
+              auto residuals = subtractAddress(uncovered, storedAddress);
+              nextUncoveredRanges.append(residuals);
+            }
+            uncoveredRanges = std::move(nextUncoveredRanges);
+          }
         }
       }
     }
@@ -1282,7 +1309,11 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveHandles(
 SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveAt(
     const SourceRefLatticeValue &input, Operation *before, ResolutionState &state, bool handlesOnly
 ) const {
-  const MaterializedSnapshot snapshot = materializeSnapshot(before);
+  auto &entry = state.snapshots[before];
+  if (!entry) {
+    entry = std::make_unique<MaterializedSnapshot>(materializeSnapshot(before));
+  }
+  const MaterializedSnapshot &snapshot = *entry;
   return resolve(input, snapshot.aliases, snapshot.storage, before, state, handlesOnly);
 }
 
@@ -1683,9 +1714,37 @@ SourceRefAnalysis::StorageState::materializeSnapshot(Operation *before) const {
   auto target = operationOrder.find(before);
   ensure(target != operationOrder.end(), "snapshot operation must belong to storage state");
 
+  // Materialize full checkpoints only at fixed program-order intervals. A
+  // checkpoint represents state before its key operation, so replay starts at
+  // that operation.
   MaterializedSnapshot snapshot;
-  Operation *scopeOp = before->getParentOfType<FuncDefOp>().getOperation();
-  for (size_t i = scopeBegins.lookup(scopeOp); i < target->second; ++i) {
+  auto scope = before->getParentOfType<FuncDefOp>();
+  Operation *scopeOp = scope.getOperation();
+  auto &scopeCheckpoints = checkpoints[scopeOp];
+  size_t replayBegin = scopeBegins.lookup(scopeOp) / checkpointStride * checkpointStride;
+  const size_t checkpointTarget = target->second / checkpointStride * checkpointStride;
+  auto nextCheckpoint = scopeCheckpoints.upper_bound(checkpointTarget);
+  if (nextCheckpoint != scopeCheckpoints.begin()) {
+    auto previousCheckpoint = std::prev(nextCheckpoint);
+    snapshot = previousCheckpoint->second;
+    replayBegin = previousCheckpoint->first;
+  }
+
+  // Build any missing checkpoints on the way to the one preceding this query.
+  // Their immutable program-order state can be reused by later queries.
+  for (size_t i = replayBegin; i < checkpointTarget; ++i) {
+    if (operations[i]->getParentOfType<FuncDefOp>().getOperation() == scopeOp) {
+      snapshot.storage.materializeOperation(
+          *this, operations[i], snapshot.aliases, /*forceMayBeSkipped=*/false
+      );
+    }
+    if ((i + 1) % checkpointStride == 0) {
+      scopeCheckpoints.try_emplace(i + 1, snapshot);
+    }
+  }
+
+  // The remaining replay is bounded by the checkpoint stride.
+  for (size_t i = checkpointTarget; i < target->second; ++i) {
     if (operations[i]->getParentOfType<FuncDefOp>().getOperation() == scopeOp) {
       snapshot.storage.materializeOperation(
           *this, operations[i], snapshot.aliases, /*forceMayBeSkipped=*/false
@@ -1712,7 +1771,43 @@ SourceRefAnalysis::StorageState::materializeSnapshot(Operation *before) const {
   return snapshot;
 }
 
+void SourceRefAnalysis::StorageState::invalidateCheckpointsFrom(Operation *op) {
+  auto position = operationOrder.find(op);
+  if (position == operationOrder.end()) {
+    return;
+  }
+  // A checkpoint immediately before this operation excludes its effects, while
+  // every later checkpoint includes them and must be reconstructed on a revisit.
+  Operation *scope = op->getParentOfType<FuncDefOp>().getOperation();
+  auto &scopeCheckpoints = checkpoints[scope];
+  scopeCheckpoints.erase(scopeCheckpoints.upper_bound(position->second), scopeCheckpoints.end());
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::indexAddress(const SourceRef &address) {
+  if (auto root = address.getRoot(); succeeded(root)) {
+    valuesByRoot[*root].push_back(address);
+  }
+}
+
+void SourceRefAnalysis::StorageState::MaterializedStorage::unindexAddress(
+    const SourceRef &address
+) {
+  auto root = address.getRoot();
+  if (failed(root)) {
+    return;
+  }
+  auto entries = valuesByRoot.find(*root);
+  ensure(entries != valuesByRoot.end(), "storage root index is out of sync");
+  auto *addressIt = llvm::find(entries->second, address);
+  ensure(addressIt != entries->second.end(), "storage root index is out of sync");
+  entries->second.erase(addressIt);
+  if (entries->second.empty()) {
+    valuesByRoot.erase(entries);
+  }
+}
+
 void SourceRefAnalysis::StorageState::MaterializedStorage::eraseValue(const SourceRef &address) {
+  unindexAddress(address);
   values.erase(address);
   skippedFirstWrites.erase(address);
   coveredRanges.erase(address);
@@ -1760,6 +1855,9 @@ void SourceRefAnalysis::StorageState::MaterializedStorage::invalidateOverlapping
   }
   for (const RangeReplacement &replacement : replacements) {
     auto [it, inserted] = values.try_emplace(replacement.address, replacement.value);
+    if (inserted) {
+      indexAddress(replacement.address);
+    }
     if (!inserted) {
       it->second.update(replacement.value);
     }
@@ -1803,6 +1901,9 @@ void SourceRefAnalysis::StorageState::MaterializedStorage::applyWrite(
     (void)initialValue.dependencies.insert(address);
   }
   auto [it, inserted] = values.try_emplace(address, std::move(initialValue));
+  if (inserted) {
+    indexAddress(address);
+  }
   if (inserted && seedUnwrittenAlternative) {
     skippedFirstWrites.insert(address);
   }
@@ -2030,7 +2131,7 @@ void SourceRefAnalysis::StorageState::applyAggregateAliases(
       if (mayBeSkipped) {
         (void)aliasTargets.insert(sourceRef);
       }
-      aliases.insert_or_assign(sourceRef, std::move(aliasTargets));
+      aliases.set(sourceRef, std::move(aliasTargets));
     }
   };
 
@@ -2363,9 +2464,7 @@ void SourceRefAnalysis::visitExternalCall(
     // however, need the aggregate root so a callee selection is appended only
     // once (e.g. `%arg[0]`, never `%arg[0][0]`).
     if (llvm::isa<StructType>(call->getOperand(i).getType())) {
-      storageTranslation.insert_or_assign(
-          argumentRef, getDependencyState(dataflowSolver_, call->getOperand(i))
-      );
+      storageTranslation.set(argumentRef, getDependencyState(dataflowSolver_, call->getOperand(i)));
     } else if (isAggregate) {
       auto blockArgument = llvm::dyn_cast<BlockArgument>(call->getOperand(i));
       const bool isRegionArgument =
@@ -2375,13 +2474,11 @@ void SourceRefAnalysis::visitExternalCall(
       // Region arguments inherit storage from incoming values, as in setToEntryState.
       // A fresh block-argument root would discard those contents at the call boundary.
       if (!isRegionArgument && succeeded(storageArgumentRef)) {
-        storageTranslation.insert_or_assign(
-            argumentRef, SourceRefLatticeValue(*storageArgumentRef)
-        );
+        storageTranslation.set(argumentRef, SourceRefLatticeValue(*storageArgumentRef));
       } else if (argumentValue.isScalar()) {
         // Scalar lattices name the selected aggregate, including every incoming
         // storage alternative for a region argument.
-        storageTranslation.insert_or_assign(argumentRef, argumentValue);
+        storageTranslation.set(argumentRef, argumentValue);
       } else if (auto arrayType = llvm::dyn_cast<ArrayType>(call->getOperand(i).getType())) {
         // Propagated arrays and array.extract values have one lattice element per
         // selected leaf. Recover the selected subarray address by removing the
@@ -2405,11 +2502,11 @@ void SourceRefAnalysis::visitExternalCall(
           }
         }
         if (!storageArgumentValue.foldToScalar().empty()) {
-          storageTranslation.insert_or_assign(argumentRef, std::move(storageArgumentValue));
+          storageTranslation.set(argumentRef, std::move(storageArgumentValue));
         }
       }
     } else {
-      storageTranslation.insert_or_assign(argumentRef, argumentValue);
+      storageTranslation.set(argumentRef, argumentValue);
     }
   }
   getStorageState(call.getOperation())->recordCalleeStorageWrites(call, funcOp, storageTranslation);
