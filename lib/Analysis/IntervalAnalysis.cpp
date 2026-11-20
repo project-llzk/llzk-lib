@@ -1384,6 +1384,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           joinedUnreduced = mergeUnreducedIntervals(joinedUnreduced, refUnreduced);
         }
       }
+      if (isBooleanType(value.getType())) {
+        joinedInterval = joinedInterval.intersect(Interval::Boolean(field.get()));
+      }
       ExpressionValue anyVal = createUnknownValue(value)
                                    .withInterval(joinedInterval)
                                    .withOptionalUnreducedInterval(joinedUnreduced);
@@ -1392,6 +1395,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     const SourceRef &ref = refSet.getSingleValue();
     auto stored = getRefValue(ref, getOrCreateSymbol(value));
+    if (isBooleanType(value.getType())) {
+      stored = refineReducedInterval(
+          stored, stored.getInterval().intersect(Interval::Boolean(field.get()))
+      );
+    }
     if (isReadOp(value.getDefiningOp()) && !ref.getPath().empty() && !hasRangedSelection(ref) &&
         stored.getExpr() == getOrCreateSymbol(ref)) {
       // Storage summaries are flow-insensitive. Their unknown/merged location symbol
