@@ -1,0 +1,206 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Storage summaries must converge regardless of definition order, including through
+// void call chains, copies after calls, and scalar or aggregate returns.
+
+module attributes {llzk.lang} {
+  struct.def @ForwardVoidCall {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@ForwardVoidCall> {
+      %self = struct.new : !struct.type<@ForwardVoidCall>
+      function.return %self : !struct.type<@ForwardVoidCall>
+    }
+    function.def @constrain(%self: !struct.type<@ForwardVoidCall>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %array = array.new %initial : !array.type<1 x !felt.type>
+      function.call @write(%array, %replacement) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %observed = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+  function.def @write(%target: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %c0 = arith.constant 0 : index
+    array.write %target[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: @ForwardVoidCall ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @write(%target: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %c0 = arith.constant 0 : index
+    array.write %target[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+  struct.def @BackwardVoidCall {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@BackwardVoidCall> {
+      %self = struct.new : !struct.type<@BackwardVoidCall>
+      function.return %self : !struct.type<@BackwardVoidCall>
+    }
+    function.def @constrain(%self: !struct.type<@BackwardVoidCall>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %array = array.new %initial : !array.type<1 x !felt.type>
+      function.call @write(%array, %replacement) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %observed = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @BackwardVoidCall ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ForwardCallChain {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@ForwardCallChain> {
+      %self = struct.new : !struct.type<@ForwardCallChain>
+      function.return %self : !struct.type<@ForwardCallChain>
+    }
+    function.def @constrain(%self: !struct.type<@ForwardCallChain>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %array = array.new %initial : !array.type<1 x !felt.type>
+      function.call @wrapper(%array, %replacement) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %observed = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+  function.def @wrapper(%target: !array.type<1 x !felt.type>, %value: !felt.type) {
+    function.call @write(%target, %value) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+    function.return
+  }
+  function.def @write(%target: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %c0 = arith.constant 0 : index
+    array.write %target[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: @ForwardCallChain ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @CopyAfterForwardCall {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@CopyAfterForwardCall> {
+      %self = struct.new : !struct.type<@CopyAfterForwardCall>
+      function.return %self : !struct.type<@CopyAfterForwardCall>
+    }
+    function.def @constrain(%self: !struct.type<@CopyAfterForwardCall>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %array = array.new %initial : !array.type<1 x !felt.type>
+      function.call @write(%array, %replacement) : (!array.type<1 x !felt.type>, !felt.type) -> ()
+      %pod = pod.new { @items = %array } : !pod.type<[@items: !array.type<1 x !felt.type>]>
+      %copy = pod.read %pod[@items] : !pod.type<[@items: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %observed = array.read %copy[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+  function.def @write(%target: !array.type<1 x !felt.type>, %value: !felt.type) {
+    %c0 = arith.constant 0 : index
+    array.write %target[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+}
+
+// CHECK-LABEL: @CopyAfterForwardCall ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ForwardScalarReturn {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@ForwardScalarReturn> {
+      %self = struct.new : !struct.type<@ForwardScalarReturn>
+      function.return %self : !struct.type<@ForwardScalarReturn>
+    }
+    function.def @constrain(%self: !struct.type<@ForwardScalarReturn>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %array = array.new %initial : !array.type<1 x !felt.type>
+      %observed = function.call @readBack(%array, %replacement) : (!array.type<1 x !felt.type>, !felt.type) -> !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+  function.def @readBack(%target: !array.type<1 x !felt.type>, %value: !felt.type) -> !felt.type {
+    %updated = function.call @write(%target, %value) : (!array.type<1 x !felt.type>, !felt.type) -> !array.type<1 x !felt.type>
+    %c0 = arith.constant 0 : index
+    %result = array.read %updated[%c0] : !array.type<1 x !felt.type>, !felt.type
+    function.return %result : !felt.type
+  }
+  function.def @write(%target: !array.type<1 x !felt.type>, %value: !felt.type) -> !array.type<1 x !felt.type> {
+    %c0 = arith.constant 0 : index
+    array.write %target[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return %target : !array.type<1 x !felt.type>
+  }
+}
+
+// CHECK-LABEL: @ForwardScalarReturn ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ForwardArrayReturn {
+    function.def @compute(%replacement: !felt.type) -> !struct.type<@ForwardArrayReturn> {
+      %self = struct.new : !struct.type<@ForwardArrayReturn>
+      function.return %self : !struct.type<@ForwardArrayReturn>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ForwardArrayReturn>,
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %result = function.call @make(%replacement) : (!felt.type) -> !array.type<1 x !felt.type>
+      %observed = array.read %result[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+  function.def @make(%value: !felt.type) -> !array.type<1 x !felt.type> {
+    %zero = felt.const 0
+    %target = array.new %zero : !array.type<1 x !felt.type>
+    %updated = function.call @write(%target, %value) : (!array.type<1 x !felt.type>, !felt.type) -> !array.type<1 x !felt.type>
+    function.return %updated : !array.type<1 x !felt.type>
+  }
+  function.def @write(%target: !array.type<1 x !felt.type>, %value: !felt.type) -> !array.type<1 x !felt.type> {
+    %c0 = arith.constant 0 : index
+    array.write %target[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return %target : !array.type<1 x !felt.type>
+  }
+}
+
+// CHECK-LABEL: @ForwardArrayReturn ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }

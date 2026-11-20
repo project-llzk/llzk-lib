@@ -192,6 +192,52 @@ module attributes {llzk.lang} {
   }
 }
 
+// Copied unknown fields retain read barriers when their containing aggregate is replaced.
+TEST_F(IntervalStorageTests, CopiedConcreteReadsRespectWriteBarriers) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%parent: !W, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type) {
+    %first = pod.read %parent[@child] : !W, !P
+    %before = pod.read %first[@value] : !P, !felt.type
+    scf.if %condition {
+      %replacement = pod.new { @value = %input, @other = %input } : !P
+      pod.write %parent[@child] = %replacement : !W, !P
+    }
+    %second = pod.read %parent[@child] : !W, !P
+    %after = pod.read %second[@value] : !P, !felt.type
+    %third = pod.read %parent[@child] : !W, !P
+    %again = pod.read %third[@value] : !P, !felt.type
+    %other = pod.read %third[@other] : !P, !felt.type
+    function.return %before, %after, %again, %other : !felt.type, !felt.type, !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  SmallVector<llvm::SMTExprRef> expressions;
+  for (Value value : fn.getBody().front().getTerminator()->getOperands()) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    const auto &stored = lattice->getValue().getScalarValue();
+    EXPECT_EQ(stored.getInterval(), Interval::Entire(field));
+    ASSERT_NE(stored.getExpr(), nullptr);
+    expressions.push_back(stored.getExpr());
+  }
+  EXPECT_FALSE(*expressions[0] == *expressions[1]);
+  EXPECT_TRUE(*expressions[1] == *expressions[2]);
+  EXPECT_FALSE(*expressions[2] == *expressions[3]);
+  smt->addConstraint(smt->mkNot(smt->mkEqual(expressions[0], expressions[1])));
+  EXPECT_EQ(smt->check(), std::optional<bool>(true));
+}
+
 // POD fields also need separate identities across a conditional overwrite of that field.
 TEST_F(IntervalStorageTests, ConcretePodReadSymbolsRespectWriteBarriers) {
   for (bool sameField : {false, true}) {
@@ -941,12 +987,16 @@ module attributes {llzk.lang} {
       %nine = felt.const 9
       %first = array.read %array[%zero] : !array.type<2 x !P>, !P
       %second = array.read %array[%one] : !array.type<2 x !P>, !P
-      %dynamic = array.read %array[%i] : !array.type<2 x !P>, !P
       pod.write %first[@value] = %seven : !P, !felt.type
       pod.write %second[@value] = %seven : !P, !felt.type
       pod.write %first[@other] = %seven : !P, !felt.type
       pod.write %second[@other] = %seven : !P, !felt.type
+      // POD reads are copies; publish their updated payloads into the source array.
+      array.write %array[%zero] = %first : !array.type<2 x !P>, !P
+      array.write %array[%one] = %second : !array.type<2 x !P>, !P
+      %dynamic = array.read %array[%i] : !array.type<2 x !P>, !P
       pod.write %dynamic[@value] = %nine : !P, !felt.type
+      array.write %array[%i] = %dynamic : !array.type<2 x !P>, !P
       %source = array.read %array[%j] : !array.type<2 x !P>, !P
       %podCopy = pod.new { @child = %source } : !W
       %arrayCopy = array.new %source : !array.type<1 x !P>
@@ -1165,6 +1215,7 @@ module attributes {llzk.lang} {
     %alias = pod.read %copy[@child] : !W, !P
     scf.if %condition {
       pod.write %alias[@value] = %nine : !P, !felt.type
+      pod.write %copy[@child] = %alias : !W, !P
     }
     %out = pod.new { @child = %alias } : !W
     function.return
@@ -1183,7 +1234,9 @@ module attributes {llzk.lang} {
         continue;
       }
       if (auto conditional = dyn_cast<scf::IfOp>(op)) {
-        ASSERT_TRUE(succeeded(visit(&conditional.thenBlock()->front())));
+        for (Operation &nested : conditional.getThenRegion().front().without_terminator()) {
+          ASSERT_TRUE(succeeded(visit(&nested)));
+        }
       } else {
         ASSERT_TRUE(succeeded(visit(&op)));
       }
@@ -1337,12 +1390,15 @@ module attributes {llzk.lang} {
     %nine = felt.const 9
     %first = array.read %array[%zero] : !array.type<2 x !P>, !P
     %second = array.read %array[%one] : !array.type<2 x !P>, !P
-    %dynamic = array.read %array[%i] : !array.type<2 x !P>, !P
     pod.write %first[@value] = %seven : !P, !felt.type
     pod.write %second[@value] = %seven : !P, !felt.type
     pod.write %first[@other] = %seven : !P, !felt.type
     pod.write %second[@other] = %seven : !P, !felt.type
+    array.write %array[%zero] = %first : !array.type<2 x !P>, !P
+    array.write %array[%one] = %second : !array.type<2 x !P>, !P
     pod.write %second[@value] = %nine : !P, !felt.type
+    array.write %array[%one] = %second : !array.type<2 x !P>, !P
+    %dynamic = array.read %array[%i] : !array.type<2 x !P>, !P
     %copy = pod.new { @child = %dynamic } : !W
     %alias = pod.read %copy[@child] : !W, !P
     %out = pod.new { @child = %alias } : !W
@@ -1353,13 +1409,13 @@ module attributes {llzk.lang} {
     ASSERT_TRUE(mod);
     auto fn = *mod->getOps<function::FuncDefOp>().begin();
     auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
-    auto lateWrite = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+    auto lateWrite = llvm::to_vector(fn.getOps<array::WriteArrayOp>()).back();
     auto copies = llvm::to_vector(fn.getOps<pod::NewPodOp>());
     if (selection != 0) {
-      copies.front()->setOperand(0, reads.front().getResult());
+      reads.back()->setOperand(1, reads.front().getIndices().front());
     }
     if (selection == 1) {
-      lateWrite->setOperand(0, reads.back().getResult());
+      lateWrite->setOperand(1, fn.getArgument(1));
     }
     SourceRefIndex child(StringAttr::get(&ctx, "child"));
     SourceRefIndex value(StringAttr::get(&ctx, "value"));

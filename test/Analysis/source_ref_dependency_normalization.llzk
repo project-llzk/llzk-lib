@@ -1,0 +1,55 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck %s --check-prefix=INTRA --match-full-lines --implicit-check-not=error:
+
+// A scalar read from initialized POD storage retains its dependency through a nested constrain call.
+module attributes {llzk.lang} {
+  struct.def @Child {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      function.return %self : !struct.type<@Child>
+    }
+
+    function.def @constrain(%self: !struct.type<@Child>, %input: !felt.type) {
+      %zero = felt.const 0
+      constrain.eq %input, %zero : !felt.type, !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @child : !struct.type<@Child>
+
+    function.def @compute(%input: !felt.type) -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      %child = function.call @Child::@compute(%input)
+          : (!felt.type) -> !struct.type<@Child>
+      struct.writem %self[@child] = %child
+          : !struct.type<@Parent>, !struct.type<@Child>
+      function.return %self : !struct.type<@Parent>
+    }
+
+    function.def @constrain(%self: !struct.type<@Parent>, %input: !felt.type) {
+      %child = struct.readm %self[@child]
+          : !struct.type<@Parent>, !struct.type<@Child>
+      %storage = pod.new { @value = %input } : !pod.type<[@value: !felt.type]>
+      %read = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      function.call @Child::@constrain(%child, %read)
+          : (!struct.type<@Child>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Child ConstraintDependencyGraph {
+// CHECK-NEXT:      { %arg1, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @Parent ConstraintDependencyGraph {
+// CHECK-NEXT:      { %arg1, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @Child ConstraintDependencyGraph {
+// INTRA-NEXT:      { %arg1, <felt.const: 0> }
+// INTRA-NEXT:  }
+// INTRA-NEXT:  @Parent ConstraintDependencyGraph { }

@@ -1,0 +1,67 @@
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck --match-full-lines --check-prefix=UNREDUCED %s
+
+// Dependency sets identify inputs, not exact stored values or alternative values.
+// The returned computations need conservative intervals without expression summaries.
+module attributes {llzk.lang} {
+  function.def @make_array(%value: !felt.type) -> !array.type<1 x !felt.type> attributes {function.allow_witness} {
+    %sum = felt.add %value, %value
+    %array = array.new %sum : !array.type<1 x !felt.type>
+    function.return %array : !array.type<1 x !felt.type>
+  }
+  function.def @make_pod(%a: !felt.type, %b: !felt.type) -> !pod.type<[@value: !felt.type]> attributes {function.allow_witness} {
+    %sum = felt.add %a, %b
+    %pod = pod.new { @value = %sum } : !pod.type<[@value: !felt.type]>
+    function.return %pod : !pod.type<[@value: !felt.type]>
+  }
+  struct.def @ComputedAggregateCallResults {
+    struct.member @arrayResult : !felt.type
+    struct.member @podResult : !felt.type
+    struct.member @localResult : !felt.type
+    function.def @compute() -> !struct.type<@ComputedAggregateCallResults> {
+      %self = struct.new : !struct.type<@ComputedAggregateCallResults>
+      %two = felt.const 2
+      %three = felt.const 3
+      %array = function.call @make_array(%two) : (!felt.type) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %arrayValue = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+      struct.writem %self[@arrayResult] = %arrayValue : !struct.type<@ComputedAggregateCallResults>, !felt.type
+      %pod = function.call @make_pod(%two, %three) : (!felt.type, !felt.type) -> !pod.type<[@value: !felt.type]>
+      %podValue = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      struct.writem %self[@podResult] = %podValue : !struct.type<@ComputedAggregateCallResults>, !felt.type
+      // Exact local expressions remain precise through storage.
+      %sum = felt.add %two, %three
+      %local = array.new %sum : !array.type<1 x !felt.type>
+      %localValue = array.read %local[%c0] : !array.type<1 x !felt.type>, !felt.type
+      struct.writem %self[@localResult] = %localValue : !struct.type<@ComputedAggregateCallResults>, !felt.type
+      function.return %self : !struct.type<@ComputedAggregateCallResults>
+    }
+    function.def @constrain(%self: !struct.type<@ComputedAggregateCallResults>) { function.return }
+  }
+}
+
+// CHECK-LABEL: @ComputedAggregateCallResults StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %self.arrayResult in Entire
+// CHECK-NEXT:          %self.podResult in Entire
+// CHECK-NEXT:          %self.localResult in Degenerate(5)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.arrayResult in Entire
+// CHECK-NEXT:          %self.podResult in Entire
+// CHECK-NEXT:          %self.localResult in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// UNREDUCED-LABEL: @ComputedAggregateCallResults StructIntervals {
+// UNREDUCED-NEXT:      compute {
+// UNREDUCED-NEXT:          %self.arrayResult in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %self.podResult in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %self.localResult in Degenerate(5) ( Unreduced:[ 5, 5 ] )
+// UNREDUCED-NEXT:      }
+// UNREDUCED-NEXT:      constrain {
+// UNREDUCED-NEXT:          %self.arrayResult in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %self.podResult in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:          %self.localResult in Entire ( Unreduced:[ 0, 2013265920 ] )
+// UNREDUCED-NEXT:      }
+// UNREDUCED-NEXT:  }
