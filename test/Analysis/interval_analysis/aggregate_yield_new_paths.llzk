@@ -1,18 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
 
 // Outer joins must subscribe before a nested result has any materialized fields.
-// CHECK-LABEL: @NestedIfBoth StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %arg1 in Entire
-// CHECK-NEXT:          %self.storage.value in TypeA:[ 0, 7 ]
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.value in Entire
-// CHECK-NEXT:          %arg1 in Entire
-// CHECK-NEXT:          %arg2 in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @NestedIfBoth {
     struct.member @storage : !pod.type<[@value: !felt.type]>
@@ -47,10 +35,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-// -----
-
-// CHECK-LABEL: @NestedIfKnownElse StructIntervals {
+// CHECK-LABEL: @NestedIfBoth StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %arg0 in Entire
 // CHECK-NEXT:          %arg1 in Entire
@@ -62,6 +47,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          %arg2 in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @NestedIfKnownElse {
     struct.member @storage : !pod.type<[@value: !felt.type]>
@@ -90,10 +78,7 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-// -----
-
-// CHECK-LABEL: @NestedIndexSwitch StructIntervals {
+// CHECK-LABEL: @NestedIfKnownElse StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %arg0 in Entire
 // CHECK-NEXT:          %arg1 in Entire
@@ -105,6 +90,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          %arg2 in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @NestedIndexSwitch {
     struct.member @storage : !pod.type<[@value: !felt.type]>
@@ -141,3 +129,15 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @NestedIndexSwitch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %self.storage.value in TypeA:[ 0, 7 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

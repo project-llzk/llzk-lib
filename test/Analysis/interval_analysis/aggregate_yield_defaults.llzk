@@ -2,21 +2,6 @@
 // RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --check-prefixes=CHECK,UNREDUCED --implicit-check-not=error:
 
 // Type-default leaves must be retained even when no branch writes any field.
-// CHECK-LABEL: @UnwrittenPodArguments StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %arg1.flag in Entire
-// CHECK-NEXT:          %arg2.flag in Entire
-// CHECK-NEXT:          %self.storage.flag in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.flag in Entire
-// CHECK-NEXT:          %arg1 in Entire
-// CHECK-NEXT:          %arg2.flag in Entire
-// CHECK-NEXT:          %arg3.flag in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @UnwrittenPodArguments {
     struct.member @storage : !pod.type<[@flag: i1]>
@@ -35,58 +20,24 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @UnwrittenPodArguments StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.flag in Entire
+// CHECK-NEXT:          %arg2.flag in Entire
+// CHECK-NEXT:          %self.storage.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.flag in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.flag in Entire
+// CHECK-NEXT:          %arg3.flag in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
-// CHECK-LABEL: @UnwrittenNestedSwitch StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %arg1.child.flag in Entire
-// CHECK-NEXT:          %arg1.child.value in Entire
-// CHECK-NEXT:          %arg1.flags[0][0] in Entire
-// CHECK-NEXT:          %arg1.flags[0][1] in Entire
-// CHECK-NEXT:          %arg1.flags[1][0] in Entire
-// CHECK-NEXT:          %arg1.flags[1][1] in Entire
-// CHECK-NEXT:          %arg2.child.flag in Entire
-// CHECK-NEXT:          %arg2.child.value in Entire
-// CHECK-NEXT:          %arg2.flags[0][0] in Entire
-// CHECK-NEXT:          %arg2.flags[0][1] in Entire
-// CHECK-NEXT:          %arg2.flags[1][0] in Entire
-// CHECK-NEXT:          %arg2.flags[1][1] in Entire
-// CHECK-NEXT:          %self.storage.child.flag in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:          %self.storage.child.value in Entire
-// CHECK-NEXT:          %self.storage.flags[0][0] in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:          %self.storage.flags[0][1] in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:          %self.storage.flags[1][0] in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:          %self.storage.flags[1][1] in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.child.flag in Entire
-// CHECK-NEXT:          %self.storage.child.value in Entire
-// CHECK-NEXT:          %self.storage.flags[0][0] in Entire
-// CHECK-NEXT:          %self.storage.flags[0][1] in Entire
-// CHECK-NEXT:          %self.storage.flags[1][0] in Entire
-// CHECK-NEXT:          %self.storage.flags[1][1] in Entire
-// CHECK-NEXT:          %arg1 in Entire
-// CHECK-NEXT:          %arg2.child.flag in Entire
-// CHECK-NEXT:          %arg2.child.value in Entire
-// CHECK-NEXT:          %arg2.flags[0][0] in Entire
-// CHECK-NEXT:          %arg2.flags[0][1] in Entire
-// CHECK-NEXT:          %arg2.flags[1][0] in Entire
-// CHECK-NEXT:          %arg2.flags[1][1] in Entire
-// CHECK-NEXT:          %arg3.child.flag in Entire
-// CHECK-NEXT:          %arg3.child.value in Entire
-// CHECK-NEXT:          %arg3.flags[0][0] in Entire
-// CHECK-NEXT:          %arg3.flags[0][1] in Entire
-// CHECK-NEXT:          %arg3.flags[1][0] in Entire
-// CHECK-NEXT:          %arg3.flags[1][1] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @UnwrittenNestedSwitch {
     struct.member @storage : !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>
@@ -110,20 +61,58 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @UnwrittenNestedSwitch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.child.flag in Entire
+// CHECK-NEXT:          %arg1.child.value in Entire
+// CHECK-NEXT:          %arg1.flags[0][0] in Entire
+// CHECK-NEXT:          %arg1.flags[0][1] in Entire
+// CHECK-NEXT:          %arg1.flags[1][0] in Entire
+// CHECK-NEXT:          %arg1.flags[1][1] in Entire
+// CHECK-NEXT:          %arg2.child.flag in Entire
+// CHECK-NEXT:          %arg2.child.value in Entire
+// CHECK-NEXT:          %arg2.flags[0][0] in Entire
+// CHECK-NEXT:          %arg2.flags[0][1] in Entire
+// CHECK-NEXT:          %arg2.flags[1][0] in Entire
+// CHECK-NEXT:          %arg2.flags[1][1] in Entire
+// CHECK-NEXT:          %self.storage.child.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.child.value in Entire
+// CHECK-NEXT:          %self.storage.flags[0][0] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.flags[0][1] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.flags[1][0] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.flags[1][1] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.flag in Entire
+// CHECK-NEXT:          %self.storage.child.value in Entire
+// CHECK-NEXT:          %self.storage.flags[0][0] in Entire
+// CHECK-NEXT:          %self.storage.flags[0][1] in Entire
+// CHECK-NEXT:          %self.storage.flags[1][0] in Entire
+// CHECK-NEXT:          %self.storage.flags[1][1] in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.child.flag in Entire
+// CHECK-NEXT:          %arg2.child.value in Entire
+// CHECK-NEXT:          %arg2.flags[0][0] in Entire
+// CHECK-NEXT:          %arg2.flags[0][1] in Entire
+// CHECK-NEXT:          %arg2.flags[1][0] in Entire
+// CHECK-NEXT:          %arg2.flags[1][1] in Entire
+// CHECK-NEXT:          %arg3.child.flag in Entire
+// CHECK-NEXT:          %arg3.child.value in Entire
+// CHECK-NEXT:          %arg3.flags[0][0] in Entire
+// CHECK-NEXT:          %arg3.flags[0][1] in Entire
+// CHECK-NEXT:          %arg3.flags[1][0] in Entire
+// CHECK-NEXT:          %arg3.flags[1][1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
-// CHECK-LABEL: @UnwrittenPodInitializers StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %self.storage.flag in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.flag in Entire
-// CHECK-NEXT:          %arg1 in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @UnwrittenPodInitializers {
     struct.member @storage : !pod.type<[@flag: i1]>
@@ -144,3 +133,14 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @UnwrittenPodInitializers StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.flag in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

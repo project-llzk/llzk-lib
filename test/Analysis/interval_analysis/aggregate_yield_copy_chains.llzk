@@ -2,17 +2,6 @@
 // RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --check-prefixes=CHECK,UNREDUCED --implicit-check-not=error:
 
 // Storage updates must reach every aggregate initializer and alias in a copy chain.
-// CHECK-LABEL: @PodCopyChain StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %self.storage.child.child.value in TypeA:[ 0, 7 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.child.child.value in Entire
-// CHECK-NEXT:          %arg1 in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @PodCopyChain {
     struct.member @storage : !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
@@ -37,23 +26,20 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-// -----
-
-// CHECK-LABEL: @ArrayCopyChain StructIntervals {
+// CHECK-LABEL: @PodCopyChain StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %self.storage[0].child.value in TypeA:[ 0, 7 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
-// CHECK-NEXT:          %self.storage[1].child.value in TypeA:[ 0, 7 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:          %self.storage.child.child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 7 ] )
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage[0].child.value in Entire
-// CHECK-NEXT:          %self.storage[1].child.value in Entire
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
 // CHECK-NEXT:          %arg1 in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @ArrayCopyChain {
     struct.member @storage : !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>
@@ -78,20 +64,23 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-// -----
-
-// CHECK-LABEL: @PodReadCopyChain StructIntervals {
+// CHECK-LABEL: @ArrayCopyChain StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %self.storage.child.child.value in TypeA:[ 0, 7 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:          %self.storage[0].child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:          %self.storage[1].child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 7 ] )
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.child.child.value in Entire
+// CHECK-NEXT:          %self.storage[0].child.value in Entire
+// CHECK-NEXT:          %self.storage[1].child.value in Entire
 // CHECK-NEXT:          %arg1 in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @PodReadCopyChain {
     struct.member @storage : !pod.type<[@child: !pod.type<[@child: !pod.type<[@value: !felt.type]>]>]>
@@ -118,20 +107,20 @@ module attributes {llzk.lang} {
     }
   }
 }
-
-// -----
-
-// CHECK-LABEL: @ArrayReadCopyChain StructIntervals {
+// CHECK-LABEL: @PodReadCopyChain StructIntervals {
 // CHECK-NEXT:      compute {
 // CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %self.storage.child.value in TypeA:[ 0, 7 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:          %self.storage.child.child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 7 ] )
 // CHECK-NEXT:      }
 // CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.child.value in Entire
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
 // CHECK-NEXT:          %arg1 in Entire
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
+// -----
+
 module attributes {llzk.lang} {
   struct.def @ArrayReadCopyChain {
     struct.member @storage : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
@@ -158,26 +147,20 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @ArrayReadCopyChain StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage.child.value in TypeA:[ 0, 7 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 7 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
-// CHECK-LABEL: @UnknownCopyChain StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %arg0 in Entire
-// CHECK-NEXT:          %arg1.flag in Entire
-// CHECK-NEXT:          %arg1.value in Entire
-// CHECK-NEXT:          %self.storage.child.child.flag in TypeA:[ 0, 1 ]
-// UNREDUCED-SAME: ( Unreduced:[ 0, 1 ] )
-// CHECK-NEXT:          %self.storage.child.child.value in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %self.storage.child.child.flag in Entire
-// CHECK-NEXT:          %self.storage.child.child.value in Entire
-// CHECK-NEXT:          %arg1 in Entire
-// CHECK-NEXT:          %arg2.flag in Entire
-// CHECK-NEXT:          %arg2.value in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @UnknownCopyChain {
     struct.member @storage : !pod.type<[@child: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>]>]>
@@ -201,3 +184,20 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @UnknownCopyChain StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.flag in Entire
+// CHECK-NEXT:          %arg1.value in Entire
+// CHECK-NEXT:          %self.storage.child.child.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.child.flag in Entire
+// CHECK-NEXT:          %self.storage.child.child.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.flag in Entire
+// CHECK-NEXT:          %arg2.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
