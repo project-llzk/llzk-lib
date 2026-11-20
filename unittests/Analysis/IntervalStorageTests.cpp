@@ -9,6 +9,7 @@
 
 #include "../LLZKTestBase.h"
 #include "../LLZKTestUtils.h"
+#include "IntervalTestUtils.h"
 
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
@@ -32,24 +33,6 @@ using namespace mlir;
 using namespace llzk;
 
 namespace {
-
-/// Establish an ordered initial visit sequence while the real dataflow solver is running.
-class IntervalStorageInitialization : public DataFlowAnalysis {
-public:
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalStorageInitialization)
-
-  IntervalStorageInitialization(DataFlowSolver &dataflowSolver, std::function<void()> callback)
-      : DataFlowAnalysis(dataflowSolver), initializeCallback(std::move(callback)) {}
-
-  LogicalResult initialize(Operation *) override {
-    initializeCallback();
-    return success(!testing::Test::HasFatalFailure());
-  }
-  LogicalResult visit(ProgramPoint *) override { return success(); }
-
-private:
-  std::function<void()> initializeCallback;
-};
 
 /// Exercise stored intervals and symbolic identities through the public analysis API.
 class IntervalStorageTests : public LLZKTest {
@@ -133,8 +116,9 @@ protected:
       }
       return analysis->visitOperation(op, operands, results);
     };
-    auto *driver =
-        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit, solver); });
+    auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
+      initialize(*analysis, visit, solver);
+    });
     ASSERT_TRUE(succeeded(solver.initializeAndRun(mod, [&](DataFlowAnalysis &candidate) {
       return &candidate == driver;
     })));
