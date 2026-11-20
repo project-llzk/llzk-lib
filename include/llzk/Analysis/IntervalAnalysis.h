@@ -371,6 +371,14 @@ private:
   // Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
+  /// Actual writes, excluding the default for executions that perform no write.
+  struct WriteContribution {
+    ExpressionValue value;
+    bool mayBeSkipped;
+  };
+  /// Keep the no-write alternative separate so a guaranteed write can remove it later.
+  llvm::DenseMap<SourceRef, WriteContribution> writeContributions;
+
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
     (void)lattice->setValue(ExpressionValue(field.get()));
@@ -495,6 +503,7 @@ private:
   ///
   /// When `mayBeSkipped` is true, handle the write as control-dependent instead
   /// of unconditional, so the stored value also keeps the prior/no-write state.
+  /// Retain that default only until a guaranteed write to this location is analyzed.
   void recordRefWrite(
       const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false
   );
