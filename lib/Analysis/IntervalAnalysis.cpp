@@ -1821,14 +1821,32 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       }
 
       SourceRef resultRef(llvm::cast<OpResult>(parentRes));
-      llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
+      llvm::MapVector<SourceRef, ExpressionValue> remappedWrites;
+      // Join all possible sources before replacing this yield's publication for each leaf.
       for (const SourceRef &yieldedRef : yieldedRefs.getScalarValue()) {
-        llvm::append_range(
-            remappedWrites, getAggregateWrites(yieldedRef, resultRef, yieldOp.getOperand(idx), op)
-        );
+        for (const auto &[translatedRef, translatedVal] :
+             getAggregateWrites(yieldedRef, resultRef, yieldOp.getOperand(idx), op)) {
+          auto [it, inserted] = remappedWrites.try_emplace(translatedRef, translatedVal);
+          if (inserted) {
+            continue;
+          }
+          const ExpressionValue &previous = it->second;
+          const auto *expr = previous.getExpr();
+          if (!expr || !translatedVal.getExpr() || *expr != *translatedVal.getExpr()) {
+            expr = getOrCreateSymbol(translatedRef);
+          }
+          it->second = ExpressionValue(
+              expr, previous.getInterval().join(translatedVal.getInterval()),
+              mergeUnreducedIntervals(
+                  previous.getOptionalUnreducedInterval(),
+                  translatedVal.getOptionalUnreducedInterval()
+              )
+          );
+        }
       }
+      // Branch yields remain independent publishers, even when they share a parent result.
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
-        recordRefWrite(translatedRef, translatedVal, op);
+        recordRefWrite(translatedRef, translatedVal, op, /*mayBeSkipped=*/false, /*publisher=*/op);
       }
     }
   } else if (
