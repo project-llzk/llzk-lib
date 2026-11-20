@@ -382,6 +382,7 @@ private:
   llvm::DenseMap<Lattice *, Interval> computedIntervals;
   /// Values before backward refinement, restored when a storage read expands.
   llvm::DenseMap<Lattice *, ExpressionValue> refinementBases;
+
   /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
@@ -390,6 +391,7 @@ private:
     ExpressionValue value;
     bool mayBeSkipped;
   };
+
   /// Keep recomputed publications separate from actual writes to the same location.
   /// The null key accumulates ordinary writes; operation keys hold replaceable publications.
   llvm::DenseMap<SourceRef, llvm::DenseMap<mlir::Operation *, WriteContribution>>
@@ -401,6 +403,7 @@ private:
 
   /// Conditional aggregate results are materialized only after every live yield is visited.
   llvm::DenseSet<mlir::Operation *> visitedConditionalYields;
+
   /// Distinguish unwritten aggregate fields from producers that have not been analyzed yet.
   llvm::DenseSet<mlir::Value> initializedAggregates;
 
