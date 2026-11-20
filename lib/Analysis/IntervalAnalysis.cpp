@@ -1149,12 +1149,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // No need to propagate the constraint
     (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
   } else if (auto writePod = llvm::dyn_cast<pod::WritePodOp>(op)) {
-    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     SourceRefLatticeValue podRefs = getSourceRefState(writePod.getPodRef());
     if (podRefs.isScalar()) {
       auto recordRefsRes = podRefs.referencePodRecord(writePod.getRecordNameAttr());
       ensure(succeeded(recordRefsRes), "could not create SourceRef child for pod write");
       SourceRefLatticeValue recordRefs = recordRefsRes->first;
+      // A write to one of several possible PODs can miss each candidate.
+      const bool maySkipWrite = isInMaybeSkippedScfRegion(op) || !recordRefs.isSingleValue();
       Type valueTy = writePod.getValue().getType();
       if (!llvm::isa<ArrayType, StructType, pod::PodType>(valueTy)) {
         ExpressionValue writeVal = operandVals[1].getScalarValue();
