@@ -2025,7 +2025,7 @@ module attributes {llzk.lang} {
     auto sourcePod = *fn.getOps<pod::NewPodOp>().begin();
     SourceRefIndex value(StringAttr::get(&ctx, "value"));
     SourceRef resultRef(conditionals.back()->getResult(0), {value});
-    runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit) {
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &) {
       for (Operation &op : fn.getBody().front()) {
         if (&op == guaranteed.getOperation()) {
           continue;
@@ -2041,7 +2041,7 @@ module attributes {llzk.lang} {
       }
       expectStored(analysis, resultRef, Interval::Entire(field));
       ASSERT_TRUE(succeeded(visit(guaranteed)));
-    }, [&](IntervalDataFlowAnalysis &analysis) {
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
       expectStored(
           analysis, SourceRef(sourcePod->getResult(0), {value}),
           Interval::Degenerate(field, field.felt(7))
@@ -2086,7 +2086,7 @@ module attributes {llzk.lang} {
   ASSERT_TRUE(mod);
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
   auto result = *fn.getOps<scf::ExecuteRegionOp>().begin();
-  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
     for (Operation &op : fn.getBody().front()) {
       if (isa<scf::IfOp, scf::ExecuteRegionOp>(op)) {
         for (Region &region : op.getRegions()) {
@@ -2096,7 +2096,7 @@ module attributes {llzk.lang} {
         ASSERT_TRUE(succeeded(visit(&op)));
       }
     }
-  }, [&](IntervalDataFlowAnalysis &analysis) {
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
     auto expected = UnreducedInterval(7, 9).reduce(field);
     SourceRefIndex value(StringAttr::get(&ctx, "value"));
     expectStored(analysis, SourceRef(result->getResult(0), {value}), expected);

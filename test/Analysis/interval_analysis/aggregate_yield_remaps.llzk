@@ -1,0 +1,38 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Scalar reads through yielded POD and array aliases must include every possible source.
+// YieldRemapsPreserveAliasedSources separately checks materialized storage through the API;
+// these reads can follow the source aliases without observing that storage.
+!P = !pod.type<[@value: !felt.type]>
+!A = !array.type<1 x !felt.type>
+module attributes {llzk.lang} {
+  struct.def @YieldAliasRemap {
+    function.def @product(%condition: i1) -> !struct.type<@YieldAliasRemap> {
+      %self = struct.new : !struct.type<@YieldAliasRemap>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = pod.new { @value = %seven } : !P
+      %right = pod.new { @value = %nine } : !P
+      %leftArray = array.new : !A
+      %rightArray = array.new : !A
+      array.write %leftArray[%zero] = %seven : !A, !felt.type
+      array.write %rightArray[%zero] = %nine : !A, !felt.type
+      %selected, %selectedArray = scf.if %condition -> (!P, !A) {
+        scf.yield %left, %leftArray : !P, !A
+      } else {
+        scf.yield %right, %rightArray : !P, !A
+      }
+      %result, %resultArray = scf.execute_region -> (!P, !A) {
+        scf.yield %selected, %selectedArray : !P, !A
+      }
+      %podLeaf = pod.read %result[@value] : !P, !felt.type
+      %arrayLeaf = array.read %resultArray[%zero] : !A, !felt.type
+      function.return %self : !struct.type<@YieldAliasRemap>
+    }
+  }
+}
+
+// CHECK-LABEL: @YieldAliasRemap SSAIntervals {
+// CHECK:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [pod.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
