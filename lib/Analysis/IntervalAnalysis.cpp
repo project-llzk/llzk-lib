@@ -880,16 +880,21 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     );
   };
 
-  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
-    it->second = joinStoredWrite(it->second, writeVal);
-  } else if (mayBeSkipped) {
+  auto [it, inserted] =
+      writeContributions.try_emplace(writtenRef, WriteContribution {writeVal, mayBeSkipped});
+  if (!inserted) {
+    it->second.value = joinStoredWrite(it->second.value, writeVal);
+    it->second.mayBeSkipped &= mayBeSkipped;
+  }
+  const WriteContribution &contribution = it->second;
+  if (contribution.mayBeSkipped) {
     ExpressionValue noWrite(
-        getOrCreateSymbol(writtenRef), getRefInterval(writtenRef),
-        getRefUnreducedInterval(writtenRef)
+        getOrCreateSymbol(writtenRef), getDefaultIntervalForType(writtenRef.getType()),
+        getDefaultUnreducedIntervalForType(writtenRef.getType())
     );
-    writeResults[writtenRef] = joinStoredWrite(noWrite, writeVal);
+    writeResults[writtenRef] = joinStoredWrite(noWrite, contribution.value);
   } else {
-    writeResults[writtenRef] = writeVal;
+    writeResults[writtenRef] = contribution.value;
   }
 
   const ExpressionValue &readerUpdate = mayBeSkipped ? writeResults[writtenRef] : writeVal;
@@ -1102,12 +1107,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // No need to propagate the constraint
     (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
   } else if (auto writePod = llvm::dyn_cast<pod::WritePodOp>(op)) {
-    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     SourceRefLatticeValue podRefs = getSourceRefState(writePod.getPodRef());
     if (podRefs.isScalar()) {
       auto recordRefsRes = podRefs.referencePodRecord(writePod.getRecordNameAttr());
       ensure(succeeded(recordRefsRes), "could not create SourceRef child for pod write");
       SourceRefLatticeValue recordRefs = recordRefsRes->first;
+      // A write to one of several possible PODs can miss each candidate.
+      const bool maySkipWrite = isInMaybeSkippedScfRegion(op) || !recordRefs.isSingleValue();
       Type valueTy = writePod.getValue().getType();
       if (!llvm::isa<ArrayType, StructType, pod::PodType>(valueTy)) {
         ExpressionValue writeVal = operandVals[1].getScalarValue();
@@ -1179,9 +1185,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       }
     }
   } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
-    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     ExpressionValue writeVal = operandVals.back().getScalarValue();
     auto arrayRef = getArrayAccessRef(op, writeArr);
+    // A ranged access may miss each candidate even when the operation always executes.
+    const bool maySkipWrite =
+        isInMaybeSkippedScfRegion(op) || (succeeded(arrayRef) && hasRangedSelection(*arrayRef));
     if (succeeded(arrayRef)) {
       recordRefWrite(*arrayRef, writeVal, maySkipWrite);
     }
@@ -1194,7 +1202,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto [targetRefs, _] = *targetRefsRes;
       ensure(targetRefs.isScalar(), "array write must resolve to scalar references");
       for (const SourceRef &ref : targetRefs.getScalarValue()) {
-        recordRefWrite(ref, writeVal, maySkipWrite);
+        recordRefWrite(
+            ref, writeVal, maySkipWrite || !targetRefs.isSingleValue() || hasRangedSelection(ref)
+        );
       }
     }
   } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {

@@ -1,0 +1,24 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Conditional and unconditional dynamic writes can both miss a later selected element.
+module attributes {llzk.lang} {
+  struct.def @RangedWritesKeepDefaults {
+    function.def @product(%array: !array.type<2 x !felt.type>, %condition: i1, %i: index, %j: index, %k: index) -> !struct.type<@RangedWritesKeepDefaults> {
+      %self = struct.new : !struct.type<@RangedWritesKeepDefaults>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      scf.if %condition {
+        array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+      }
+      array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
+      %concrete = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+      %ranged = array.read %array[%k] : !array.type<2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@RangedWritesKeepDefaults>
+    }
+  }
+}
+
+// CHECK-LABEL: @RangedWritesKeepDefaults SSAIntervals {
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )

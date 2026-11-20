@@ -14,17 +14,40 @@
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Analysis/DataFlowFramework.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
+#include <functional>
 #include <gtest/gtest.h>
+#include <utility>
 
 using namespace mlir;
 using namespace llzk;
 
 namespace {
+
+/// Establish an ordered initial visit sequence while the real dataflow solver is running.
+class IntervalStorageInitialization : public DataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalStorageInitialization)
+
+  IntervalStorageInitialization(DataFlowSolver &dataflowSolver, std::function<void()> callback)
+      : DataFlowAnalysis(dataflowSolver), initializeCallback(std::move(callback)) {}
+
+  LogicalResult initialize(Operation *) override {
+    initializeCallback();
+    return success(!testing::Test::HasFatalFailure());
+  }
+  LogicalResult visit(ProgramPoint *) override { return success(); }
+
+private:
+  std::function<void()> initializeCallback;
+};
 
 /// Exercise stored intervals and symbolic identities through the public analysis API.
 class IntervalStorageTests : public LLZKTest {
@@ -33,6 +56,49 @@ protected:
 
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     return parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  }
+
+  using Visit = std::function<LogicalResult(Operation *)>;
+
+  /// Initialize references, seed interval visits, then drain their real queued dependencies.
+  void runOrdered(
+      ModuleOp mod,
+      const std::function<void(IntervalDataFlowAnalysis &, const Visit &)> &initialize,
+      const std::function<void(IntervalDataFlowAnalysis &)> &check
+  ) {
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod)));
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    Visit visit = [&](Operation *op) {
+      SmallVector<const IntervalAnalysisLattice *> operands;
+      SmallVector<IntervalAnalysisLattice *> results;
+      for (Value value : op->getOperands()) {
+        operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+      }
+      for (Value value : op->getResults()) {
+        results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+      }
+      return analysis->visitOperation(op, operands, results);
+    };
+    auto *driver =
+        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit); });
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod, [&](DataFlowAnalysis &candidate) {
+      return &candidate == driver;
+    })));
+    check(*analysis);
+  }
+
+  /// Check both reduced and unreduced storage bounds without relying on aggregate SSA lattices.
+  void
+  expectStored(IntervalDataFlowAnalysis &analysis, const SourceRef &ref, const Interval &expected) {
+    auto it = analysis.getWriteResults().find(ref);
+    ASSERT_NE(it, analysis.getWriteResults().end()) << debug::toStringOne(ref);
+    const auto &actual = it->second.getInterval();
+    EXPECT_TRUE(checkCond(expected, actual, expected == actual));
+    EXPECT_EQ(it->second.getOptionalUnreducedInterval(), expected.firstUnreduced());
   }
 };
 
@@ -374,6 +440,211 @@ module attributes {llzk.lang} {
         );
       }
     }
+  }
+}
+
+// Neither a ranged target nor one of several possible aliases is guaranteed to be written.
+TEST_F(IntervalStorageTests, AmbiguousArrayWritesKeepNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %matrix: !array.type<2,2 x !felt.type>, %left: !array.type<2 x !felt.type>, %right: !array.type<2 x !felt.type>, %condition: i1, %chooseLeft: i1, %i: index, %j: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %firstRow = array.extract %matrix[%i] : !array.type<2,2 x !felt.type>
+    %secondRow = array.extract %matrix[%j] : !array.type<2,2 x !felt.type>
+    %choice = scf.if %chooseLeft -> (!array.type<2 x !felt.type>) {
+      scf.yield %left : !array.type<2 x !felt.type>
+    } else {
+      scf.yield %right : !array.type<2 x !felt.type>
+    }
+    scf.if %condition {
+      array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %firstRow[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %left[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %right[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %secondRow[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %choice[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (!isa<array::WriteArrayOp, scf::IfOp>(op)) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      auto visitWrites = [&](Block &block) {
+        for (auto write : block.getOps<array::WriteArrayOp>()) {
+          ASSERT_TRUE(succeeded(visit(write)));
+        }
+      };
+      if (optionalFirst) {
+        visitWrites(*conditional.thenBlock());
+        visitWrites(fn.getBody().front());
+      } else {
+        visitWrites(fn.getBody().front());
+        visitWrites(*conditional.thenBlock());
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      auto range = SourceRefIndex::forArrayDimension(2);
+      expectStored(analysis, SourceRef(fn.getArgument(0), {range}), Interval::Entire(field));
+      expectStored(
+          analysis, SourceRef(fn.getArgument(1), {range, SourceRefIndex(0)}),
+          Interval::Entire(field)
+      );
+      for (unsigned arg : {2U, 3U}) {
+        expectStored(
+            analysis, SourceRef(fn.getArgument(arg), {SourceRefIndex(0)}), Interval::Entire(field)
+        );
+      }
+    });
+  }
+}
+
+// A write through a merged POD can miss either candidate, including aggregate-valued fields.
+TEST_F(IntervalStorageTests, AmbiguousPodWritesKeepNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+!Inner = !pod.type<[@value: !felt.type]>
+!P = !pod.type<[@value: !felt.type, @nested: !Inner]>
+module attributes {llzk.lang} {
+  function.def @test(%left: !P, %right: !P, %condition: i1, %chooseLeft: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %sevenPod = pod.new { @value = %seven } : !Inner
+    %ninePod = pod.new { @value = %nine } : !Inner
+    %choice = scf.if %chooseLeft -> (!P) {
+      scf.yield %left : !P
+    } else {
+      scf.yield %right : !P
+    }
+    scf.if %condition {
+      pod.write %left[@value] = %seven : !P, !felt.type
+      pod.write %right[@value] = %seven : !P, !felt.type
+      pod.write %left[@nested] = %sevenPod : !P, !Inner
+      pod.write %right[@nested] = %sevenPod : !P, !Inner
+    }
+    pod.write %choice[@value] = %nine : !P, !felt.type
+    pod.write %choice[@nested] = %ninePod : !P, !Inner
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (!isa<pod::WritePodOp, scf::IfOp>(op)) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      auto visitWrites = [&](Block &block) {
+        for (auto write : block.getOps<pod::WritePodOp>()) {
+          ASSERT_TRUE(succeeded(visit(write)));
+        }
+      };
+      if (optionalFirst) {
+        visitWrites(*conditional.thenBlock());
+        visitWrites(fn.getBody().front());
+      } else {
+        visitWrites(fn.getBody().front());
+        visitWrites(*conditional.thenBlock());
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      SourceRefIndex value(StringAttr::get(&ctx, "value"));
+      SourceRefIndex nested(StringAttr::get(&ctx, "nested"));
+      for (unsigned arg : {0U, 1U}) {
+        expectStored(analysis, SourceRef(fn.getArgument(arg), {value}), Interval::Entire(field));
+        expectStored(
+            analysis, SourceRef(fn.getArgument(arg), {nested, value}), Interval::Entire(field)
+        );
+      }
+    });
+  }
+}
+
+// An unconditional write must remove the no-write alternative in either visitation order.
+TEST_F(IntervalStorageTests, UnconditionalWritesRemoveNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %pod = pod.new : !P
+    %array = array.new : !array.type<2 x !felt.type>
+    scf.if %condition {
+      pod.write %pod[@value] = %seven : !P, !felt.type
+      pod.write %pod[@other] = %seven : !P, !felt.type
+      array.write %array[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %array[%one] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    pod.write %pod[@value] = %nine : !P, !felt.type
+    array.write %array[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto podValue = *fn.getOps<pod::NewPodOp>().begin();
+    auto arrayValue = *fn.getOps<array::CreateArrayOp>().begin();
+    auto conditional = *fn.getOps<scf::IfOp>().begin();
+    auto isWrite = [](Operation *op) { return isa<pod::WritePodOp, array::WriteArrayOp>(op); };
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (!isWrite(&op) && !isa<scf::IfOp>(op)) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      auto visitWrites = [&](Block &block) {
+        for (Operation &op : block) {
+          if (isWrite(&op)) {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+      };
+      if (optionalFirst) {
+        visitWrites(*conditional.thenBlock());
+        visitWrites(fn.getBody().front());
+      } else {
+        visitWrites(fn.getBody().front());
+        visitWrites(*conditional.thenBlock());
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      auto joined = UnreducedInterval(7, 9).reduce(field);
+      expectStored(
+          analysis,
+          SourceRef(podValue->getResult(0), {SourceRefIndex(StringAttr::get(&ctx, "value"))}),
+          joined
+      );
+      expectStored(analysis, SourceRef(arrayValue->getResult(0), {SourceRefIndex(0)}), joined);
+      // A guaranteed write to one field does not eliminate defaults at other locations.
+      expectStored(
+          analysis,
+          SourceRef(podValue->getResult(0), {SourceRefIndex(StringAttr::get(&ctx, "other"))}),
+          Interval::Entire(field)
+      );
+      expectStored(
+          analysis, SourceRef(arrayValue->getResult(0), {SourceRefIndex(1)}),
+          Interval::Entire(field)
+      );
+    });
   }
 }
 
