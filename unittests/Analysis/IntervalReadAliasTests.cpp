@@ -17,6 +17,7 @@
 #include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
+#include <tuple>
 
 using namespace mlir;
 using namespace llzk;
@@ -27,8 +28,10 @@ namespace {
 class IntervalReadAliasTests : public LLZKTest {
 protected:
   /// Instantiate a nested read scenario and query its asserted comparison constraints.
-  void
-  checkAliases(StringRef body, bool memberReads, bool sameIndex, bool constants, bool shouldAlias) {
+  void checkAliases(
+      StringRef body, bool memberReads, bool sameIndex, bool constants, bool shouldAlias,
+      StringRef setup = {}
+  ) {
     SCOPED_TRACE(memberReads ? "component members" : "array elements");
     SCOPED_TRACE(sameIndex ? "same index" : "independent indices");
     SCOPED_TRACE(constants ? "conflicting constants" : "inequality");
@@ -49,12 +52,13 @@ module attributes {llzk.lang} {
     array.write %cells[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
     function.return
   }
-  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %condition: i1, %input: !felt.type, %replacement: !struct.type<@Cell>) {
+  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %condition: i1, %input: !felt.type, %replacement: !struct.type<@Cell>, %otherArray: !array.type<2 x !felt.type>, %otherCells: !array.type<2 x !struct.type<@Cell>>) {
     %zero = arith.constant 0 : index
     %one = arith.constant 1 : index
     %two = arith.constant 2 : index
     %seven = felt.const 7
     %nine = felt.const 9
+    // SETUP
     // LEFT_READ
     // LEFT_CONSTRAINT
     // BODY
@@ -68,6 +72,7 @@ module attributes {llzk.lang} {
       }
     };
     replace("// BODY", body);
+    replace("// SETUP", setup);
     replace(
         "// LEFT_READ", memberReads ? R"mlir(
     %leftCell = array.read %cells[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
@@ -142,6 +147,29 @@ module attributes {llzk.lang} {
         ASSERT_NE(read, nullptr);
         EXPECT_EQ(read->getValue().getScalarValue().getInterval(), Interval::Empty(field));
       }
+    }
+    EXPECT_EQ(smt->check(), std::optional<bool>(!shouldAlias));
+  }
+
+  /// Query one asserted inequality between reads in a custom storage scenario.
+  void checkInequality(StringRef source, bool shouldAlias) {
+    auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+    ASSERT_TRUE(mod);
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    solver.load<IntervalDataFlowAnalysis>(smt, Field::getField("babybear"), false, false);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    SmallVector<boolean::CmpOp> comparisons;
+    mod->walk([&](boolean::CmpOp comparison) { comparisons.push_back(comparison); });
+    ASSERT_EQ(comparisons.size(), 1U);
+    const auto *lattice =
+        solver.lookupState<IntervalAnalysisLattice>(comparisons.front().getResult());
+    ASSERT_NE(lattice, nullptr);
+    ASSERT_FALSE(lattice->getConstraints().empty());
+    for (const ExpressionValue &constraint : lattice->getConstraints()) {
+      smt->addConstraint(constraint.getExpr());
     }
     EXPECT_EQ(smt->check(), std::optional<bool>(!shouldAlias));
   }
@@ -253,6 +281,171 @@ TEST_F(IntervalReadAliasTests, NestedReadAliasesRespectWriteBarriers) {
   for (bool memberReads : {false, true}) {
     for (bool constants : {false, true}) {
       checkAliases("scf.if %condition { // READ\n }", memberReads, false, constants, false);
+    }
+  }
+}
+
+// Fresh allocations and writes to them cannot clobber earlier array/component storage.
+TEST_F(IntervalReadAliasTests, DisjointWritesPreserveReadAliases) {
+  const StringRef setup = R"mlir(
+    %scratch = array.new : !array.type<2 x !felt.type>
+    %scratchCells = array.new %replacement, %replacement : !array.type<2 x !struct.type<@Cell>>
+)mlir";
+  const std::pair<StringRef, StringRef> cases[] = {
+      {"same block", "// DISJOINT_WRITE\n // READ"},
+      {"nested branch", "scf.if %condition { // DISJOINT_WRITE\n // READ\n }"},
+      {"intervening region", "scf.if %condition { // DISJOINT_WRITE\n } // READ"},
+      {"loop prefix", "scf.for %iv = %zero to %two step %one { // DISJOINT_WRITE\n // READ\n }"},
+      {"loop backedge", "scf.for %iv = %zero to %two step %one { // READ\n // DISJOINT_WRITE\n }"},
+      {"while other region", R"mlir(
+        scf.while : () -> () {
+          // READ
+          scf.condition(%condition)
+        } do {
+          // DISJOINT_WRITE
+          scf.yield
+        }
+      )mlir"},
+      {"allocation between reads", R"mlir(
+        %temporary = array.new : !array.type<2 x !felt.type>
+        array.write %temporary[%i] = %input : !array.type<2 x !felt.type>, !felt.type
+        // READ
+      )mlir"},
+      {"subarray insertion", R"mlir(
+        %matrix = array.new : !array.type<2,2 x !felt.type>
+        array.insert %matrix[%zero] = %array : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+        // READ
+      )mlir"},
+      {"POD record write", R"mlir(
+        %record = pod.new : !pod.type<[@value: !felt.type]>
+        pod.write %record[@value] = %input : !pod.type<[@value: !felt.type]>, !felt.type
+        // READ
+      )mlir"}
+  };
+  for (auto [name, body] : cases) {
+    SCOPED_TRACE(name.str());
+    std::string source = body.str();
+    const StringRef marker = "// DISJOINT_WRITE";
+    if (size_t pos = source.find(marker); pos != std::string::npos) {
+      source.replace(pos, marker.size(), R"mlir(
+        array.write %scratch[%i] = %input : !array.type<2 x !felt.type>, !felt.type
+        array.write %scratchCells[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      )mlir");
+    }
+    for (bool memberReads : {false, true}) {
+      for (bool constants : {false, true}) {
+        checkAliases(source, memberReads, true, constants, true, setup);
+      }
+    }
+  }
+}
+
+// Different SSA names or dynamic indices do not prove that writes are disjoint.
+TEST_F(IntervalReadAliasTests, PotentiallyAliasingWritesRemainBarriers) {
+  const std::pair<StringRef, StringRef> cases[] = {
+      {"different arguments", R"mlir(
+        array.write %otherArray[%i] = %input : !array.type<2 x !felt.type>, !felt.type
+        array.write %otherCells[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+        // READ
+      )mlir"},
+      {"independent index in same storage", R"mlir(
+        array.write %array[%j] = %input : !array.type<2 x !felt.type>, !felt.type
+        array.write %cells[%j] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+        // READ
+      )mlir"}
+  };
+  for (auto [name, body] : cases) {
+    SCOPED_TRACE(name.str());
+    for (bool memberReads : {false, true}) {
+      for (bool constants : {false, true}) {
+        checkAliases(body, memberReads, true, constants, false);
+      }
+    }
+  }
+}
+
+// Constant dimensions can separate ranged accesses; dynamic dimensions and aliases cannot.
+TEST_F(IntervalReadAliasTests, ArrayWriteFootprintsRespectIndicesAndAliases) {
+  const std::tuple<StringRef, StringRef, bool> cases[] = {
+      {"disjoint element",
+       "array.write %array[%one, %j] = %input : !array.type<2,2 x !felt.type>, !felt.type", true},
+      {"possibly overlapping element",
+       "array.write %array[%zero, %j] = %input : !array.type<2,2 x !felt.type>, !felt.type", false},
+      {"dynamic row",
+       "array.write %array[%j, %i] = %input : !array.type<2,2 x !felt.type>, !felt.type", false},
+      {"disjoint subarray",
+       "array.insert %array[%one] = %row : !array.type<2,2 x !felt.type>, !array.type<2 x "
+       "!felt.type>",
+       true},
+      {"overlapping subarray",
+       "array.insert %array[%zero] = %row : !array.type<2,2 x !felt.type>, !array.type<2 x "
+       "!felt.type>",
+       false},
+      {"two fresh allocations", R"mlir(
+        %other = array.new : !array.type<2,2 x !felt.type>
+        array.write %other[%zero, %j] = %input : !array.type<2,2 x !felt.type>, !felt.type
+      )mlir",
+       true},
+      {"argument predates fresh read storage",
+       "array.write %source[%zero, %j] = %input : !array.type<2,2 x !felt.type>, !felt.type", true}
+  };
+  for (auto [name, write, shouldAlias] : cases) {
+    SCOPED_TRACE(name.str());
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%source: !array.type<2,2 x !felt.type>, %row: !array.type<2 x !felt.type>, %i: index, %j: index, %input: !felt.type, %condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %array = array.new : !array.type<2,2 x !felt.type>
+    %left = array.read %array[%zero, %i] : !array.type<2,2 x !felt.type>, !felt.type
+    // WRITE
+    %right = array.read %array[%zero, %i] : !array.type<2,2 x !felt.type>, !felt.type
+    %different = bool.cmp ne(%left, %right)
+    bool.assert %different
+    function.return
+  }
+}
+)mlir";
+    source.replace(source.find("// WRITE"), std::string("// WRITE").size(), write.str());
+    checkInequality(source, shouldAlias);
+  }
+}
+
+// Only proven distinct component identities or different members bypass the write barrier.
+TEST_F(IntervalReadAliasTests, MemberWriteFootprintsUseProvenIdentityOrDifferentFields) {
+  for (bool freshTarget : {false, true}) {
+    for (bool otherMember : {false, true}) {
+      SCOPED_TRACE(freshTarget ? "fresh component" : "unproven component identity");
+      SCOPED_TRACE(otherMember ? "different member" : "same member");
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    struct.member @other : !felt.type {llzk.pub}
+    function.def @compute(%cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %input: !felt.type) -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      %cell = array.read %cells[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %left = struct.readm %cell[@value] : !struct.type<@Cell>, !felt.type
+      %fresh = struct.new : !struct.type<@Cell>
+      struct.writem TARGET[MEMBER] = %input : !struct.type<@Cell>, !felt.type
+      %right = struct.readm %cell[@value] : !struct.type<@Cell>, !felt.type
+      %different = bool.cmp ne(%left, %right)
+      bool.assert %different
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %input: !felt.type) {
+      function.return
+    }
+  }
+}
+)mlir";
+      source.replace(
+          source.find("TARGET"), std::string("TARGET").size(), freshTarget ? "%fresh" : "%self"
+      );
+      source.replace(
+          source.find("MEMBER"), std::string("MEMBER").size(), otherMember ? "@other" : "@value"
+      );
+      checkInequality(source, freshTarget || otherMember);
     }
   }
 }
