@@ -473,6 +473,7 @@ module attributes {llzk.lang} {
             !pod.type<[@value: !felt.type, @missing: !felt.type]>
       %value = pod.read %storage[@value]
           : !pod.type<[@value: !felt.type, @missing: !felt.type]>, !felt.type
+      constrain.eq %value, %replacement : !felt.type
       function.return
     }
   }
@@ -488,10 +489,13 @@ module attributes {llzk.lang} {
 
   llvm::SmallVector<pod::NewPodOp> pods;
   llvm::SmallVector<pod::ReadPodOp> reads;
+  component::MemberWriteOp storageWrite;
   computeFn.walk([&](pod::NewPodOp op) { pods.push_back(op); });
   computeFn.walk([&](pod::ReadPodOp op) { reads.push_back(op); });
+  computeFn.walk([&](component::MemberWriteOp op) { storageWrite = op; });
   ASSERT_EQ(pods.size(), 5U);
   ASSERT_EQ(reads.size(), 7U);
+  ASSERT_TRUE(storageWrite);
   pod::ReadPodOp constrainRead;
   constrainFn.walk([&](pod::ReadPodOp op) { constrainRead = op; });
   ASSERT_TRUE(constrainRead);
@@ -502,6 +506,13 @@ module attributes {llzk.lang} {
   ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
   DataFlowSolver &solver = analysis.getSolver();
 
+  auto writeTarget = SourceRefAnalysis::getWriteTargetState(solver, storageWrite);
+  ASSERT_TRUE(succeeded(writeTarget));
+  SourceRef expectedWriteTarget(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()), {SourceRefIndex(storageMember)}
+  );
+  EXPECT_EQ(writeTarget->foldToScalar(), SourceRefSet({expectedWriteTarget}));
+
   SourceRef constrainStorageValue(
       mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()),
       {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "value"))}
@@ -509,6 +520,14 @@ module attributes {llzk.lang} {
   EXPECT_EQ(
       SourceRefAnalysis::getDependencyState(solver, constrainRead.getResult()).foldToScalar(),
       SourceRefSet({constrainStorageValue})
+  );
+  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+  SourceRef constrainStorage(
+      mlir::cast<BlockArgument>(constrainFn.getSelfValueFromConstrain()),
+      {SourceRefIndex(storageMember)}
+  );
+  EXPECT_TRUE(
+      graph.getConstrainingValues(constrainStorage).contains(SourceRef(constrainFn.getArgument(2)))
   );
 
   auto valueName = StringAttr::get(&ctx, "value");
@@ -539,6 +558,13 @@ module attributes {llzk.lang} {
   auto unwrittenDependencies =
       SourceRefAnalysis::getDependencyState(solver, reads[2].getResult()).foldToScalar();
   EXPECT_EQ(unwrittenDependencies, SourceRefSet({storageMissing}));
+
+  auto aggregateDependencies =
+      SourceRefAnalysis::getDependencyState(solver, storageWrite.getVal(), storageWrite)
+          .foldToScalar();
+  EXPECT_EQ(
+      aggregateDependencies, SourceRefSet({SourceRef(computeFn.getArgument(1)), storageMissing})
+  );
 
   auto maybeDependencies =
       SourceRefAnalysis::getDependencyState(solver, reads[3].getResult()).foldToScalar();
@@ -798,7 +824,7 @@ module attributes {llzk.lang} {
   ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
   auto dependencies = SourceRefAnalysis::getDependencyState(analysis.getSolver(), read.getResult());
   EXPECT_EQ(dependencies.foldToScalar(), SourceRefSet({SourceRef(compute.getArgument(2))}))
-      << buildStringViaPrint(dependencies);
+      << buildStringViaInsertionOp(dependencies);
 }
 
 TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
@@ -1173,4 +1199,347 @@ TEST_F(SourceRefTests, CapturedComponentBoundariesSurviveTranslation) {
   auto [rebound, changed] = SourceRefLatticeValue(*member).replacePrefixes(aliases);
   EXPECT_EQ(changed, ChangeResult::Change);
   EXPECT_EQ(rebound.getSingleValue(), *SourceRef(self).createChild(memberIndex));
+}
+
+TEST_F(SourceRefTests, ConstraintQueriesNarrowStaticLoopRangesPerElement) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @LoopRanges {
+    struct.member @out : !array.type<3 x !felt.type> {llzk.pub, signal}
+
+    function.def @compute(%in: !array.type<3 x !felt.type>)
+        -> !struct.type<@LoopRanges> {
+      %self = struct.new : !struct.type<@LoopRanges>
+      %storage = array.new : !array.type<3 x !felt.type>
+      struct.writem %self[@out] = %storage
+          : !struct.type<@LoopRanges>, !array.type<3 x !felt.type>
+      function.return %self : !struct.type<@LoopRanges>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@LoopRanges>,
+        %in: !array.type<3 x !felt.type>) {
+      %out = struct.readm %self[@out]
+          : !struct.type<@LoopRanges>, !array.type<3 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %c2 step %c1 {
+        %lhs = array.read %out[%i] : !array.type<3 x !felt.type>, !felt.type
+        %rhs = array.read %in[%i] : !array.type<3 x !felt.type>, !felt.type
+        constrain.eq %lhs, %rhs : !felt.type
+      }
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  auto outMember = *structDef.getOps<MemberDefOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+
+  for (int64_t index = 0; index < 2; ++index) {
+    SourceRef output(
+        constrainFn.getArgument(0), {SourceRefIndex(outMember), SourceRefIndex(DynamicAPInt(index))}
+    );
+    SourceRef input(constrainFn.getArgument(1), {SourceRefIndex(DynamicAPInt(index))});
+    EXPECT_TRUE(graph.getConstrainingValues(output).contains(input));
+  }
+
+  SourceRef omitted(
+      constrainFn.getArgument(0), {SourceRefIndex(outMember), SourceRefIndex(DynamicAPInt(2))}
+  );
+  EXPECT_TRUE(graph.getConstrainingValues(omitted).empty());
+}
+
+TEST_F(SourceRefTests, ConstraintQueriesDropOnlyNeutralLoopZeroInitializers) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @LoopNormalization {
+    struct.member @sum : !felt.type {llzk.pub, signal}
+    struct.member @zero : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%in: !felt.type) -> !struct.type<@LoopNormalization> {
+      %self = struct.new : !struct.type<@LoopNormalization>
+      struct.writem %self[@sum] = %in : !struct.type<@LoopNormalization>, !felt.type
+      struct.writem %self[@zero] = %in : !struct.type<@LoopNormalization>, !felt.type
+      function.return %self : !struct.type<@LoopNormalization>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopNormalization>, %in: !felt.type)
+        attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %sum = struct.readm %self[@sum] : !struct.type<@LoopNormalization>, !felt.type
+      %zeroOut = struct.readm %self[@zero] : !struct.type<@LoopNormalization>, !felt.type
+      %zero = felt.const 0
+      %true = arith.constant true
+      %loop = scf.while (%acc = %zero) : (!felt.type) -> !felt.type {
+        scf.condition(%true) %acc : !felt.type
+      } do {
+      ^bb0(%acc: !felt.type):
+        %next = felt.add %acc, %in : !felt.type, !felt.type
+        scf.yield %next : !felt.type
+      }
+      constrain.eq %sum, %loop : !felt.type
+      constrain.eq %zeroOut, %zero : !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto constrainFn = structDef.getConstrainFuncOp();
+  auto members = llvm::to_vector(structDef.getOps<MemberDefOp>());
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+
+  SourceRef sum(constrainFn.getArgument(0), {SourceRefIndex(members[0])});
+  SourceRef input(constrainFn.getArgument(1));
+  SourceRefSet sumDependencies = graph.getConstrainingValues(sum);
+  EXPECT_TRUE(sumDependencies.contains(input));
+  EXPECT_TRUE(llvm::none_of(sumDependencies, [](const SourceRef &dependency) {
+    auto constant = dependency.getConstantValue(Field::getField("babybear"));
+    return succeeded(constant) && *constant == 0;
+  }));
+
+  SourceRef zeroOut(constrainFn.getArgument(0), {SourceRefIndex(members[1])});
+  EXPECT_TRUE(llvm::any_of(graph.getConstrainingValues(zeroOut), [](const SourceRef &dependency) {
+    auto constant = dependency.getConstantValue(Field::getField("babybear"));
+    return succeeded(constant) && *constant == 0;
+  }));
+}
+
+TEST_F(SourceRefTests, DependencyStateDropsFullyOverwrittenLoopArrayZeros) {
+  auto runCase = [&](bool completeCopy) {
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @LoopArray {
+    function.def @compute(%in: !array.type<2 x !felt.type>) -> !struct.type<@LoopArray>
+        attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@LoopArray>
+      %storage = llzk.nondet : !array.type<2 x !felt.type>
+      %zero0 = felt.const 0
+      %index0 = arith.constant 0 : index
+      array.write %storage[%index0] = %zero0 : !array.type<2 x !felt.type>, !felt.type
+      %zero1 = felt.const 0
+      %index1 = arith.constant 1 : index
+      array.write %storage[%index1] = %zero1 : !array.type<2 x !felt.type>, !felt.type
+      %lower = felt.const 0
+      %loop:2 = scf.while (%array = %storage, %index = %lower)
+          : (!array.type<2 x !felt.type>, !felt.type)
+          -> (!array.type<2 x !felt.type>, !felt.type) {
+        %upper = felt.const 2
+        %condition = bool.cmp lt(%index, %upper) : !felt.type, !felt.type
+        scf.condition(%condition) %array, %index
+            : !array.type<2 x !felt.type>, !felt.type
+      } do {
+      ^bb0(%array: !array.type<2 x !felt.type>, %index: !felt.type):
+        %arrayIndex = cast.toindex %index : !felt.type
+        %value = array.read %in[%arrayIndex] : !array.type<2 x !felt.type>, !felt.type
+        array.write %array[%arrayIndex] = %value : !array.type<2 x !felt.type>, !felt.type
+        %one = felt.const 1
+        %next = felt.add %index, %one : !felt.type, !felt.type
+        scf.yield %array, %next : !array.type<2 x !felt.type>, !felt.type
+      }
+      %readIndex = arith.constant 0 : index
+      %value = array.read %loop#0[%readIndex] : !array.type<2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@LoopArray>
+    }
+    function.def @constrain(
+        %self: !struct.type<@LoopArray>, %in: !array.type<2 x !felt.type>) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+    if (!completeCopy) {
+      // A stride of two leaves element one at its initialized value.
+      source.replace(
+          source.find("%one = felt.const 1"), std::string("%one = felt.const 1").size(),
+          "%one = felt.const 2"
+      );
+      source.replace(
+          source.find("%readIndex = arith.constant 0"),
+          std::string("%readIndex = arith.constant 0").size(), "%readIndex = arith.constant 1"
+      );
+    }
+    auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+    ASSERT_TRUE(mod);
+    auto structDef = *mod->getOps<StructDefOp>().begin();
+    auto computeFn = structDef.getComputeFuncOp();
+    llvm::SmallVector<array::ReadArrayOp> reads;
+    computeFn.walk([&](array::ReadArrayOp op) { reads.push_back(op); });
+    ASSERT_EQ(reads.size(), 2U);
+
+    ModuleAnalysisManager mam(*mod, nullptr);
+    AnalysisManager am = mam;
+    ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+    ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+    SourceRefSet dependencies =
+        SourceRefAnalysis::getDependencyState(analysis.getSolver(), reads.back().getResult())
+            .foldToScalar();
+
+    if (completeCopy) {
+      EXPECT_TRUE(dependencies.contains(
+          SourceRef(computeFn.getArgument(0), {SourceRefIndex(DynamicAPInt(0))})
+      )) << buildStringViaInsertionOp(dependencies);
+    }
+    bool hasZero = llvm::any_of(dependencies, [](const SourceRef &dependency) {
+      auto constant = dependency.getConstantValue(Field::getField("babybear"));
+      return succeeded(constant) && *constant == 0;
+    });
+    EXPECT_EQ(hasZero, !completeCopy) << buildStringViaInsertionOp(dependencies);
+  };
+  runCase(/*completeCopy=*/true);
+  runCase(/*completeCopy=*/false);
+}
+
+TEST_F(SourceRefTests, ConstraintQueriesRetainLogicalComponentPathsAlongsideInputs) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Child {
+    struct.member @out : !felt.type {llzk.pub, signal}
+    function.def @compute(%in: !felt.type) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      struct.writem %self[@out] = %in : !struct.type<@Child>, !felt.type
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>, %in: !felt.type) {
+      %out = struct.readm %self[@out] : !struct.type<@Child>, !felt.type
+      %sum = felt.add %in, %in : !felt.type, !felt.type
+      constrain.eq %out, %sum : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @out : !array.type<4 x !felt.type> {llzk.pub, signal}
+    struct.member @child : !struct.type<@Child>
+    function.def @compute(%in: !felt.type, %index: index) -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      function.return %self : !struct.type<@Parent>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Parent>, %in: !felt.type, %index: index
+    ) {
+      %out = struct.readm %self[@out] : !struct.type<@Parent>, !array.type<4 x !felt.type>
+      %selected = array.read %out[%index] : !array.type<4 x !felt.type>, !felt.type
+      constrain.eq %selected, %in : !felt.type
+      %child = struct.readm %self[@child] : !struct.type<@Parent>, !struct.type<@Child>
+      %childOut = struct.readm %child[@out] : !struct.type<@Child>, !felt.type
+      %c3 = arith.constant 3 : index
+      %last = array.read %out[%c3] : !array.type<4 x !felt.type>, !felt.type
+      constrain.eq %last, %childOut : !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto parent = *std::next(mod->getOps<StructDefOp>().begin());
+  auto constrainFn = parent.getConstrainFuncOp();
+  auto members = llvm::to_vector(parent.getOps<MemberDefOp>());
+  auto child = *mod->getOps<StructDefOp>().begin();
+  auto childOut = *child.getOps<MemberDefOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(parent);
+
+  SourceRef output(
+      constrainFn.getArgument(0), {SourceRefIndex(members[0]), SourceRefIndex(DynamicAPInt(3))}
+  );
+  SourceRef logicalChild(
+      constrainFn.getArgument(0), {SourceRefIndex(members[1]), SourceRefIndex(childOut)}
+  );
+  SourceRefSet dependencies = graph.getConstrainingValues(output);
+  EXPECT_TRUE(llvm::any_of(dependencies, [&](const SourceRef &dependency) {
+    return dependency.withoutComponentCapture() == logicalChild;
+  })) << buildStringViaInsertionOp(dependencies);
+  EXPECT_TRUE(dependencies.contains(SourceRef(constrainFn.getArgument(1))));
+}
+
+TEST_F(SourceRefTests, ConditionalMarkersRequireBothBooleanConstraints) {
+  auto runCase = [&](bool includeTrueConstraint) {
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Conditional {
+    struct.member @out : !felt.type {llzk.pub, signal}
+    struct.member @helper : !felt.type {signal}
+    function.def @compute(%out: !felt.type, %helper: !felt.type)
+        -> !struct.type<@Conditional> {
+      %self = struct.new : !struct.type<@Conditional>
+      struct.writem %self[@out] = %out : !struct.type<@Conditional>, !felt.type
+      struct.writem %self[@helper] = %helper : !struct.type<@Conditional>, !felt.type
+      function.return %self : !struct.type<@Conditional>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Conditional>, %outArg: !felt.type, %helperArg: !felt.type
+    )
+        attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %out = struct.readm %self[@out] : !struct.type<@Conditional>, !felt.type
+      %helper = struct.readm %self[@helper] : !struct.type<@Conditional>, !felt.type
+      %zero = felt.const 0
+      %one = felt.const 1
+      %condition = bool.cmp eq(%helper, %zero)
+      scf.if %condition {
+        scf.yield
+      } else {
+        scf.yield
+      }
+      constrain.eq %out, %zero : !felt.type
+)mlir";
+    if (includeTrueConstraint) {
+      source += "      constrain.eq %out, %one : !felt.type\n";
+    }
+    source += R"mlir(
+      function.return
+    }
+  }
+}
+)mlir";
+
+    auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+    EXPECT_TRUE(mod);
+    if (!mod) {
+      return false;
+    }
+    auto structDef = *mod->getOps<StructDefOp>().begin();
+    auto constrainFn = structDef.getConstrainFuncOp();
+    auto members = llvm::to_vector(structDef.getOps<MemberDefOp>());
+    ModuleAnalysisManager mam(*mod, nullptr);
+    AnalysisManager am = mam;
+    ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+    if (failed(analysis.ensureAnalysisRun(am))) {
+      ADD_FAILURE() << "could not construct conditional dependency graph";
+      return false;
+    }
+    const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+    SourceRef out(constrainFn.getArgument(0), {SourceRefIndex(members[0])});
+    SourceRef helper(constrainFn.getArgument(0), {SourceRefIndex(members[1])});
+    return graph.getConstrainingValues(out).contains(helper);
+  };
+
+  EXPECT_TRUE(runCase(/*includeTrueConstraint=*/true));
+  EXPECT_FALSE(runCase(/*includeTrueConstraint=*/false));
 }

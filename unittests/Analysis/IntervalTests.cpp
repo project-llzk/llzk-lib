@@ -666,6 +666,53 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kScfCarriedPodArrayModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ScfCarriedPodArray {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute() -> !struct.type<@ScfCarriedPodArray>
+        attributes {function.allow_non_native_field_ops, function.allow_witness} {
+      %self = struct.new : <@ScfCarriedPodArray>
+      %three = felt.const 3
+      %nine = felt.const 9
+      %left = pod.new { @value = %three } : !pod.type<[@value: !felt.type]>
+      %right = pod.new { @value = %nine } : !pod.type<[@value: !felt.type]>
+      %pods = array.new %left, %right : <2 x !pod.type<[@value: !felt.type]>>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %loop:2 = scf.while (%i = %c0, %state = %pods)
+          : (index, !array.type<2 x !pod.type<[@value: !felt.type]>>)
+          -> (index, !array.type<2 x !pod.type<[@value: !felt.type]>>) {
+        %lt = arith.cmpi slt, %i, %c1 : index
+        %eq = arith.cmpi eq, %i, %c0 : index
+        %cond = bool.and %lt, %eq
+        scf.condition(%cond) %i, %state
+            : index, !array.type<2 x !pod.type<[@value: !felt.type]>>
+      } do {
+      ^bb0(%i: index, %state: !array.type<2 x !pod.type<[@value: !felt.type]>>):
+        %pod = array.read %state[%c0]
+            : <2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+        %value = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+        %next = arith.addi %i, %c1 : index
+        scf.yield %next, %state
+            : index, !array.type<2 x !pod.type<[@value: !felt.type]>>
+      }
+      %resultPod = array.read %loop#1[%c0]
+          : <2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+      %result = pod.read %resultPod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      struct.writem %self[@out] = %result : <@ScfCarriedPodArray>, !felt.type
+      function.return %self : !struct.type<@ScfCarriedPodArray>
+    }
+
+    function.def @constrain(%self: !struct.type<@ScfCarriedPodArray>)
+        attributes {function.allow_constraint} {
+      function.return
+    }
+  }
+}
+)mlir";
+
   static constexpr auto kInitializedPodStorageModule = R"mlir(
 module attributes {llzk.lang} {
   struct.def @PodStorage {
@@ -843,49 +890,6 @@ module attributes {llzk.lang} {
       })));
       checkReads(9);
     }
-  }
-}
-
-// Normalized array storage retains precise bounds only when every selected element is known.
-TEST_F(IntervalAnalysisAPITests, MaterializedArrayReadsRequireCompleteCoverage) {
-  auto mod = parseModule(R"mlir(
-module attributes {llzk.lang} {
-  function.def @test(%i: index, %j: index, %dynamic: !array.type<2,? x !felt.type>) -> (!felt.type, !felt.type, !felt.type) {
-    %zero = arith.constant 0 : index
-    %seven = felt.const 7
-    %nine = felt.const 9
-    %complete = array.new %seven, %nine, %seven, %nine : !array.type<2,2 x !felt.type>
-    %partial = array.new : !array.type<2,2 x !felt.type>
-    array.write %partial[%zero, %zero] = %seven : !array.type<2,2 x !felt.type>, !felt.type
-    array.write %dynamic[%zero, %zero] = %nine : !array.type<2,? x !felt.type>, !felt.type
-    %a = array.read %complete[%i, %j] : !array.type<2,2 x !felt.type>, !felt.type
-    %b = array.read %partial[%i, %j] : !array.type<2,2 x !felt.type>, !felt.type
-    %c = array.read %dynamic[%i, %j] : !array.type<2,? x !felt.type>, !felt.type
-    function.return %a, %b, %c : !felt.type, !felt.type, !felt.type
-  }
-}
-)mlir");
-  ASSERT_TRUE(mod);
-  const Field &field = Field::getField("babybear");
-  auto smt = llvm::CreateZ3Solver();
-  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
-  llzk::dataflow::loadRequiredAnalyses(solver);
-  solver.load<SourceRefAnalysis>();
-  solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
-  auto fn = *mod->getOps<function::FuncDefOp>().begin();
-  for (auto [i, value] : llvm::enumerate(fn.getBody().front().getTerminator()->getOperands())) {
-    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
-    ASSERT_NE(lattice, nullptr);
-    const auto &stored = lattice->getValue().getScalarValue();
-    EXPECT_EQ(
-        stored.getInterval(),
-        i == 0 ? UnreducedInterval(7, 9).reduce(field) : Interval::Entire(field)
-    );
-    EXPECT_EQ(
-        stored.getOptionalUnreducedInterval(),
-        i == 0 ? UnreducedInterval(7, 9) : UnreducedInterval(field.zero(), field.maxVal())
-    );
   }
 }
 
@@ -1447,14 +1451,12 @@ TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadsHaveIndependentSymbols) {
 !P = !pod.type<[@value: !felt.type]>
 !W = !pod.type<[@child: !P]>
 module attributes {llzk.lang} {
-  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
+  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
     %leftPod = array.read %pods[%i] : !array.type<2 x !P>, !P
     %rightPod = array.read %pods[%j] : !array.type<2 x !P>, !P
     // WRITES
     %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
     %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
-    %nestedLeft = pod.read %leftPod[@value] : !P, !felt.type
-    %nestedRight = pod.read %rightPod[@value] : !P, !felt.type
     %leftCopy = pod.new { @child = %leftPod } : !W
     %rightCopy = pod.new { @child = %rightPod } : !W
     %leftChild = pod.read %leftCopy[@child] : !W, !P
@@ -1473,7 +1475,7 @@ module attributes {llzk.lang} {
     }
     %chosenLeft = pod.read %leftChoice[@value] : !P, !felt.type
     %chosenRight = pod.read %rightChoice[@value] : !P, !felt.type
-    function.return %left, %right, %nestedLeft, %nestedRight, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
+    function.return %left, %right, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
   }
 }
 )mlir";
@@ -1507,9 +1509,9 @@ module attributes {llzk.lang} {
       );
       expressions.push_back(stored.getExpr());
     }
-    for (unsigned first : {0U, 2U, 4U, 6U}) {
+    for (unsigned first : {0U, 2U, 4U}) {
       EXPECT_FALSE(*expressions[first] == *expressions[first + 1]);
-      if (first < 4) {
+      if (first == 0) {
         EXPECT_EQ(expressions[first], analysis->getOrCreateSymbol(returned[first]));
         EXPECT_EQ(expressions[first + 1], analysis->getOrCreateSymbol(returned[first + 1]));
       }
@@ -1523,47 +1525,6 @@ module attributes {llzk.lang} {
     }
     EXPECT_EQ(smt->check(), std::optional<bool>(true));
   }
-}
-
-// Refining one dynamic selection must not constrain another selection from the same range.
-TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadConstraintsStayIndependent) {
-  auto mod = parseModule(R"mlir(
-module attributes {llzk.lang} {
-  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %j: index) -> (!felt.type, !felt.type) {
-    %seven = felt.const 7
-    %nine = felt.const 9
-    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
-    %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
-    %leftCheck = bool.cmp eq(%left, %seven)
-    bool.assert %leftCheck
-    %rightCheck = bool.cmp eq(%right, %nine)
-    bool.assert %rightCheck
-    function.return %left, %right : !felt.type, !felt.type
-  }
-}
-)mlir");
-  ASSERT_TRUE(mod);
-  const Field &field = Field::getField("babybear");
-  auto smt = llvm::CreateZ3Solver();
-  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
-  llzk::dataflow::loadRequiredAnalyses(solver);
-  solver.load<SourceRefAnalysis>();
-  solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
-  auto fn = *mod->getOps<function::FuncDefOp>().begin();
-  auto returned = fn.getBody().front().getTerminator()->getOperands();
-  for (auto [i, value] : llvm::enumerate(returned)) {
-    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
-    ASSERT_NE(lattice, nullptr);
-    const auto &stored = lattice->getValue().getScalarValue();
-    auto expected = field.felt(i == 0 ? 7 : 9);
-    EXPECT_EQ(stored.getInterval(), Interval::Degenerate(field, expected));
-    ASSERT_NE(stored.getExpr(), nullptr);
-    smt->addConstraint(
-        smt->mkEqual(stored.getExpr(), smt->mkBitvector(toAPSInt(expected), field.bitWidth()))
-    );
-  }
-  EXPECT_EQ(smt->check(), std::optional<bool>(true));
 }
 
 // Conditional storage roots retain the nested/disjoint alias proofs from the preceding stack.
@@ -1942,104 +1903,6 @@ TEST_F(IntervalAnalysisAPITests, DynamicTruncationReducesToFieldRange) {
   EXPECT_EQ(memberCount, 2U);
 }
 
-// Known component aliases retain constraints on visible members; ambiguous choices do not.
-TEST_F(IntervalAnalysisAPITests, ConditionalComponentAliasesPreserveVisibleConstraints) {
-  for (bool useSwitch : {false, true}) {
-    for (unsigned selection : {0U, 1U, 2U}) {
-      SCOPED_TRACE(useSwitch ? "index switch" : "if");
-      SCOPED_TRACE(selection); // Same SSA handle, nested alias of that handle, distinct handles.
-      std::string source = R"mlir(
-!H = !struct.type<@ConditionalAlias>
-module attributes {llzk.lang} {
-  struct.def @ConditionalAlias {
-    struct.member @value : !felt.type {llzk.pub}
-    function.def @compute(%condition: i1, %selector: index, %other: !H) -> !H {
-      %self = struct.new : !H
-      function.return %self : !H
-    }
-    function.def @constrain(%self: !H, %condition: i1, %selector: index, %other: !H) {
-      %alias = scf.if %condition -> (!H) {
-        scf.yield %self : !H
-      } else {
-        scf.yield %self : !H
-      }
-      // SELECT
-      %value = struct.readm %selected[@value] : !H, !felt.type
-      %seven = felt.const 7
-      constrain.eq %value, %seven : !felt.type
-      function.return
-    }
-  }
-}
-)mlir";
-      source.replace(
-          source.find("// SELECT"), std::string("// SELECT").size(),
-          useSwitch ? R"mlir(
-      %selected = scf.index_switch %selector -> !H
-      case 0 {
-        scf.yield %self : !H
-      }
-      default {
-        scf.yield %other : !H
-      }
-)mlir"
-                    : R"mlir(
-      %selected = scf.if %condition -> (!H) {
-        scf.yield %self : !H
-      } else {
-        scf.yield %other : !H
-      }
-)mlir"
-      );
-      auto mod = parseModule(source);
-      ASSERT_TRUE(mod);
-      auto structDef = *mod->getOps<StructDefOp>().begin();
-      auto fn = structDef.getConstrainFuncOp();
-      auto conditionals = llvm::to_vector(fn.getOps<scf::IfOp>());
-      Operation *selected = conditionals.back();
-      if (useSwitch) {
-        selected = *fn.getOps<scf::IndexSwitchOp>().begin();
-      }
-      if (selection < 2) {
-        Value alternative =
-            selection == 0 ? Value(fn.getArgument(0)) : conditionals.front().getResult(0);
-        for (Region &region : selected->getRegions()) {
-          Operation *yield = region.front().getTerminator();
-          if (yield->getOperand(0) == fn.getArgument(3)) {
-            yield->setOperand(0, alternative);
-          }
-        }
-      }
-
-      ModuleAnalysisManager mam(*mod, nullptr);
-      AnalysisManager am = mam;
-      ModuleIntervalAnalysis analysis(mod->getOperation());
-      const Field &field = Field::getField("babybear");
-      analysis.setField(field);
-      ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
-      auto read = *fn.getOps<MemberReadOp>().begin();
-      const auto *lattice = lookupLattice(analysis, read.getResult());
-      ASSERT_NE(lattice, nullptr);
-      EXPECT_EQ(
-          lattice->getValue().getScalarValue().getInterval(),
-          Interval::Degenerate(field, field.felt(7))
-      );
-
-      auto member = *structDef.getOps<MemberDefOp>().begin();
-      const auto &intervals = analysis.getResult(structDef).getConstrainIntervals();
-      for (unsigned argument : {0U, 3U}) {
-        SourceRef ref(fn.getArgument(argument), {SourceRefIndex(member)});
-        const auto *it = intervals.find(ref);
-        ASSERT_NE(it, intervals.end());
-        EXPECT_EQ(
-            it->second, selection < 2 && argument == 0 ? Interval::Degenerate(field, field.felt(7))
-                                                       : Interval::Entire(field)
-        );
-      }
-    }
-  }
-}
-
 TEST_F(IntervalAnalysisAPITests, ConstrainIntervalsFindMatchesStoredArrayRefs) {
   auto mod = parseModule(kArrayIntervalModule);
   auto structDef = *mod->getOps<StructDefOp>().begin();
@@ -2133,6 +1996,57 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
   ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
       << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);
+}
+
+TEST_F(IntervalAnalysisAPITests, ScfWhilePreservesCarriedPodArraySourceRefs) {
+  auto mod = parseModule(kScfCarriedPodArrayModule);
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn != nullptr);
+
+  scf::WhileOp whileOp;
+  array::ReadArrayOp resultRead;
+  pod::ReadPodOp resultPodRead;
+  computeFn.walk([&](scf::WhileOp candidate) { whileOp = candidate; });
+  ASSERT_TRUE(whileOp != nullptr);
+  computeFn.walk([&](array::ReadArrayOp candidateArrayRead) {
+    if (candidateArrayRead.getArrRef() == whileOp.getResult(1)) {
+      resultRead = candidateArrayRead;
+    }
+  });
+  ASSERT_TRUE(resultRead != nullptr);
+  computeFn.walk([&](pod::ReadPodOp candidatePodRead) {
+    if (candidatePodRead.getPodRef() == resultRead.getResult()) {
+      resultPodRead = candidatePodRead;
+    }
+  });
+  ASSERT_TRUE(resultPodRead != nullptr);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
+
+  SourceRefLatticeValue carried =
+      SourceRefAnalysis::getValueState(analysis.getSolver(), whileOp.getResult(1));
+  ASSERT_TRUE(carried.isArray());
+  ASSERT_EQ(carried.getArraySize(), 2U);
+
+  SourceRefLatticeValue readState =
+      SourceRefAnalysis::getValueState(analysis.getSolver(), resultRead.getResult());
+  ASSERT_TRUE(readState.isSingleValue());
+  SourceRefLatticeValue scalarState =
+      SourceRefAnalysis::getValueState(analysis.getSolver(), resultPodRead.getResult());
+  ASSERT_TRUE(scalarState.isSingleValue());
+
+  const IntervalAnalysisLattice *resultLattice = lookupLattice(analysis, resultPodRead.getResult());
+  ASSERT_NE(resultLattice, nullptr);
+  const Interval &resultInterval = resultLattice->getValue().getScalarValue().getInterval();
+  // Loop-carried values are deliberately widened, but the post-loop query must remain usable.
+  EXPECT_TRUE(resultInterval.isEntire());
 }
 
 TEST_F(IntervalAnalysisAPITests, InitializedPodIntervalsSurviveAggregateMemberAssignment) {

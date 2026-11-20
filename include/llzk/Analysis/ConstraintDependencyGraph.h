@@ -61,11 +61,12 @@ public:
   static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &solver, mlir::Value val);
 
   /// Return the logical dependencies of `val` by following known storage writes transitively.
-  /// Unwritten storage remains represented by its address.
+  /// Expand array/POD contents at their definition; unwritten storage retains its address.
+  /// Use the explicit observation overload to inspect an aggregate after subsequent writes.
   static SourceRefLatticeValue getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val);
 
   /// Return array/POD contents before `before`; scalars and component handles keep their
-  /// original SSA observation.
+  /// original SSA observation. Large and symbolic array contents use compact range references.
   static SourceRefLatticeValue
   getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val, mlir::Operation *before);
 
@@ -234,6 +235,8 @@ public:
 
   ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
       : mod(other.mod), structDef(other.structDef), ctx(other.ctx), signalSets(other.signalSets),
+        directAliases(other.directAliases), dependencyEdges(other.dependencyEdges),
+        conditionalDependencyEdges(other.conditionalDependencyEdges),
         constantSets(other.constantSets), ref2Val(other.ref2Val), tables() {}
 
   ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
@@ -241,6 +244,9 @@ public:
     structDef = other.structDef;
     ctx = other.ctx;
     signalSets = other.signalSets;
+    directAliases = other.directAliases;
+    dependencyEdges = other.dependencyEdges;
+    conditionalDependencyEdges = other.conditionalDependencyEdges;
     constantSets = other.constantSets;
     ref2Val = other.ref2Val;
     return *this;
@@ -257,6 +263,15 @@ private:
 
   // Transitive closure only over signals.
   llvm::EquivalenceClasses<SourceRef> signalSets;
+  // Exact two-value equalities are tracked separately so query results can prefer logical inputs
+  // over compiler-generated aggregate storage paths.
+  llvm::EquivalenceClasses<SourceRef> directAliases;
+  // Pairwise dependency edges retain the origin of relationships that an equivalence-class
+  // closure would otherwise erase, especially for control-flow-selected aggregate alternatives.
+  std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> dependencyEdges;
+  // Dependencies recovered from empty conditional markers are weaker than emitted constraints.
+  // Queries use them only when the selected output is itself constrained to both boolean values.
+  std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> conditionalDependencyEdges;
   // A simple set mapping of constants, as we do not want to compute a transitive closure over
   // constants.
   std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> constantSets;

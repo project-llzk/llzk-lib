@@ -12,6 +12,8 @@
 #include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
@@ -214,6 +216,250 @@ static SourceRef getArrayElementAddress(const SourceRef &root, size_t flatIndex)
     address = *child;
   }
   return address;
+}
+
+/// Infer the half-open index bounds of a statically bounded structured loop.
+static std::optional<std::pair<DynamicAPInt, DynamicAPInt>> getStaticLoopIndexRange(Value index) {
+  if (auto toIndex = index.getDefiningOp<cast::FeltToIndexOp>()) {
+    index = toIndex.getValue();
+  }
+  auto blockArg = llvm::dyn_cast<BlockArgument>(index);
+  if (!blockArg) {
+    return std::nullopt;
+  }
+
+  if (auto forOp = llvm::dyn_cast<scf::ForOp>(blockArg.getOwner()->getParentOp())) {
+    if (blockArg != forOp.getInductionVar()) {
+      return std::nullopt;
+    }
+    auto lower = forOp.getLowerBound().getDefiningOp<arith::ConstantIndexOp>();
+    auto upper = forOp.getUpperBound().getDefiningOp<arith::ConstantIndexOp>();
+    if (lower && upper) {
+      return std::pair(DynamicAPInt(lower.value()), DynamicAPInt(upper.value()));
+    }
+    return std::nullopt;
+  }
+
+  auto whileOp = llvm::dyn_cast<scf::WhileOp>(blockArg.getOwner()->getParentOp());
+  if (!whileOp || blockArg.getOwner() != &whileOp.getAfter().front()) {
+    return std::nullopt;
+  }
+  unsigned argumentNumber = blockArg.getArgNumber();
+  if (argumentNumber >= whileOp.getBeforeArguments().size() ||
+      argumentNumber >= whileOp.getInits().size()) {
+    return std::nullopt;
+  }
+
+  auto lower = whileOp.getInits()[argumentNumber].getDefiningOp<felt::FeltConstantOp>();
+  auto cmp = whileOp.getConditionOp().getCondition().getDefiningOp<boolean::CmpOp>();
+  Value beforeArgument = whileOp.getBeforeArguments()[argumentNumber];
+  if (!lower || !cmp || cmp.getPredicate() != boolean::FeltCmpPredicate::LT ||
+      cmp.getLhs() != beforeArgument ||
+      whileOp.getConditionOp().getArgs()[argumentNumber] != beforeArgument) {
+    return std::nullopt;
+  }
+  auto upper = cmp.getRhs().getDefiningOp<felt::FeltConstantOp>();
+  if (!upper) {
+    return std::nullopt;
+  }
+  // The backedge need not be monotone. The condition proves an upper bound, while a felt's
+  // representative is nonnegative regardless of the initializer or recurrence.
+  return std::pair(DynamicAPInt(0), upper.getValue().getReducedValueOrRaw());
+}
+
+/// Recognize a complete elementwise copy with an unconditional write and a unit-step induction.
+/// More general loops retain the existing conservative storage dependencies.
+static WriteArrayOp getFullyOverwrittenLoopArrayWrite(Value value) {
+  auto read = value.getDefiningOp<ReadArrayOp>();
+  auto whileResult = read ? llvm::dyn_cast<OpResult>(read.getArrRef()) : OpResult();
+  auto whileOp = whileResult ? whileResult.getDefiningOp<scf::WhileOp>() : scf::WhileOp();
+  if (!whileOp || whileResult.getResultNumber() >= whileOp.getInits().size()) {
+    return nullptr;
+  }
+
+  Value initializer = whileOp.getInits()[whileResult.getResultNumber()];
+  auto arrayType = llvm::dyn_cast<ArrayType>(initializer.getType());
+  if (!initializer.getDefiningOp<NonDetOp>() || !arrayType || !arrayType.hasStaticShape() ||
+      arrayType.getShape().size() != 1) {
+    return nullptr;
+  }
+
+  unsigned resultNumber = whileResult.getResultNumber();
+  Value carried = whileOp.getAfter().front().getArgument(whileResult.getResultNumber());
+  if (whileOp.getConditionOp().getArgs()[resultNumber] !=
+          whileOp.getBeforeArguments()[resultNumber] ||
+      whileOp.getYieldOp().getOperand(resultNumber) != carried) {
+    return nullptr;
+  }
+  WriteArrayOp coveringWrite;
+  for (auto write : whileOp.getAfter().front().getOps<WriteArrayOp>()) {
+    if (write.getArrRef() != carried || write.getIndices().size() != 1 || coveringWrite) {
+      return nullptr;
+    }
+    auto range = getStaticLoopIndexRange(write.getIndices().front());
+    auto indexCast = write.getIndices().front().getDefiningOp<cast::FeltToIndexOp>();
+    auto index = indexCast ? llvm::dyn_cast<BlockArgument>(indexCast.getValue()) : BlockArgument();
+    if (!range || range->first != 0 || range->second != arrayType.getDimSize(0) || !index ||
+        index.getOwner() != &whileOp.getAfter().front()) {
+      return nullptr;
+    }
+    auto initial = whileOp.getInits()[index.getArgNumber()].getDefiningOp<felt::FeltConstantOp>();
+    auto next =
+        whileOp.getYieldOp().getOperand(index.getArgNumber()).getDefiningOp<felt::AddFeltOp>();
+    if (!initial || initial.getValue().getReducedValueOrRaw() != 0 || !next) {
+      return nullptr;
+    }
+    Value stepValue = next.getLhs() == index   ? next.getRhs()
+                      : next.getRhs() == index ? next.getLhs()
+                                               : Value();
+    auto step =
+        stepValue ? stepValue.getDefiningOp<felt::FeltConstantOp>() : felt::FeltConstantOp();
+    auto source = write.getRvalue().getDefiningOp<ReadArrayOp>();
+    if (!step || step.getValue().getReducedValueOrRaw() != 1 || !source ||
+        source.getArrRef() == carried || !llvm::equal(source.getIndices(), write.getIndices())) {
+      return nullptr;
+    }
+    coveringWrite = write;
+  }
+  bool hasOtherWrites = false;
+  whileOp.getAfter().walk([&](WriteArrayOp write) { hasOtherWrites |= write != coveringWrite; });
+  return hasOtherWrites ? WriteArrayOp() : coveringWrite;
+}
+
+/// Recognize the field-independent literals zero and one, including fieldless constants.
+static bool isBooleanLiteral(const SourceRef &ref, int64_t literal) {
+  if (auto value = ref.getConstant(); succeeded(value)) {
+    if (auto constant = value->getDefiningOp<felt::FeltConstantOp>()) {
+      return constant.getValue().getReducedValueOrRaw() == literal;
+    }
+  }
+  auto index = ref.getConstantIndexValue();
+  return succeeded(index) && *index == literal;
+}
+
+/// Recognize a literal zero written to this array before the loop.
+static bool isZeroInitializerWrite(const SourceRef &ref, Value initializer) {
+  auto value = ref.getConstant();
+  if (!isBooleanLiteral(ref, 0) || failed(value)) {
+    return false;
+  }
+  return llvm::any_of(value->getUsers(), [initializer](Operation *user) {
+    auto write = llvm::dyn_cast<WriteArrayOp>(user);
+    return write && write.getArrRef() == initializer;
+  });
+}
+
+/// Collect POD record positions used to distinguish indexed aggregate alternatives.
+static llvm::SmallVector<std::pair<uint64_t, uint64_t>>
+getAggregateAlternativeOrdinals(const SourceRef &ref) {
+  llvm::SmallVector<std::pair<uint64_t, uint64_t>> result;
+  auto root = ref.getRoot();
+  if (failed(root)) {
+    return result;
+  }
+  Type currentType = root->getType();
+  for (const SourceRefIndex &index : ref.getPath()) {
+    if (index.isMember()) {
+      currentType = index.getMember().getType();
+      continue;
+    }
+    if (index.isPodRecord()) {
+      auto podType = llvm::dyn_cast<PodType>(currentType);
+      if (!podType) {
+        continue;
+      }
+      auto records = podType.getRecords();
+      for (auto [ordinal, record] : llvm::enumerate(records)) {
+        if (record.getName() == index.getPodRecordNameAttr()) {
+          result.emplace_back(ordinal, records.size());
+          currentType = record.getType();
+          break;
+        }
+      }
+      continue;
+    }
+    if (index.isIndex() || index.isIndexRange()) {
+      if (auto arrayType = llvm::dyn_cast<ArrayType>(currentType)) {
+        currentType = arrayType.getElementType();
+      }
+    }
+  }
+  return result;
+}
+
+/// Check whether a POD alternative matches the selected aggregate element.
+static bool isCompatibleIndexedAlternative(const SourceRef &candidate, const SourceRef &selection) {
+  llvm::SmallVector<std::pair<uint64_t, uint64_t>> selectedIndices;
+  auto root = selection.getRoot();
+  if (failed(root)) {
+    return true;
+  }
+  Type currentType = root->getType();
+  for (const SourceRefIndex &index : selection.getPath()) {
+    if (index.isMember()) {
+      currentType = index.getMember().getType();
+      continue;
+    }
+    if (index.isPodRecord()) {
+      if (auto podType = llvm::dyn_cast<PodType>(currentType)) {
+        for (auto record : podType.getRecords()) {
+          if (record.getName() == index.getPodRecordNameAttr()) {
+            currentType = record.getType();
+            break;
+          }
+        }
+      }
+      continue;
+    }
+    if (auto arrayType = llvm::dyn_cast<ArrayType>(currentType)) {
+      if (index.isIndex()) {
+        selectedIndices.emplace_back(
+            static_cast<uint64_t>(static_cast<int64_t>(index.getIndex())), arrayType.getDimSize(0)
+        );
+      }
+      currentType = arrayType.getElementType();
+    }
+  }
+
+  for (auto [ordinal, alternativeCount] : getAggregateAlternativeOrdinals(candidate)) {
+    for (auto [selected, dimensionSize] : selectedIndices) {
+      if (alternativeCount == dimensionSize && ordinal != selected) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/// Recognize a zero initializer used only as the identity of a loop-carried sum.
+static std::optional<SourceRef> getNeutralWhileInitializer(Value value) {
+  auto result = llvm::dyn_cast<OpResult>(value);
+  auto whileOp =
+      result ? llvm::dyn_cast_if_present<scf::WhileOp>(result.getDefiningOp()) : scf::WhileOp();
+  if (!whileOp) {
+    return std::nullopt;
+  }
+
+  unsigned resultNumber = result.getResultNumber();
+  if (resultNumber >= whileOp.getInits().size() ||
+      resultNumber >= whileOp.getYieldOp().getNumOperands() ||
+      whileOp.getConditionOp().getArgs()[resultNumber] !=
+          whileOp.getBeforeArguments()[resultNumber]) {
+    return std::nullopt;
+  }
+  Value init = whileOp.getInits()[resultNumber];
+  auto zero = init.getDefiningOp<felt::FeltConstantOp>();
+  if (!zero || zero.getValue().getReducedValueOrRaw() != 0) {
+    return std::nullopt;
+  }
+
+  Value carried = whileOp.getAfter().front().getArgument(resultNumber);
+  Value yielded = whileOp.getYieldOp().getOperand(resultNumber);
+  auto add = yielded.getDefiningOp<felt::AddFeltOp>();
+  if (!add || !llvm::is_contained(add->getOperands(), carried)) {
+    return std::nullopt;
+  }
+  return SourceRef(zero);
 }
 
 } // namespace
@@ -733,6 +979,41 @@ static SourceRefLatticeValue getObservedDependencies(
     );
   };
   SourceRefLatticeValue result = compute();
+  if (std::optional<SourceRef> neutralInitializer = getNeutralWhileInitializer(val)) {
+    (void)result.remove(*neutralInitializer);
+    auto whileResult = llvm::cast<OpResult>(val);
+    auto whileOp = llvm::cast<scf::WhileOp>(whileResult.getDefiningOp());
+    Value carried = whileOp.getAfter().front().getArgument(whileResult.getResultNumber());
+    auto add = whileOp.getYieldOp()
+                   .getOperand(whileResult.getResultNumber())
+                   .getDefiningOp<felt::AddFeltOp>();
+    for (Value operand : add->getOperands()) {
+      if (operand != carried) {
+        (void)result.update(getObservedDependencies(solver, operand, cache));
+      }
+    }
+  }
+  if (WriteArrayOp write = getFullyOverwrittenLoopArrayWrite(val)) {
+    auto read = val.getDefiningOp<ReadArrayOp>();
+    auto loopResult = llvm::cast<OpResult>(read.getArrRef());
+    auto loop = loopResult.getDefiningOp<scf::WhileOp>();
+    Value initializer = loop.getInits()[loopResult.getResultNumber()];
+    SourceRefSet writtenDependencies =
+        getObservedDependencies(solver, write.getRvalue(), cache).foldToScalar();
+    SourceRefLatticeValue normalized;
+    auto selected = SourceRefAnalysis::getValueState(solver, val);
+    for (const SourceRef &ref : result.foldToScalar()) {
+      if (isZeroInitializerWrite(ref, initializer) && !writtenDependencies.contains(ref)) {
+        continue;
+      }
+      (void)normalized.insert(
+          selected.isSingleValue() && writtenDependencies.contains(ref)
+              ? ref.narrowRanges(selected.getSingleValue())
+              : ref
+      );
+    }
+    result = std::move(normalized);
+  }
   if (llvm::isa<StructType>(val.getType())) {
     result = captureComponentHandles(result);
   }
@@ -944,7 +1225,44 @@ SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveDependencies(
     const SourceRefLatticeValue &addresses, Operation *before
 ) const {
   ResolutionState state;
-  return resolveAt(addresses, before, state);
+  SymbolTableCollection queryTables;
+  auto module = before->getParentOfType<ModuleOp>();
+  // Value aggregates expose their scalar contents at this observation point. Component handles
+  // remain identities: expanding them would lose the captured instance used by later member reads.
+  std::function<SourceRefLatticeValue(const SourceRefLatticeValue &)> expand =
+      [&](const SourceRefLatticeValue &input) {
+    if (input.isArray()) {
+      SourceRefLatticeValue result(input.getArrayShape());
+      for (size_t i = 0; i < input.getArraySize(); ++i) {
+        (void)result.getElemFlatIdx(i).setValue(expand(input.getElemFlatIdx(i)));
+      }
+      return result;
+    }
+    SourceRefLatticeValue result;
+    for (const SourceRef &address : input.getScalarValue()) {
+      if (!isMutableAggregateType(address.getType())) {
+        (void)result.insert(address);
+        continue;
+      }
+      SourceRefLatticeValue children;
+      if (auto arrayType = llvm::dyn_cast<ArrayType>(address.getType());
+          arrayType && (!arrayType.hasStaticShape() || arrayType.getNumElements() > 64)) {
+        // Keep large and symbolic arrays compact while still selecting their scalar leaves.
+        auto child =
+            address.createChild(SourceRefIndex::forArrayDimension(arrayType.getDimSize(0)));
+        ensure(succeeded(child), "could not select aggregate dependency range");
+        (void)children.insert(*child);
+        (void)result.update(expand(children));
+        continue;
+      }
+      for (const SourceRef &child : address.getAllChildren(queryTables, module)) {
+        (void)children.insert(child);
+      }
+      (void)result.update(expand(children));
+    }
+    return result;
+  };
+  return resolveAt(expand(addresses), before, state);
 }
 
 SourceRefLatticeValue SourceRefAnalysis::StorageState::resolveHandles(
@@ -1837,6 +2155,8 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
         auto constantIndex = idxVals.getConstantValue();
         if (succeeded(constantIndex)) {
           indices.emplace_back(*constantIndex);
+        } else if (auto bounds = getStaticLoopIndexRange(idxOperand)) {
+          indices.emplace_back(bounds->first, bounds->second);
         } else {
           ArrayType arrayType = array.getType();
           assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
@@ -2254,6 +2574,8 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
     auto constantIndex = idxVals.getConstantValue();
     if (succeeded(constantIndex)) {
       indices.emplace_back(*constantIndex);
+    } else if (auto bounds = getStaticLoopIndexRange(idxOperand)) {
+      indices.emplace_back(bounds->first, bounds->second);
     } else {
       ArrayType arrayType = array.getType();
       assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
@@ -2460,6 +2782,22 @@ ConstraintDependencyGraph::computeConstraints(DataFlowSolver &solver, AnalysisMa
           signalSets.unionSets(leader, member);
         }
       }
+      for (const auto &[source, targets] : translatedCDG.dependencyEdges) {
+        dependencyEdges[source].insert(targets.begin(), targets.end());
+      }
+      for (const auto &[source, targets] : translatedCDG.conditionalDependencyEdges) {
+        conditionalDependencyEdges[source].insert(targets.begin(), targets.end());
+      }
+      auto &translatedAliases = translatedCDG.directAliases;
+      for (const auto *leaderIt : translatedAliases) {
+        if (!leaderIt->isLeader()) {
+          continue;
+        }
+        const SourceRef &leader = leaderIt->getData();
+        for (const SourceRef &member : translatedAliases.members(*leaderIt)) {
+          directAliases.unionSets(leader, member);
+        }
+      }
       // And update the constant sets
       for (auto &[ref, constSet] : translatedCDG.constantSets) {
         constantSets[ref].insert(constSet.begin(), constSet.end());
@@ -2471,25 +2809,93 @@ ConstraintDependencyGraph::computeConstraints(DataFlowSolver &solver, AnalysisMa
   return success();
 }
 
-void ConstraintDependencyGraph::walkConstrainOp(DataFlowSolver &solver, Operation *emitOp) {
+void ConstraintDependencyGraph::walkConstrainOp(
+    mlir::DataFlowSolver &solver, mlir::Operation *emitOp
+) {
   std::vector<SourceRef> signalUsages, constUsages;
+  std::vector<SourceRef> conditionalUsages;
+  llvm::SmallVector<SourceRefSet, 2> operandSignals;
 
-  for (auto operand : emitOp->getOperands()) {
-    auto latticeVal = SourceRefAnalysis::getDependencyState(solver, operand);
-    for (const auto &ref : latticeVal.foldToScalar()) {
-      if (ref.isConstant()) {
-        constUsages.push_back(ref);
-      } else {
-        signalUsages.push_back(ref);
+  // Some frontends preserve a witness-only conditional in @constrain as an empty scf.if marker.
+  // Associate that marker's condition with the next emitted constraint in the block.
+  for (Operation *previous = emitOp->getPrevNode(); previous != nullptr;
+       previous = previous->getPrevNode()) {
+    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(previous)) {
+      break;
+    }
+    auto ifOp = llvm::dyn_cast<scf::IfOp>(previous);
+    if (!ifOp) {
+      continue;
+    }
+    auto hasOnlyTerminator = [](Region &region) {
+      return region.hasOneBlock() && region.front().without_terminator().empty();
+    };
+    if (!hasOnlyTerminator(ifOp.getThenRegion()) || !hasOnlyTerminator(ifOp.getElseRegion())) {
+      continue;
+    }
+    for (const SourceRef &conditionRef :
+         SourceRefAnalysis::getDependencyState(solver, ifOp.getCondition()).foldToScalar()) {
+      if (conditionRef.isConstant() || conditionRef.isTemplateConstant()) {
+        constUsages.push_back(conditionRef);
+      } else if (!conditionRef.isBlockArgument() || *conditionRef.getInputNum() == 0) {
+        conditionalUsages.push_back(conditionRef);
       }
     }
   }
 
+  for (auto operand : emitOp->getOperands()) {
+    auto latticeVal = SourceRefAnalysis::getDependencyState(solver, operand, emitOp);
+    std::optional<SourceRef> neutralInitializer = getNeutralWhileInitializer(operand);
+    SourceRefSet currentOperandSignals;
+    for (const auto &ref : latticeVal.foldToScalar()) {
+      if (ref.isConstant() || ref.isTemplateConstant()) {
+        if (!neutralInitializer || ref != *neutralInitializer) {
+          constUsages.push_back(ref);
+        }
+      } else {
+        signalUsages.push_back(ref);
+      }
+    }
+    for (const SourceRef &ref : SourceRefAnalysis::getValueState(solver, operand).foldToScalar()) {
+      if (!ref.isConstant() && !ref.isTemplateConstant()) {
+        currentOperandSignals.insert(ref);
+      }
+    }
+    operandSignals.push_back(std::move(currentOperandSignals));
+  }
+
+  auto isStorageIdentity = [](Value operand) {
+    return llvm::isa<BlockArgument>(operand) ||
+           llvm::isa_and_present<MemberReadOp, ReadArrayOp, ReadPodOp>(operand.getDefiningOp());
+  };
+  if (llvm::isa<EmitEqualityOp>(emitOp) && operandSignals.size() == 2 &&
+      llvm::all_of(emitOp->getOperands(), isStorageIdentity) && operandSignals[0].size() == 1 &&
+      operandSignals[1].size() == 1) {
+    const SourceRef &lhs = *operandSignals[0].begin();
+    const SourceRef &rhs = *operandSignals[1].begin();
+    directAliases.unionSets(lhs, rhs);
+  }
+
   // Compute a transitive closure over the signals.
   if (!signalUsages.empty()) {
+    for (const SourceRef &lhs : signalUsages) {
+      for (const SourceRef &rhs : signalUsages) {
+        if (lhs != rhs) {
+          dependencyEdges[lhs].insert(rhs);
+        }
+      }
+    }
     auto leader = signalSets.getOrInsertLeaderValue(signalUsages.front());
     for (const SourceRef &signal : llvm::drop_begin(signalUsages)) {
       signalSets.unionSets(leader, signal);
+    }
+  }
+  for (const SourceRef &conditionRef : conditionalUsages) {
+    for (const SourceRef &signalRef : signalUsages) {
+      if (conditionRef != signalRef) {
+        conditionalDependencyEdges[conditionRef].insert(signalRef);
+        conditionalDependencyEdges[signalRef].insert(conditionRef);
+      }
     }
   }
   // Also update constant references for each value.
@@ -2590,6 +2996,74 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
     }
   }
 
+  for (const auto &[source, targets] : dependencyEdges) {
+    auto translatedSources = translate(source);
+    if (failed(translatedSources)) {
+      continue;
+    }
+    for (const SourceRef &target : targets) {
+      auto translatedTargets = translate(target);
+      if (failed(translatedTargets)) {
+        continue;
+      }
+      for (const SourceRef &translatedSource : *translatedSources) {
+        for (const SourceRef &translatedTarget : *translatedTargets) {
+          if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
+              translatedSource != translatedTarget) {
+            res.dependencyEdges[translatedSource].insert(translatedTarget);
+          }
+        }
+      }
+    }
+  }
+
+  for (const auto *leaderIt : directAliases) {
+    if (!leaderIt->isLeader()) {
+      continue;
+    }
+    std::vector<SourceRef> translatedAliases;
+    for (auto memberIt = directAliases.member_begin(*leaderIt);
+         memberIt != directAliases.member_end(); ++memberIt) {
+      auto translated = translate(*memberIt);
+      if (failed(translated)) {
+        continue;
+      }
+      llvm::copy_if(
+          *translated, std::back_inserter(translatedAliases),
+          [](const SourceRef &translatedRef) { return !translatedRef.isConstant(); }
+      );
+    }
+    if (translatedAliases.empty()) {
+      continue;
+    }
+    const SourceRef &leader = translatedAliases.front();
+    res.directAliases.insert(leader);
+    for (const SourceRef &alias : llvm::drop_begin(translatedAliases)) {
+      res.directAliases.unionSets(leader, alias);
+    }
+  }
+
+  for (const auto &[source, targets] : conditionalDependencyEdges) {
+    auto translatedSources = translate(source);
+    if (failed(translatedSources)) {
+      continue;
+    }
+    for (const SourceRef &target : targets) {
+      auto translatedTargets = translate(target);
+      if (failed(translatedTargets)) {
+        continue;
+      }
+      for (const SourceRef &translatedSource : *translatedSources) {
+        for (const SourceRef &translatedTarget : *translatedTargets) {
+          if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
+              translatedSource != translatedTarget) {
+            res.conditionalDependencyEdges[translatedSource].insert(translatedTarget);
+          }
+        }
+      }
+    }
+  }
+
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
@@ -2605,29 +3079,227 @@ ConstraintDependencyGraph ConstraintDependencyGraph::translate(
 
 SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &ref) const {
   SourceRefSet res;
-  auto currRef = FailureOr<SourceRef>(ref);
-  while (succeeded(currRef)) {
-    // A dynamic access is represented by a half-open range. Match every concrete element and
-    // range that overlaps the queried path, as well as exact references.
-    for (const auto *candidate : signalSets) {
-      const SourceRef &candidateRef = candidate->getData();
-      if (!candidateRef.overlaps(*currRef)) {
-        continue;
+  SourceRefSet visited;
+  llvm::SmallVector<SourceRef> worklist = {ref};
+  bool hasBooleanZero = false;
+  bool hasBooleanOne = false;
+  for (const auto &[source, constants] : constantSets) {
+    if (!source.overlaps(ref)) {
+      continue;
+    }
+    for (const SourceRef &constant : constants) {
+      hasBooleanZero |= isBooleanLiteral(constant, 0);
+      hasBooleanOne |= isBooleanLiteral(constant, 1);
+    }
+  }
+  const bool followConditionalDependencies = hasBooleanZero && hasBooleanOne;
+  const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(ref.getType());
+
+  // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
+  // bridges transitively so that, for example, `out[2] == child.out[2]` and a child constraint on
+  // `child.out[0:N]` connect `out[2]` to the child's inputs.
+  while (!worklist.empty()) {
+    auto currRef = mlir::FailureOr<SourceRef>(worklist.pop_back_val());
+    while (mlir::succeeded(currRef)) {
+      if (!visited.insert(*currRef).second) {
+        break;
       }
-      for (const SourceRef &member : signalSets.members(candidateRef)) {
-        if (!member.overlaps(ref)) {
-          res.insert(member);
+
+      for (const auto &[source, targets] : dependencyEdges) {
+        if ((!source.overlaps(*currRef) &&
+             !(includeDescendants && source.isValidPrefix(*currRef))) ||
+            !isCompatibleIndexedAlternative(source, ref)) {
+          continue;
+        }
+        if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
+          res.insert(constIt->second.begin(), constIt->second.end());
+        }
+        for (const SourceRef &target : targets) {
+          if (!isCompatibleIndexedAlternative(target, ref)) {
+            continue;
+          }
+          SourceRef narrowed = target.narrowRanges(*currRef);
+          if (!visited.contains(narrowed)) {
+            worklist.push_back(narrowed);
+          }
+          if (!narrowed.overlaps(ref)) {
+            res.insert(narrowed);
+          }
+          auto constIt = constantSets.find(target);
+          if (constIt != constantSets.end()) {
+            res.insert(constIt->second.begin(), constIt->second.end());
+          }
         }
       }
-      auto constIt = constantSets.find(candidateRef);
-      if (constIt != constantSets.end()) {
-        res.insert(constIt->second.begin(), constIt->second.end());
+      if (followConditionalDependencies) {
+        for (const auto &[source, targets] : conditionalDependencyEdges) {
+          if ((!source.overlaps(*currRef) &&
+               !(includeDescendants && source.isValidPrefix(*currRef))) ||
+              !isCompatibleIndexedAlternative(source, ref)) {
+            continue;
+          }
+          for (const SourceRef &target : targets) {
+            if (!isCompatibleIndexedAlternative(target, ref)) {
+              continue;
+            }
+            SourceRef narrowed = target.narrowRanges(*currRef);
+            if (!visited.contains(narrowed)) {
+              worklist.push_back(narrowed);
+            }
+            if (!narrowed.overlaps(ref)) {
+              res.insert(narrowed);
+            }
+          }
+        }
+      }
+      for (const auto &[constantSource, constants] : constantSets) {
+        if ((constantSource.overlaps(*currRef) ||
+             (includeDescendants && constantSource.isValidPrefix(*currRef))) &&
+            isCompatibleIndexedAlternative(constantSource, ref)) {
+          res.insert(constants.begin(), constants.end());
+        }
+      }
+      // Constraints on an aggregate also constrain its scalar descendants.
+      auto parent = currRef->getParentPrefix();
+      if (includeDescendants && succeeded(parent) && ref.isValidPrefix(*parent) && *parent != ref) {
+        currRef = failure();
+      } else {
+        currRef = parent;
       }
     }
-    // Go to parent
-    currRef = currRef->getParentPrefix();
   }
-  return res;
+
+  DenseMap<SourceRef, SourceRef> preferredAliases;
+  auto root = ref.getRoot();
+  StructDefOp queriedStruct =
+      succeeded(root) ? root->getParentRegion()->getParentOfType<StructDefOp>() : nullptr;
+  auto rankAlias = [queriedStruct](const SourceRef &candidate) {
+    if (candidate.isBlockArgument() && *candidate.getInputNum() > 0) {
+      auto candidateRoot = candidate.getRoot();
+      auto candidateStruct = succeeded(candidateRoot)
+                                 ? candidateRoot->getParentRegion()->getParentOfType<StructDefOp>()
+                                 : nullptr;
+      return candidateStruct == queriedStruct ? 0 : 1;
+    }
+    if (candidate.isCreateStructOp()) {
+      return 2;
+    }
+    if (candidate.isBlockArgument()) {
+      return 3;
+    }
+    return 4;
+  };
+  for (const auto *leaderIt : directAliases) {
+    if (!leaderIt->isLeader()) {
+      continue;
+    }
+    auto memberIt = directAliases.member_begin(*leaderIt);
+    SourceRef preferred = *memberIt;
+    for (; memberIt != directAliases.member_end(); ++memberIt) {
+      if (rankAlias(*memberIt) < rankAlias(preferred) ||
+          (rankAlias(*memberIt) == rankAlias(preferred) && *memberIt < preferred)) {
+        preferred = *memberIt;
+      }
+    }
+    for (memberIt = directAliases.member_begin(*leaderIt); memberIt != directAliases.member_end();
+         ++memberIt) {
+      preferredAliases.try_emplace(*memberIt, preferred);
+    }
+  }
+
+  SourceRefSet normalized;
+  if (ctx.runIntraproceduralAnalysis() &&
+      llvm::any_of(res, [](const SourceRef &resultRef) { return resultRef.isNonDetOp(); })) {
+    SourceRefSet equivalentInputs;
+    for (const auto *candidate : signalSets) {
+      const SourceRef &candidateRef = candidate->getData();
+      if (candidateRef.isBlockArgument() && *candidateRef.getInputNum() > 0) {
+        equivalentInputs.insert(candidateRef);
+      }
+    }
+    res.insert(equivalentInputs.begin(), equivalentInputs.end());
+  }
+
+  for (const SourceRef &resultRef : res) {
+    auto aliasIt = preferredAliases.find(resultRef);
+    if (aliasIt == preferredAliases.end()) {
+      normalized.insert(resultRef);
+    } else if (!aliasIt->second.overlaps(ref)) {
+      normalized.insert(aliasIt->second);
+    } else if (!resultRef.overlaps(ref)) {
+      normalized.insert(resultRef);
+    }
+  }
+
+  const bool hasInputDependency = llvm::any_of(normalized, [](const SourceRef &resultRef) {
+    return resultRef.isBlockArgument() && *resultRef.getInputNum() > 0;
+  });
+  if (hasInputDependency) {
+    auto isLogicalComponentPath = [](const SourceRef &resultRef) {
+      if (!resultRef.isBlockArgument() || *resultRef.getInputNum() != 0) {
+        return false;
+      }
+      return llvm::any_of(resultRef.getPath(), [](const SourceRefIndex &index) {
+        return index.isMember() && llvm::isa<StructType>(index.getMember().getType());
+      });
+    };
+    const bool queryIsPodStorage = llvm::isa<PodType>(ref.getType());
+    const bool hasLogicalComponentPath =
+        !queryIsPodStorage && llvm::any_of(normalized, isLogicalComponentPath);
+    SourceRefSet terminalDependencies;
+    auto isTerminal = [&](const SourceRef &resultRef) {
+      if (resultRef.isConstant() || (isLogicalComponentPath(resultRef) && !queryIsPodStorage)) {
+        return true;
+      }
+      if (!resultRef.isBlockArgument() || *resultRef.getInputNum() == 0) {
+        return false;
+      }
+      return !hasLogicalComponentPath || llvm::none_of(resultRef.getPath(), [](const auto &index) {
+        return index.isIndexRange();
+      });
+    };
+    for (const SourceRef &resultRef : normalized) {
+      if (isTerminal(resultRef)) {
+        terminalDependencies.insert(resultRef);
+      }
+    }
+    normalized = std::move(terminalDependencies);
+  }
+
+  auto isStrictRangeSubset = [](const SourceRef &candidate, const SourceRef &other) {
+    auto candidateRoot = candidate.getRoot();
+    auto otherRoot = other.getRoot();
+    if (failed(candidateRoot) || failed(otherRoot) || *candidateRoot != *otherRoot ||
+        candidate.getPath().size() != other.getPath().size()) {
+      return false;
+    }
+
+    bool isStrict = false;
+    for (auto [candidateIndex, otherIndex] : llvm::zip(candidate.getPath(), other.getPath())) {
+      if (candidateIndex == otherIndex) {
+        continue;
+      }
+      if (!candidateIndex.isIndexRange() || !otherIndex.isIndexRange()) {
+        return false;
+      }
+      auto [candidateLower, candidateUpper] = candidateIndex.getIndexRange();
+      auto [otherLower, otherUpper] = otherIndex.getIndexRange();
+      if (candidateLower < otherLower || candidateUpper > otherUpper) {
+        return false;
+      }
+      isStrict = true;
+    }
+    return isStrict;
+  };
+  SourceRefSet minimalRanges;
+  for (const SourceRef &candidate : normalized) {
+    if (llvm::none_of(normalized, [&](const SourceRef &other) {
+      return isStrictRangeSubset(candidate, other);
+    })) {
+      minimalRanges.insert(candidate);
+    }
+  }
+  return minimalRanges;
 }
 
 /* ConstraintDependencyGraphModuleAnalysis */

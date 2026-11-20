@@ -3,5 +3,9 @@ fixed:
   - Preserve captured component-handle identities across overwritten aggregate slots and distinguish callee-local identities between calls
   - Resolve storage effects across calls, loops, and executable region yields, revisiting dependents when callee summaries become available
   - Preserve stored interval expressions and observation-time values when copying aggregates, keeping unknown copied fields distinct across intervening writes
+  - Preserve SCF-carried aggregate state and refine statically bounded loop accesses
+  - Traverse overlapping constraint dependencies transitively and normalize aggregate queries to logical inputs
+  - Remove proven neutral loop initializers and retain meaningful zero constraints
+  - Preserve boolean intervals and recover conditional dependencies only for outputs constrained to both boolean values
 changed:
   - Separate SourceRef storage addresses from logical dependency queries and cache storage snapshots and reference translations
