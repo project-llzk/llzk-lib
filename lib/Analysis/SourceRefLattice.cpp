@@ -25,7 +25,6 @@
 #include <llvm/Support/Debug.h>
 
 #include <numeric>
-#include <unordered_set>
 
 #define DEBUG_TYPE "llzk-constrain-ref-lattice"
 
@@ -41,13 +40,62 @@ using namespace polymorphic;
 
 /* SourceRefLatticeValue */
 
-mlir::ChangeResult SourceRefLatticeValue::insert(const SourceRef &rhs) {
-  auto rhsVal = SourceRefLatticeValue(rhs);
-  if (isScalar()) {
-    return updateScalar(rhsVal.getScalarValue());
-  } else {
-    return foldAndUpdate(rhsVal);
+TranslationMap &TranslationMap::operator=(const TranslationMap &other) {
+  if (this != &other) {
+    entries = other.entries;
+    invalidateCache();
   }
+  return *this;
+}
+
+TranslationMap &TranslationMap::operator=(TranslationMap &&other) noexcept {
+  if (this != &other) {
+    entries = std::move(other.entries);
+    invalidateCache();
+    other.invalidateCache();
+  }
+  return *this;
+}
+
+void TranslationMap::set(SourceRef prefix, SourceRefLatticeValue replacements) {
+  invalidateCache();
+  entries.insert_or_assign(std::move(prefix), std::move(replacements));
+}
+
+llvm::ArrayRef<const TranslationMap::Entry *>
+TranslationMap::Index::getEntriesForRoot(Value root) const {
+  auto entriesForRoot = entriesByRoot.find(root);
+  if (entriesForRoot == entriesByRoot.end()) {
+    return {};
+  }
+  return entriesForRoot->second;
+}
+
+const TranslationMap::Index &TranslationMap::getIndex() const {
+  if (cachedIndex) {
+    return *cachedIndex;
+  }
+
+  cachedIndex.emplace();
+  Index &index = *cachedIndex;
+  index.entries.reserve(entries.size());
+  for (const auto &[prefix, replacements] : entries) {
+    FailureOr<Value> root = prefix.getRoot();
+    if (failed(root)) {
+      continue;
+    }
+    index.entries.push_back({prefix, replacements.foldToScalar()});
+    index.entriesByRoot[*root].push_back(&index.entries.back());
+  }
+  return index;
+}
+
+mlir::ChangeResult SourceRefLatticeValue::insert(const SourceRef &rhs) {
+  if (isScalar()) {
+    return getScalarValue().insert(rhs).second ? mlir::ChangeResult::Change
+                                               : mlir::ChangeResult::NoChange;
+  }
+  return foldAndUpdate(SourceRefLatticeValue(rhs));
 }
 
 mlir::ChangeResult SourceRefLatticeValue::remove(const SourceRef &ref) {
@@ -79,15 +127,16 @@ SourceRefLatticeValue::translate(const TranslationMap &translation) const {
   return {newVal, res};
 }
 
-std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-SourceRefLatticeValue::replacePrefixes(const TranslationMap &translation) const {
+std::pair<SourceRefLatticeValue, mlir::ChangeResult> SourceRefLatticeValue::replacePrefixes(
+    const TranslationMap &translation, bool preserveCaptures
+) const {
   auto newVal = *this;
   auto res = mlir::ChangeResult::NoChange;
   if (newVal.isScalar()) {
-    res = newVal.replacePrefixesScalar(translation);
+    res = newVal.replacePrefixesScalar(translation, preserveCaptures);
   } else {
     for (auto &elem : newVal.getArrayValue()) {
-      auto [newElem, elemRes] = elem->replacePrefixes(translation);
+      auto [newElem, elemRes] = elem->replacePrefixes(translation, preserveCaptures);
       *elem = std::move(newElem);
       res |= elemRes;
     }
@@ -170,7 +219,7 @@ SourceRefLatticeValue::referencePodRecord(mlir::StringAttr recordName) const {
 }
 
 mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
-SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const {
+SourceRefLatticeValue::extract(llvm::ArrayRef<SourceRefIndex> indices) const {
   if (isArray()) {
     ensure(indices.size() <= getNumArrayDims(), "invalid extract array operands");
 
@@ -252,9 +301,19 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
   // If so, translate the current element with all replacement prefixes indicated
   // by the translation value.
   for (const SourceRef &currRef : currVal) {
-    for (const auto &[prefix, replacementVal] : translation) {
+    FailureOr<Value> root = currRef.getRoot();
+    if (failed(root)) {
+      continue;
+    }
+    llvm::ArrayRef<const TranslationMap::Entry *> entries =
+        translation.getIndex().getEntriesForRoot(*root);
+    if (entries.empty()) {
+      continue;
+    }
+    for (const TranslationMap::Entry *entry : entries) {
+      const auto &[prefix, replacementPrefixes] = *entry;
       if (currRef.isValidPrefix(prefix)) {
-        for (const SourceRef &replacementPrefix : replacementVal.foldToScalar()) {
+        for (const SourceRef &replacementPrefix : replacementPrefixes) {
           auto translatedRefRes = currRef.translate(prefix, replacementPrefix);
           if (succeeded(translatedRefRes)) {
             res |= insert(*translatedRefRes);
@@ -266,21 +325,39 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
   return res;
 }
 
-mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(const TranslationMap &translation) {
-  const ScalarTy current = getScalarValue();
+mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(
+    const TranslationMap &translation, bool preserveCaptures
+) {
+  const ScalarTy &current = getScalarValue();
   ScalarTy replaced;
+  replaced.reserve(current.size());
   for (const SourceRef &currentRef : current) {
+    FailureOr<Value> root = currentRef.getRoot();
+    if (failed(root)) {
+      replaced.insert(currentRef);
+      continue;
+    }
+    llvm::ArrayRef<const TranslationMap::Entry *> entries =
+        translation.getIndex().getEntriesForRoot(*root);
+    if (entries.empty()) {
+      replaced.insert(currentRef);
+      continue;
+    }
     bool matched = false;
-    for (const auto &[prefix, replacementVal] : translation) {
-      if (!currentRef.isValidPrefix(prefix)) {
+    for (const TranslationMap::Entry *entry : entries) {
+      const auto &[prefix, replacementPrefixes] = *entry;
+      if (preserveCaptures && currentRef.protectsCapturedComponent(prefix)) {
+        continue;
+      }
+      auto suffix = currentRef.getSuffix(prefix);
+      if (failed(suffix)) {
         continue;
       }
       matched = true;
-      for (const SourceRef &replacementPrefix : replacementVal.foldToScalar()) {
+      for (const SourceRef &replacementPrefix : replacementPrefixes) {
         auto translated = currentRef.translate(prefix, replacementPrefix);
-        if (succeeded(translated)) {
-          replaced.insert(*translated);
-        }
+        ensure(succeeded(translated), "matching prefix must translate");
+        replaced.insert(*translated);
       }
     }
     if (!matched) {
@@ -349,6 +426,12 @@ mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
     } else if (auto nonDet = llvm::dyn_cast<NonDetOp>(defOp)) {
       return SourceRef(nonDet);
     } else if (llvm::isa<global::GlobalReadOp>(defOp)) {
+      return SourceRef(llvm::cast<mlir::OpResult>(val));
+    } else if (
+        llvm::isa<ReadPodOp, ReadArrayOp, MemberReadOp>(defOp) &&
+        llvm::isa<ArrayType, PodType>(val.getType())
+    ) {
+      // Mutable aggregate reads produce independent copied storage.
       return SourceRef(llvm::cast<mlir::OpResult>(val));
     } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(defOp)) {
       return SourceRef(createArray->getResult(0));

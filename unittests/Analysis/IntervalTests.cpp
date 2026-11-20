@@ -666,6 +666,32 @@ module attributes {llzk.lang} {
 }
 )mlir";
 
+  static constexpr auto kInitializedPodStorageModule = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @PodStorage {
+    struct.member @storage : !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+    function.def @compute() -> !struct.type<@PodStorage> {
+      %self = struct.new : !struct.type<@PodStorage>
+      %five = felt.const 5
+      %seven = felt.const 7
+      %storage = pod.new { @initialized = %five }
+          : !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+      pod.write %storage[@written] = %seven
+          : !pod.type<[@initialized: !felt.type, @written: !felt.type]>, !felt.type
+      %read = pod.read %storage[@initialized]
+          : !pod.type<[@initialized: !felt.type, @written: !felt.type]>, !felt.type
+      struct.writem %self[@storage] = %storage
+          : !struct.type<@PodStorage>,
+            !pod.type<[@initialized: !felt.type, @written: !felt.type]>
+      function.return %self : !struct.type<@PodStorage>
+    }
+    function.def @constrain(%self: !struct.type<@PodStorage>) {
+      function.return
+    }
+  }
+}
+)mlir";
+
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
     EXPECT_TRUE(mod);
@@ -777,12 +803,15 @@ module attributes {llzk.lang} {
       auto fn = *mod->getOps<function::FuncDefOp>().begin();
       auto returned = fn.getBody().front().getTerminator()->getOperands();
       auto checkReads = [&](int64_t upper) {
-        for (Value value : returned) {
+        for (auto [index, value] : llvm::enumerate(returned)) {
           const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
           ASSERT_NE(lattice, nullptr);
           const auto &stored = lattice->getValue().getScalarValue();
-          EXPECT_EQ(stored.getInterval(), UnreducedInterval(7, upper).reduce(field));
-          EXPECT_EQ(stored.getOptionalUnreducedInterval(), UnreducedInterval(7, upper));
+          // Direct roots retain a flow-insensitive summary. Copies observe the last
+          // guaranteed write, so their scalar reads have the exact replacement value.
+          const int64_t lower = index < 2 ? 7 : upper;
+          EXPECT_EQ(stored.getInterval(), UnreducedInterval(lower, upper).reduce(field));
+          EXPECT_EQ(stored.getOptionalUnreducedInterval(), UnreducedInterval(lower, upper));
         }
       };
       SmallVector<Operation *> writes;
@@ -953,12 +982,15 @@ module attributes {llzk.lang} {
       ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
         return &candidate == driver;
       })));
-      auto check = [&](const SourceRef &ref, int64_t upper) {
+      auto check = [&](const SourceRef &ref, int64_t upper, bool copied = false) {
         const auto &stored = analysis->getWriteResults();
         auto it = stored.find(ref);
         ASSERT_NE(it, stored.end());
-        EXPECT_EQ(it->second.getInterval(), UnreducedInterval(7, upper).reduce(field));
-        EXPECT_EQ(it->second.getOptionalUnreducedInterval(), UnreducedInterval(7, upper));
+        // The result summary includes both publication and mutation; a later copy
+        // contains only the value after the guaranteed independent write.
+        const int64_t lower = copied ? upper : 7;
+        EXPECT_EQ(it->second.getInterval(), UnreducedInterval(lower, upper).reduce(field));
+        EXPECT_EQ(it->second.getOptionalUnreducedInterval(), UnreducedInterval(lower, upper));
       };
       check(*resultField, independentWrite ? 9 : 7);
       check(SourceRef(conditional->getResult(1), {SourceRefIndex(0)}), 7);
@@ -968,7 +1000,7 @@ module attributes {llzk.lang} {
               {SourceRefIndex(0), SourceRefIndex(StringAttr::get(&ctx, "pod")),
                SourceRefIndex(StringAttr::get(&ctx, "value"))}
           ),
-          independentWrite ? 9 : 7
+          independentWrite ? 9 : 7, /*copied=*/true
       );
       check(
           SourceRef(
@@ -1016,12 +1048,20 @@ TEST_F(IntervalAnalysisAPITests, OverlappingArrayWritesNotifyRangedSubscribers) 
       auto mod = parseModule(R"mlir(
 module attributes {llzk.lang} {
   function.def @test(%index: index, %condition: i1, %argument: !array.type<2 x !pod.type<[@value: !felt.type]>>) {
+    %zero = arith.constant 0 : index
     %one = arith.constant 1 : index
     %seven = felt.const 7
+    %nine = felt.const 9
+    %seed = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
     %owned = array.new : !array.type<2 x !pod.type<[@value: !felt.type]>>
     %container = pod.new { @items = %owned } : !pod.type<[@items: !array.type<2 x !pod.type<[@value: !felt.type]>>]>
     %nested = pod.read %container[@items] : !pod.type<[@items: !array.type<2 x !pod.type<[@value: !felt.type]>>]>, !array.type<2 x !pod.type<[@value: !felt.type]>>
     %other = array.new : !array.type<2 x !pod.type<[@value: !felt.type]>>
+    array.write %argument[%zero] = %seed : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    array.write %argument[%one] = %seed : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    %fixed = array.read %argument[%one] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    pod.write %fixed[@value] = %nine : !pod.type<[@value: !felt.type]>, !felt.type
+    array.write %argument[%one] = %fixed : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
     %slice = array.read %argument[%index] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
     %copy = pod.new { @slice = %slice } : !pod.type<[@slice: !pod.type<[@value: !felt.type]>]>
     %otherSlice = array.read %other[%index] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
@@ -1031,8 +1071,6 @@ module attributes {llzk.lang} {
     } else {
       scf.yield %slice : !pod.type<[@value: !felt.type]>
     }
-    %fixed = array.read %argument[%one] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
-    pod.write %fixed[@value] = %seven : !pod.type<[@value: !felt.type]>, !felt.type
     function.return
   }
 }
@@ -1041,10 +1079,11 @@ module attributes {llzk.lang} {
       auto fn = *mod->getOps<function::FuncDefOp>().begin();
       auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
       auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
-      auto read = *fn.getOps<array::ReadArrayOp>().begin();
-      auto write = *fn.getOps<pod::WritePodOp>().begin();
+      auto writes = llvm::to_vector(fn.getOps<array::WriteArrayOp>());
+      auto write = writes.back();
       auto selections = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
-      auto fixed = selections.back();
+      auto fixed = selections.front();
+      auto read = selections[1];
       auto conditional = *fn.getOps<scf::IfOp>().begin();
       auto nested = *fn.getOps<pod::ReadPodOp>().begin();
       std::array<Value, 3> sources {
@@ -1052,8 +1091,12 @@ module attributes {llzk.lang} {
       };
       read->setOperand(0, sources[sourceKind]);
       fixed->setOperand(0, sources[sourceKind]);
+      for (auto stored : writes) {
+        stored->setOperand(0, sources[sourceKind]);
+      }
       if (rangedWrite) {
         fixed->setOperand(1, fn.getArgument(0));
+        write->setOperand(1, fn.getArgument(0));
       }
 
       const Field &field = Field::getField("babybear");
@@ -1090,7 +1133,7 @@ module attributes {llzk.lang} {
             ASSERT_TRUE(succeeded(visit(&op)));
           }
         }
-        EXPECT_EQ(analysis->getVisits(pods[1]), 1U);
+        EXPECT_EQ(analysis->getVisits(pods[2]), 1U);
         EXPECT_EQ(analysis->getVisits(thenYield), 1U);
         EXPECT_EQ(analysis->getVisits(elseYield), 1U);
         ASSERT_TRUE(succeeded(visit(write)));
@@ -1098,10 +1141,10 @@ module attributes {llzk.lang} {
       ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
         return &candidate == driver;
       })));
-      EXPECT_GT(analysis->getVisits(pods[1]), 1U);
+      EXPECT_GT(analysis->getVisits(pods[2]), 1U);
       EXPECT_GT(analysis->getVisits(thenYield), 1U);
       EXPECT_GT(analysis->getVisits(elseYield), 1U);
-      EXPECT_EQ(analysis->getVisits(pods[2]), 1U);
+      EXPECT_EQ(analysis->getVisits(pods[3]), 1U);
     }
   }
 }
@@ -1110,7 +1153,7 @@ module attributes {llzk.lang} {
 TEST_F(IntervalAnalysisAPITests, RangedWritesUpdateConcreteAggregateSubscribers) {
   for (bool delayedWrite : {false, true}) {
     for (bool aggregateWrite : {false, true}) {
-      SCOPED_TRACE(delayedWrite ? "write after copies" : "write before copies");
+      SCOPED_TRACE(delayedWrite ? "visit write after copies" : "visit write before copies");
       SCOPED_TRACE(aggregateWrite ? "aggregate write" : "scalar write");
       std::string source = R"mlir(
 module attributes {llzk.lang} {
@@ -1125,6 +1168,7 @@ module attributes {llzk.lang} {
     %array = array.new %element, %element, %element, %element : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
     %dynamic = array.read %array[%zero, %index] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
     %dynamicPayload = pod.read %dynamic[@payload] : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>, !pod.type<[@value: !felt.type]>
+    // LATE_WRITE
     %concrete = array.read %array[%zero, %one] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
     %podCopy = pod.new { @selected = %concrete } : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
     %arrayCopy = array.new %concrete : !array.type<1 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
@@ -1138,7 +1182,6 @@ module attributes {llzk.lang} {
     %out = array.new %selected : !array.type<1 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
     %disjoint = array.read %array[%one, %one] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
     %unrelated = pod.new { @selected = %disjoint } : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
-    // LATE_WRITE
     function.return
   }
 }
@@ -1148,9 +1191,18 @@ module attributes {llzk.lang} {
           aggregateWrite
               ? "pod.write %dynamic[@payload] = %replacement : !pod.type<[@payload: "
                 "!pod.type<[@value: !felt.type]>, @other: !felt.type]>, !pod.type<[@value: "
-                "!felt.type]>"
+                "!felt.type]>\n"
+                "array.write %array[%zero, %index] = %dynamic : !array.type<2,2 x "
+                "!pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, "
+                "!pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>"
               : "pod.write %dynamicPayload[@value] = %nine : !pod.type<[@value: !felt.type]>, "
-                "!felt.type"
+                "!felt.type\n"
+                "pod.write %dynamic[@payload] = %dynamicPayload : !pod.type<[@payload: "
+                "!pod.type<[@value: !felt.type]>, @other: !felt.type]>, !pod.type<[@value: "
+                "!felt.type]>\n"
+                "array.write %array[%zero, %index] = %dynamic : !array.type<2,2 x "
+                "!pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, "
+                "!pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>"
       );
       auto mod = parseModule(source);
       ASSERT_TRUE(mod);
@@ -1158,7 +1210,13 @@ module attributes {llzk.lang} {
       auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
       auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
       auto conditional = *fn.getOps<scf::IfOp>().begin();
-      auto write = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+      auto concrete = llvm::to_vector(fn.getOps<array::ReadArrayOp>())[1];
+      auto payloadRead = *fn.getOps<pod::ReadPodOp>().begin();
+      SmallVector<Operation *> writes;
+      for (Operation *writer = payloadRead->getNextNode(); writer != concrete.getOperation();
+           writer = writer->getNextNode()) {
+        writes.push_back(writer);
+      }
       const Field &field = Field::getField("babybear");
       auto smt = llvm::CreateZ3Solver();
       DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
@@ -1199,12 +1257,17 @@ module attributes {llzk.lang} {
           check(*copy.createChild(other), 7);
         }
       };
+      auto visitWrites = [&] {
+        for (Operation *writer : writes) {
+          ASSERT_TRUE(succeeded(visit(writer)));
+        }
+      };
       auto *driver = solver.load<IntervalTestInitialization>([&] {
         for (Operation &op : fn.getBody().front()) {
-          if (&op == pods[3].getOperation() && !delayedWrite) {
-            ASSERT_TRUE(succeeded(visit(write)));
+          if (&op == concrete.getOperation() && !delayedWrite) {
+            visitWrites();
           }
-          if (&op == write.getOperation()) {
+          if (llvm::is_contained(writes, &op)) {
             continue;
           }
           if (&op == conditional.getOperation()) {
@@ -1216,7 +1279,7 @@ module attributes {llzk.lang} {
         }
         checkCopies(delayedWrite ? 7 : 9);
         if (delayedWrite) {
-          ASSERT_TRUE(succeeded(visit(write)));
+          visitWrites();
         }
       });
       ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
@@ -2070,6 +2133,39 @@ TEST_F(IntervalAnalysisAPITests, ComputeIntervalsTrackArrayNewStoredIntoMember) 
   auto expected = Interval::TypeA(field, field.felt(5), field.felt(6));
   ASSERT_TRUE(checkCond(expected, out1It->second, expected == out1It->second))
       << buildStringViaPrint(*out1Ref) << " -> " << buildStringViaPrint(out1It->second);
+}
+
+TEST_F(IntervalAnalysisAPITests, InitializedPodIntervalsSurviveAggregateMemberAssignment) {
+  auto mod = parseModule(kInitializedPodStorageModule);
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto computeFn = structDef.getComputeFuncOp();
+  ASSERT_TRUE(computeFn);
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ModuleIntervalAnalysis analysis(mod->getOperation());
+  const Field &field = Field::getField("babybear");
+  analysis.setField(field);
+  ASSERT_TRUE(succeeded(analysis.runAnalysis(am)));
+
+  MemberDefOp storageMember = *structDef.getOps<MemberDefOp>().begin();
+  SourceRef storageRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "initialized"))}
+  );
+  const auto &intervals = analysis.getResult(structDef).getComputeIntervals();
+  const auto *intervalIt = intervals.find(storageRef);
+  ASSERT_NE(intervalIt, intervals.end());
+  EXPECT_EQ(intervalIt->second, Interval::Degenerate(field, field.felt(5)));
+
+  SourceRef writtenRef(
+      mlir::cast<OpResult>(computeFn.getSelfValueFromCompute()),
+      {SourceRefIndex(storageMember), SourceRefIndex(StringAttr::get(&ctx, "written"))}
+  );
+  const auto *writtenIt = intervals.find(writtenRef);
+  ASSERT_NE(writtenIt, intervals.end());
+  EXPECT_EQ(writtenIt->second, Interval::Degenerate(field, field.felt(7)));
 }
 
 TEST_F(IntervalAnalysisAPITests, UnreducedIntervalsDisabledByDefault) {

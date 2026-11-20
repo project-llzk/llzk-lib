@@ -1,0 +1,7 @@
+fixed:
+  - Track array and POD dependencies at their observation and copy points, preserving by-value arguments, results, and nested or symbolic array copies
+  - Preserve captured component-handle identities across overwritten aggregate slots and distinguish callee-local identities between calls
+  - Resolve storage effects across calls, loops, and executable region yields, revisiting dependents when callee summaries become available
+  - Preserve stored interval expressions and observation-time values when copying aggregates, keeping unknown copied fields distinct across intervening writes
+changed:
+  - Separate SourceRef storage addresses from logical dependency queries and cache storage snapshots and reference translations

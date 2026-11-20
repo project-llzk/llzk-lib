@@ -1,0 +1,327 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// A scalar read is an immutable observation, even when its source is overwritten
+// before the value reaches a storage write, initializer, call, return, or yield.
+
+module attributes {llzk.lang} {
+  struct.def @PodScalarObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@PodScalarObservation> {
+      %self = struct.new : !struct.type<@PodScalarObservation>
+      function.return %self : !struct.type<@PodScalarObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@PodScalarObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %target = pod.new : !pod.type<[@value: !felt.type]>
+      pod.write %target[@value] = %old : !pod.type<[@value: !felt.type]>, !felt.type
+      %observed = pod.read %target[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @PodScalarObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayScalarObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ArrayScalarObservation> {
+      %self = struct.new : !struct.type<@ArrayScalarObservation>
+      function.return %self : !struct.type<@ArrayScalarObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ArrayScalarObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %source = array.new %initial : !array.type<1 x !felt.type>
+      %old = array.read %source[%c0] : !array.type<1 x !felt.type>, !felt.type
+      array.write %source[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %target = array.new : !array.type<1 x !felt.type>
+      array.write %target[%c0] = %old : !array.type<1 x !felt.type>, !felt.type
+      %observed = array.read %target[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ArrayScalarObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArithmeticScalarObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ArithmeticScalarObservation> {
+      %self = struct.new : !struct.type<@ArithmeticScalarObservation>
+      function.return %self : !struct.type<@ArithmeticScalarObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ArithmeticScalarObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %sum = felt.add %old, %bonus
+      %target = pod.new : !pod.type<[@value: !felt.type]>
+      pod.write %target[@value] = %sum : !pod.type<[@value: !felt.type]>, !felt.type
+      %observed = pod.read %target[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ArithmeticScalarObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, bonus },
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { bonus, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PodInitializerObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@PodInitializerObservation> {
+      %self = struct.new : !struct.type<@PodInitializerObservation>
+      function.return %self : !struct.type<@PodInitializerObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@PodInitializerObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %target = pod.new { @value = %old } : !pod.type<[@value: !felt.type]>
+      %observed = pod.read %target[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @PodInitializerObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayInitializerObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ArrayInitializerObservation> {
+      %self = struct.new : !struct.type<@ArrayInitializerObservation>
+      function.return %self : !struct.type<@ArrayInitializerObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ArrayInitializerObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %source = array.new %initial : !array.type<1 x !felt.type>
+      %old = array.read %source[%c0] : !array.type<1 x !felt.type>, !felt.type
+      array.write %source[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %target = array.new %old : !array.type<1 x !felt.type>
+      %observed = array.read %target[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ArrayInitializerObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @identity(%input: !felt.type) -> !felt.type {
+    function.return %input : !felt.type
+  }
+  struct.def @ScalarCallArgumentObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ScalarCallArgumentObservation> {
+      %self = struct.new : !struct.type<@ScalarCallArgumentObservation>
+      function.return %self : !struct.type<@ScalarCallArgumentObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ScalarCallArgumentObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %observed = function.call @identity(%old) : (!felt.type) -> !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ScalarCallArgumentObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @load(%initial: !felt.type, %replacement: !felt.type) -> !felt.type {
+    %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+    %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+    pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return %old : !felt.type
+  }
+  struct.def @ScalarReturnObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ScalarReturnObservation> {
+      %self = struct.new : !struct.type<@ScalarReturnObservation>
+      function.return %self : !struct.type<@ScalarReturnObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ScalarReturnObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %observed = function.call @load(%initial, %replacement) : (!felt.type, !felt.type) -> !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ScalarReturnObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// The dead else region must not reintroduce a different yielded dependency.
+module attributes {llzk.lang} {
+  struct.def @ScalarYieldObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ScalarYieldObservation> {
+      %self = struct.new : !struct.type<@ScalarYieldObservation>
+      function.return %self : !struct.type<@ScalarYieldObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ScalarYieldObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %true = arith.constant true
+      %observed = scf.if %true -> !felt.type {
+        %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+        %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+        pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+        scf.yield %old : !felt.type
+      } else {
+        scf.yield %replacement : !felt.type
+      }
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ScalarYieldObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// A dead then region must also be excluded, even when it yields a live argument.
+module attributes {llzk.lang} {
+  struct.def @ScalarFalseYieldObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ScalarFalseYieldObservation> {
+      %self = struct.new : !struct.type<@ScalarFalseYieldObservation>
+      function.return %self : !struct.type<@ScalarFalseYieldObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ScalarFalseYieldObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %condition = arith.constant false
+      %observed = scf.if %condition -> !felt.type {
+        scf.yield %initial : !felt.type
+      } else {
+        scf.yield %replacement : !felt.type
+      }
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ScalarFalseYieldObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Both executable regions contribute when the condition is unknown.
+module attributes {llzk.lang} {
+  struct.def @ScalarUnknownYieldObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ScalarUnknownYieldObservation> {
+      %self = struct.new : !struct.type<@ScalarUnknownYieldObservation>
+      function.return %self : !struct.type<@ScalarUnknownYieldObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ScalarUnknownYieldObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %condition = llzk.nondet : i1
+      %observed = scf.if %condition -> !felt.type {
+        %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+        %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+        pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+        scf.yield %old : !felt.type
+      } else {
+        scf.yield %replacement : !felt.type
+      }
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ScalarUnknownYieldObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, replacement },
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }

@@ -1,0 +1,229 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines --check-prefix=INTRA %s
+
+// A nested constraint must retain the value captured before the source write.
+module attributes {llzk.lang} {
+  struct.def @Check {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Check> {
+      %self = struct.new : !struct.type<@Check>
+      function.return %self : !struct.type<@Check>
+    }
+    function.def @constrain(%self: !struct.type<@Check>, %input: !felt.type {function.arg_name = "input"}) {
+      %zero = felt.const 0
+      constrain.eq %input, %zero : !felt.type
+      function.return
+    }
+  }
+  struct.def @NestedArrayScalarSnapshot {
+    struct.member @child : !struct.type<@Check>
+    function.def @compute(%input: !array.type<1 x !felt.type>, %replacement: !felt.type) -> !struct.type<@NestedArrayScalarSnapshot> {
+      %self = struct.new : !struct.type<@NestedArrayScalarSnapshot>
+      function.return %self : !struct.type<@NestedArrayScalarSnapshot>
+    }
+    function.def @constrain(%self: !struct.type<@NestedArrayScalarSnapshot>, %input: !array.type<1 x !felt.type> {function.arg_name = "input"}, %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedArrayScalarSnapshot>, !struct.type<@Check>
+      %c0 = arith.constant 0 : index
+      %old = array.read %input[%c0] : !array.type<1 x !felt.type>, !felt.type
+      array.write %input[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      function.call @Check::@constrain(%child, %old) : (!struct.type<@Check>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Check ConstraintDependencyGraph {
+// CHECK-NEXT:      { input, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @NestedArrayScalarSnapshot ConstraintDependencyGraph {
+// CHECK-NEXT:      { input[0], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @Check ConstraintDependencyGraph {
+// INTRA-NEXT:      { input, <felt.const: 0> }
+// INTRA-NEXT:  }
+// INTRA-NEXT:  @NestedArrayScalarSnapshot ConstraintDependencyGraph { }
+
+// -----
+
+// A nested constraint must retain the value captured before the source write.
+module attributes {llzk.lang} {
+  struct.def @Check {
+    function.def @compute(%input: !felt.type) -> !struct.type<@Check> {
+      %self = struct.new : !struct.type<@Check>
+      function.return %self : !struct.type<@Check>
+    }
+    function.def @constrain(%self: !struct.type<@Check>, %input: !felt.type {function.arg_name = "input"}) {
+      %zero = felt.const 0
+      constrain.eq %input, %zero : !felt.type
+      function.return
+    }
+  }
+  struct.def @NestedPodScalarSnapshot {
+    struct.member @child : !struct.type<@Check>
+    function.def @compute(%input: !pod.type<[@value: !felt.type]>, %replacement: !felt.type) -> !struct.type<@NestedPodScalarSnapshot> {
+      %self = struct.new : !struct.type<@NestedPodScalarSnapshot>
+      function.return %self : !struct.type<@NestedPodScalarSnapshot>
+    }
+    function.def @constrain(%self: !struct.type<@NestedPodScalarSnapshot>, %input: !pod.type<[@value: !felt.type]> {function.arg_name = "input"}, %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedPodScalarSnapshot>, !struct.type<@Check>
+      %old = pod.read %input[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %input[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      function.call @Check::@constrain(%child, %old) : (!struct.type<@Check>, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Check ConstraintDependencyGraph {
+// CHECK-NEXT:      { input, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @NestedPodScalarSnapshot ConstraintDependencyGraph {
+// CHECK-NEXT:      { input.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @Check ConstraintDependencyGraph {
+// INTRA-NEXT:      { input, <felt.const: 0> }
+// INTRA-NEXT:  }
+// INTRA-NEXT:  @NestedPodScalarSnapshot ConstraintDependencyGraph { }
+
+// -----
+
+// A nested constraint must retain the value captured before the source write.
+module attributes {llzk.lang} {
+  struct.def @Check {
+    function.def @compute(%input: !array.type<1 x !felt.type>) -> !struct.type<@Check> {
+      %self = struct.new : !struct.type<@Check>
+      function.return %self : !struct.type<@Check>
+    }
+    function.def @constrain(%self: !struct.type<@Check>, %input: !array.type<1 x !felt.type> {function.arg_name = "input"}) {
+      %c0 = arith.constant 0 : index
+      %value = array.read %input[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+  struct.def @NestedArrayValueSnapshot {
+    struct.member @child : !struct.type<@Check>
+    function.def @compute(%input: !array.type<1 x !felt.type>, %replacement: !felt.type) -> !struct.type<@NestedArrayValueSnapshot> {
+      %self = struct.new : !struct.type<@NestedArrayValueSnapshot>
+      function.return %self : !struct.type<@NestedArrayValueSnapshot>
+    }
+    function.def @constrain(%self: !struct.type<@NestedArrayValueSnapshot>, %input: !array.type<1 x !felt.type> {function.arg_name = "input"}, %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedArrayValueSnapshot>, !struct.type<@Check>
+      %c0 = arith.constant 0 : index
+      %old = array.read %input[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %copy = array.new %old : !array.type<1 x !felt.type>
+      array.write %input[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      function.call @Check::@constrain(%child, %copy) : (!struct.type<@Check>, !array.type<1 x !felt.type>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Check ConstraintDependencyGraph {
+// CHECK-NEXT:      { input[0], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @NestedArrayValueSnapshot ConstraintDependencyGraph {
+// CHECK-NEXT:      { input[0], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @Check ConstraintDependencyGraph {
+// INTRA-NEXT:      { input[0], <felt.const: 0> }
+// INTRA-NEXT:  }
+// INTRA-NEXT:  @NestedArrayValueSnapshot ConstraintDependencyGraph { }
+
+// -----
+
+// A nested constraint must retain the value captured before the source write.
+module attributes {llzk.lang} {
+  struct.def @Check {
+    function.def @compute(%input: !pod.type<[@value: !felt.type]>) -> !struct.type<@Check> {
+      %self = struct.new : !struct.type<@Check>
+      function.return %self : !struct.type<@Check>
+    }
+    function.def @constrain(%self: !struct.type<@Check>, %input: !pod.type<[@value: !felt.type]> {function.arg_name = "input"}) {
+      %value = pod.read %input[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+  struct.def @NestedPodValueSnapshot {
+    struct.member @child : !struct.type<@Check>
+    function.def @compute(%input: !pod.type<[@value: !felt.type]>, %replacement: !felt.type) -> !struct.type<@NestedPodValueSnapshot> {
+      %self = struct.new : !struct.type<@NestedPodValueSnapshot>
+      function.return %self : !struct.type<@NestedPodValueSnapshot>
+    }
+    function.def @constrain(%self: !struct.type<@NestedPodValueSnapshot>, %input: !pod.type<[@value: !felt.type]> {function.arg_name = "input"}, %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %child = struct.readm %self[@child] : !struct.type<@NestedPodValueSnapshot>, !struct.type<@Check>
+      %old = pod.read %input[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %copy = pod.new { @value = %old } : !pod.type<[@value: !felt.type]>
+      pod.write %input[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      function.call @Check::@constrain(%child, %copy) : (!struct.type<@Check>, !pod.type<[@value: !felt.type]>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Check ConstraintDependencyGraph {
+// CHECK-NEXT:      { input.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @NestedPodValueSnapshot ConstraintDependencyGraph {
+// CHECK-NEXT:      { input.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @Check ConstraintDependencyGraph {
+// INTRA-NEXT:      { input.value, <felt.const: 0> }
+// INTRA-NEXT:  }
+// INTRA-NEXT:  @NestedPodValueSnapshot ConstraintDependencyGraph { }
+
+// -----
+
+// A struct argument is a captured handle, while its member is read at the call.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      %value = struct.readm %self[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+  struct.def @NestedCapturedStruct {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@NestedCapturedStruct> {
+      %self = struct.new : !struct.type<@NestedCapturedStruct>
+      function.return %self : !struct.type<@NestedCapturedStruct>
+    }
+    function.def @constrain(%self: !struct.type<@NestedCapturedStruct>, %first: !struct.type<@Cell> {function.arg_name = "first"}, %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %array = array.new %first : !array.type<1 x !struct.type<@Cell>>
+      %c0 = arith.constant 0 : index
+      %captured = array.read %array[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %array[%c0] = %second : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      function.call @Cell::@constrain(%captured) : (!struct.type<@Cell>) -> ()
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph {
+// CHECK-NEXT:      { %self.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @NestedCapturedStruct ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @Cell ConstraintDependencyGraph {
+// INTRA-NEXT:      { %self.value, <felt.const: 0> }
+// INTRA-NEXT:  }
+// INTRA-NEXT:  @NestedCapturedStruct ConstraintDependencyGraph { }

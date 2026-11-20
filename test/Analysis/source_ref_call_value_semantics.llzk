@@ -1,0 +1,305 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Each array parameter is an independent copy, even when both operands are the
+// same array. A scalar returned after a local write still observes that write.
+module attributes {llzk.lang} {
+  function.def @write_and_read(%first: !array.type<1 x !felt.type>, %second: !array.type<1 x !felt.type>, %value: !felt.type) -> (!felt.type, !felt.type) {
+    %c0 = arith.constant 0 : index
+    array.write %first[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    %changed = array.read %first[%c0] : !array.type<1 x !felt.type>, !felt.type
+    %unchanged = array.read %second[%c0] : !array.type<1 x !felt.type>, !felt.type
+    function.return %changed, %unchanged : !felt.type, !felt.type
+  }
+  struct.def @IndependentArrayArguments {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type) -> !struct.type<@IndependentArrayArguments> {
+      %self = struct.new : !struct.type<@IndependentArrayArguments>
+      function.return %self : !struct.type<@IndependentArrayArguments>
+    }
+    function.def @constrain(%self: !struct.type<@IndependentArrayArguments>, %initial: !felt.type {function.arg_name = "initial"}, %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %array = array.new %initial : !array.type<1 x !felt.type>
+      %changed, %unchanged = function.call @write_and_read(%array, %array, %replacement) : (!array.type<1 x !felt.type>, !array.type<1 x !felt.type>, !felt.type) -> (!felt.type, !felt.type)
+      %c0 = arith.constant 0 : index
+      %caller = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+      // Returned scalars retain their call-time observation after a caller write.
+      array.write %array[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      %one = felt.const 1
+      constrain.eq %changed, %one : !felt.type
+      constrain.eq %unchanged, %zero : !felt.type
+      constrain.eq %caller, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @IndependentArrayArguments ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 1> }
+// CHECK-NEXT:  }
+
+// -----
+
+// POD parameters and returned arguments are independent mutable values. The
+// caller can mutate both the source and the result without changing the other.
+module attributes {llzk.lang} {
+  function.def @updated(%source: !pod.type<[@value: !felt.type]>, %value: !felt.type) -> !pod.type<[@value: !felt.type]> {
+    pod.write %source[@value] = %value : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return %source : !pod.type<[@value: !felt.type]>
+  }
+  struct.def @ReturnedPodArgumentIsCopy {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %later: !felt.type) -> !struct.type<@ReturnedPodArgumentIsCopy> {
+      %self = struct.new : !struct.type<@ReturnedPodArgumentIsCopy>
+      function.return %self : !struct.type<@ReturnedPodArgumentIsCopy>
+    }
+    function.def @constrain(%self: !struct.type<@ReturnedPodArgumentIsCopy>, %initial: !felt.type {function.arg_name = "initial"}, %replacement: !felt.type {function.arg_name = "replacement"}, %later: !felt.type {function.arg_name = "later"}) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %result = function.call @updated(%source, %replacement) : (!pod.type<[@value: !felt.type]>, !felt.type) -> !pod.type<[@value: !felt.type]>
+      %caller = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %source[@value] = %later : !pod.type<[@value: !felt.type]>, !felt.type
+      %returned = pod.read %result[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %result[@value] = %initial : !pod.type<[@value: !felt.type]>, !felt.type
+      %after = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %zero = felt.const 0
+      %one = felt.const 1
+      %two = felt.const 2
+      constrain.eq %caller, %zero : !felt.type
+      constrain.eq %returned, %one : !felt.type
+      constrain.eq %after, %two : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedPodArgumentIsCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 1> },
+// CHECK-NEXT:      { later, <felt.const: 2> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Returning a modified array argument copies its contents at the return point.
+module attributes {llzk.lang} {
+  function.def @updated(%source: !array.type<1 x !felt.type>, %value: !felt.type) -> !array.type<1 x !felt.type> {
+    %c0 = arith.constant 0 : index
+    array.write %source[%c0] = %value : !array.type<1 x !felt.type>, !felt.type
+    function.return %source : !array.type<1 x !felt.type>
+  }
+  struct.def @ReturnedArrayArgumentIsCopy {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %later: !felt.type) -> !struct.type<@ReturnedArrayArgumentIsCopy> {
+      %self = struct.new : !struct.type<@ReturnedArrayArgumentIsCopy>
+      function.return %self : !struct.type<@ReturnedArrayArgumentIsCopy>
+    }
+    function.def @constrain(%self: !struct.type<@ReturnedArrayArgumentIsCopy>, %initial: !felt.type {function.arg_name = "initial"}, %replacement: !felt.type {function.arg_name = "replacement"}, %later: !felt.type {function.arg_name = "later"}) {
+      %source = array.new %initial : !array.type<1 x !felt.type>
+      %result = function.call @updated(%source, %replacement) : (!array.type<1 x !felt.type>, !felt.type) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %caller = array.read %source[%c0] : !array.type<1 x !felt.type>, !felt.type
+      array.write %source[%c0] = %later : !array.type<1 x !felt.type>, !felt.type
+      %returned = array.read %result[%c0] : !array.type<1 x !felt.type>, !felt.type
+      array.write %result[%c0] = %initial : !array.type<1 x !felt.type>, !felt.type
+      %after = array.read %source[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      %one = felt.const 1
+      %two = felt.const 2
+      constrain.eq %caller, %zero : !felt.type
+      constrain.eq %returned, %one : !felt.type
+      constrain.eq %after, %two : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedArrayArgumentIsCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 1> },
+// CHECK-NEXT:      { later, <felt.const: 2> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Returning a struct argument preserves the component identity, including
+// member paths. Forward-defined helper calls must retain this identity too.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @SharedStructArgument {
+    function.def @compute(%cell: !struct.type<@Cell>) -> !struct.type<@SharedStructArgument> {
+      %self = struct.new : !struct.type<@SharedStructArgument>
+      function.return %self : !struct.type<@SharedStructArgument>
+    }
+    function.def @constrain(%self: !struct.type<@SharedStructArgument>, %cell: !struct.type<@Cell> {function.arg_name = "cell"}) {
+      %returned = function.call @wrapper(%cell) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+      %forwarded = function.call @identity(%returned) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+      %observed = struct.readm %forwarded[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+  function.def @wrapper(%cell: !struct.type<@Cell>) -> !struct.type<@Cell> {
+    %returned = function.call @identity(%cell) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+    function.return %returned : !struct.type<@Cell>
+  }
+  function.def @identity(%cell: !struct.type<@Cell>) -> !struct.type<@Cell> {
+    function.return %cell : !struct.type<@Cell>
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @SharedStructArgument ConstraintDependencyGraph {
+// CHECK-NEXT:      { cell.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Replacing a struct-handle slot changes only the callee's array copy. Returned
+// arrays copy their slots while preserving the identity of the selected handle.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @replace(%cells: !array.type<1 x !struct.type<@Cell>>, %second: !struct.type<@Cell>) -> !array.type<1 x !struct.type<@Cell>> {
+    %c0 = arith.constant 0 : index
+    array.write %cells[%c0] = %second : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+    function.return %cells : !array.type<1 x !struct.type<@Cell>>
+  }
+  struct.def @CopiedArraySharesOnlyStructHandles {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@CopiedArraySharesOnlyStructHandles> {
+      %self = struct.new : !struct.type<@CopiedArraySharesOnlyStructHandles>
+      function.return %self : !struct.type<@CopiedArraySharesOnlyStructHandles>
+    }
+    function.def @constrain(%self: !struct.type<@CopiedArraySharesOnlyStructHandles>, %first: !struct.type<@Cell> {function.arg_name = "first"}, %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %source = array.new %first : !array.type<1 x !struct.type<@Cell>>
+      %result = function.call @replace(%source, %second) : (!array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>) -> !array.type<1 x !struct.type<@Cell>>
+      %c0 = arith.constant 0 : index
+      %original = array.read %source[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %unchanged = struct.readm %original[@value] : !struct.type<@Cell>, !felt.type
+      array.write %source[%c0] = %first : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %returned = array.read %result[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %updated = struct.readm %returned[@value] : !struct.type<@Cell>, !felt.type
+      array.write %result[%c0] = %second : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %after = array.read %source[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %after_value = struct.readm %after[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      %one = felt.const 1
+      constrain.eq %unchanged, %zero : !felt.type
+      constrain.eq %updated, %one : !felt.type
+      constrain.eq %after_value, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CopiedArraySharesOnlyStructHandles ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> },
+// CHECK-NEXT:      { second.value, <felt.const: 1> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Copying a captured handle preserves its observed identity even if the array
+// slot it came from is replaced before the function call.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @identity(%cell: !struct.type<@Cell>) -> !struct.type<@Cell> {
+    function.return %cell : !struct.type<@Cell>
+  }
+  struct.def @CapturedStructArgument {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@CapturedStructArgument> {
+      %self = struct.new : !struct.type<@CapturedStructArgument>
+      function.return %self : !struct.type<@CapturedStructArgument>
+    }
+    function.def @constrain(%self: !struct.type<@CapturedStructArgument>, %first: !struct.type<@Cell> {function.arg_name = "first"}, %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %source = array.new %first : !array.type<1 x !struct.type<@Cell>>
+      %c0 = arith.constant 0 : index
+      %captured = array.read %source[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %source[%c0] = %second : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %returned = function.call @identity(%captured) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+      %observed = struct.readm %returned[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CapturedStructArgument ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Struct handles nested in PODs/arrays keep identity across copied arguments and
+// results. Replacing a nested aggregate in the caller cannot change the result.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @identity(%holder: !pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]>) -> !pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]> {
+    function.return %holder : !pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]>
+  }
+  struct.def @NestedCopiesShareStructHandles {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@NestedCopiesShareStructHandles> {
+      %self = struct.new : !struct.type<@NestedCopiesShareStructHandles>
+      function.return %self : !struct.type<@NestedCopiesShareStructHandles>
+    }
+    function.def @constrain(%self: !struct.type<@NestedCopiesShareStructHandles>, %first: !struct.type<@Cell> {function.arg_name = "first"}, %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %cells = array.new %first : !array.type<1 x !struct.type<@Cell>>
+      %holder = pod.new { @cells = %cells } : !pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]>
+      %copy = function.call @identity(%holder) : (!pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]>) -> !pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]>
+      %other_cells = array.new %second : !array.type<1 x !struct.type<@Cell>>
+      pod.write %holder[@cells] = %other_cells : !pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]>, !array.type<1 x !struct.type<@Cell>>
+      %returned_cells = pod.read %copy[@cells] : !pod.type<[@cells: !array.type<1 x !struct.type<@Cell>>]>, !array.type<1 x !struct.type<@Cell>>
+      %c0 = arith.constant 0 : index
+      %returned = array.read %returned_cells[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %observed = struct.readm %returned[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @NestedCopiesShareStructHandles ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }

@@ -26,12 +26,12 @@
 #include <mlir/Pass/AnalysisManager.h>
 
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <compare>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -151,7 +151,8 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 /// an array).
 class SourceRef {
 public:
-  using Path = std::vector<SourceRefIndex>;
+  // 99.5% have a path length of 0 or 1, so we use a small vector to avoid heap allocations.
+  using Path = llvm::SmallVector<SourceRefIndex, 1>;
 
 private:
   // Sort in the following order:
@@ -241,6 +242,28 @@ public:
 
   mlir::Type getType() const;
 
+  /// Freeze the component currently denoted by this path independently of its mutable slot.
+  /// Root SSA handles already have stable identities and are returned unchanged.
+  SourceRef captureComponent() const;
+
+  /// Return the underlying storage path for call-entry binding or structural summaries.
+  SourceRef withoutComponentCapture() const {
+    SourceRef copy = *this;
+    copy.capturedComponentDepth = 0;
+    return copy;
+  }
+
+  /// Whether replacing this possibly ranged prefix would retarget a captured component.
+  bool protectsCapturedComponent(const SourceRef &prefix) const;
+
+  /// Return this origin in a particular invocation, retaining its type and path.
+  /// Constants remain shared. Repeated call sites truncate recursive contexts so
+  /// recursive summaries have a finite set of identities.
+  SourceRef inCallContext(mlir::Operation *call) const;
+
+  /// Calls enclosing this origin, ordered from the innermost to the outermost.
+  llvm::ArrayRef<mlir::Operation *> getCallContext() const { return callContext; }
+
   bool isConstantFelt() const {
     return isConstant() && llvm::isa_and_present<felt::FeltConstantOp>(value.getDefiningOp());
   }
@@ -252,6 +275,8 @@ public:
   bool isTemplateConstant() const {
     return isConstant() && llvm::isa_and_present<polymorphic::ConstReadOp>(value.getDefiningOp());
   }
+  /// Return whether this reference originates from a read of an immutable global.
+  bool isImmutableGlobal() const;
 
   bool isConstant() const { return constant; }
   bool isConstantInt() const { return isConstantFelt() || isConstantIndex(); }
@@ -267,6 +292,7 @@ public:
   bool isRooted() const { return !constant; }
 
   bool isBlockArgument() const { return isRooted() && llvm::isa<mlir::BlockArgument>(value); }
+  /// Original IR root; a call context further qualifies this reference's identity.
   mlir::FailureOr<mlir::Value> getRoot() const {
     if (isRooted()) {
       return value;
@@ -353,11 +379,16 @@ public:
   /// `%self.out[2].values[5]`.
   SourceRef narrowRanges(const SourceRef &rhs) const;
 
-  /// @brief If `prefix` is a valid prefix of this reference, return the suffix that
-  /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`
-  /// @param prefix
-  /// @return the suffix
-  mlir::FailureOr<std::vector<SourceRefIndex>> getSuffix(const SourceRef &prefix) const;
+  /// @brief If `prefix` is a valid prefix of this reference, return a view of the suffix that
+  /// remains after removing the prefix. I.e., `this` = `prefix` + `suffix`.
+  ///
+  /// The returned view is valid while this reference remains unmodified.
+  mlir::FailureOr<llvm::ArrayRef<SourceRefIndex>> getSuffix(const SourceRef &prefix) const;
+
+  /// @brief Return a copy of `prefix` with `suffix` appended when it is rooted.
+  ///
+  /// Constant references cannot have paths, so their copy is returned unchanged.
+  static SourceRef appendSuffix(const SourceRef &prefix, llvm::ArrayRef<SourceRefIndex> suffix);
 
   /// @brief Create a new reference with prefix replaced with other iff prefix is a valid prefix for
   /// this reference. If this reference is a felt.const, the translation will always succeed and
@@ -374,6 +405,17 @@ public:
     }
     auto copy = *this;
     copy.getPathMut().pop_back();
+    if (copy.capturedComponentDepth > copy.path.size()) {
+      copy.capturedComponentDepth = 0;
+      auto ancestor = copy;
+      while (!ancestor.path.empty()) {
+        if (llvm::isa<component::StructType>(ancestor.getType())) {
+          copy.capturedComponentDepth = ancestor.path.size();
+          break;
+        }
+        ancestor.path.pop_back();
+      }
+    }
     return copy;
   }
 
@@ -424,8 +466,25 @@ public:
   friend struct llvm::DenseMapInfo<SourceRef>;
 
 private:
+  /// SSA value backing the reference: a root block argument or operation result,
+  /// or the result of a constant operation when `constant` is true.
   mlir::Value value;
+
+  /// Member, POD-record, and array selections applied to `value`, from root to leaf.
+  /// Empty for constants and references to the entire root value.
   Path path;
+
+  /// Depth of the innermost captured component. Replacing its slot or an ancestor slot must
+  /// not retarget this reference; accesses to members below this boundary remain observable.
+  /// Zero denotes an ordinary storage path or an immutable root SSA handle.
+  size_t capturedComponentDepth = 0;
+
+  /// Enclosing call sites, ordered from innermost to outermost, that qualify the
+  /// root's identity. Empty for constants; repeated sites are truncated by inCallContext().
+  llvm::SmallVector<mlir::Operation *, 0> callContext;
+
+  /// Whether `value` represents a felt, index, or template constant rather than a root.
+  /// Constant references have no path or call context.
   bool constant;
 };
 
@@ -433,8 +492,8 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRef &rhs);
 
 /* SourceRefSet */
 
-class SourceRefSet : public std::unordered_set<SourceRef, SourceRef::Hash> {
-  using Base = std::unordered_set<SourceRef, SourceRef::Hash>;
+class SourceRefSet : public llvm::DenseSet<SourceRef> {
+  using Base = llvm::DenseSet<SourceRef>;
 
 public:
   using Base::Base;

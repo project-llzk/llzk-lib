@@ -1,0 +1,854 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Each module observes one read through a constraint against zero. Separate
+// modules prevent graph closure from merging different reads and hiding a
+// missing dependency. Full graph checks also reject unexpected dependencies.
+// Named arguments keep the expected sources distinct in generated checks.
+
+// SymbolicArrayOverwritePreservesUnboundedTail (overwritten)
+// A definite overwrite preserves the unbounded tail of a symbolic array.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicArrayOverwriteOverwritten {
+      function.def @compute(%array: !array.type<@N x !felt.type>, %i: index,
+          %value: !felt.type, %replacement: !felt.type)
+          -> !struct.type<@Arrays::@SymbolicArrayOverwriteOverwritten<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicArrayOverwriteOverwritten<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicArrayOverwriteOverwritten<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicArrayOverwriteOverwritten<[@N]>>,
+          %array: !array.type<@N x !felt.type> {function.arg_name = "array"},
+          %i: index {function.arg_name = "i"},
+          %value: !felt.type {function.arg_name = "value"},
+          %replacement: !felt.type {function.arg_name = "replacement"}
+      ) {
+        %c0 = arith.constant 0 : index
+        array.write %array[%i] = %value : <@N x !felt.type>, !felt.type
+        array.write %array[%c0] = %replacement : <@N x !felt.type>, !felt.type
+        %overwritten = array.read %array[%c0] : <@N x !felt.type>, !felt.type
+        %expected = felt.const 0
+        constrain.eq %overwritten, %expected : !felt.type
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: @Arrays::@SymbolicArrayOverwriteOverwritten ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// SymbolicArrayOverwritePreservesUnboundedTail (remaining)
+// A definite overwrite preserves the unbounded tail of a symbolic array.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicArrayOverwriteRemaining {
+      function.def @compute(%array: !array.type<@N x !felt.type>, %i: index,
+          %value: !felt.type, %replacement: !felt.type)
+          -> !struct.type<@Arrays::@SymbolicArrayOverwriteRemaining<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicArrayOverwriteRemaining<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicArrayOverwriteRemaining<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicArrayOverwriteRemaining<[@N]>>,
+          %array: !array.type<@N x !felt.type> {function.arg_name = "array"},
+          %i: index {function.arg_name = "i"},
+          %value: !felt.type {function.arg_name = "value"},
+          %replacement: !felt.type {function.arg_name = "replacement"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %array[%i] = %value : <@N x !felt.type>, !felt.type
+        array.write %array[%c0] = %replacement : <@N x !felt.type>, !felt.type
+        %remaining = array.read %array[%c1] : <@N x !felt.type>, !felt.type
+        %expected = felt.const 0
+        constrain.eq %remaining, %expected : !felt.type
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: @Arrays::@SymbolicArrayOverwriteRemaining ConstraintDependencyGraph {
+// CHECK-NEXT:      { array[1], value },
+// CHECK-NEXT:      { array[1], <felt.const: 0> },
+// CHECK-NEXT:      { value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// ConditionalStorageWritePreservesNondeterministicAlternative
+// A conditional write retains both the nondeterministic initializer and replacement.
+module attributes {llzk.lang} {
+  struct.def @NondeterministicStorage {
+    function.def @compute(%replacement: !felt.type) -> !struct.type<@NondeterministicStorage> {
+      %self = struct.new : !struct.type<@NondeterministicStorage>
+      function.return %self : !struct.type<@NondeterministicStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@NondeterministicStorage>,
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %unknown = llzk.nondet : !felt.type
+      %storage = pod.new { @value = %unknown } : !pod.type<[@value: !felt.type]>
+      %true = arith.constant true
+      scf.if %true {
+        pod.write %storage[@value] = %replacement
+            : !pod.type<[@value: !felt.type]>, !felt.type
+      }
+      %read = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NondeterministicStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <%nondet = llzk.nondet : !felt.type> },
+// CHECK-NEXT:      { replacement, <felt.const: 0> },
+// CHECK-NEXT:      { <%nondet = llzk.nondet : !felt.type>, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// DefiniteStorageWritesFollowProgramOrderAfterSolverRevisit
+// The last definite write wins even when the solver revisits an earlier scf.if result.
+module attributes {llzk.lang} {
+  struct.def @OrderedStorage {
+    function.def @compute(
+        %earlier: !felt.type, %alternative: !felt.type, %final: !felt.type
+    ) -> !struct.type<@OrderedStorage> {
+      %self = struct.new : !struct.type<@OrderedStorage>
+      function.return %self : !struct.type<@OrderedStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@OrderedStorage>,
+        %earlier: !felt.type {function.arg_name = "earlier"},
+        %alternative: !felt.type {function.arg_name = "alternative"},
+        %final: !felt.type {function.arg_name = "final"}
+    ) {
+      %storage = pod.new : !pod.type<[@value: !felt.type]>
+      %true = arith.constant true
+      %selected = scf.if %true -> (!felt.type) {
+        scf.yield %earlier : !felt.type
+      } else {
+        scf.yield %alternative : !felt.type
+      }
+      pod.write %storage[@value] = %selected
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %storage[@value] = %final
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %read = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @OrderedStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { final, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// AggregatePodInitializerRebasesNestedRecordDependencies
+// A nested POD initializer retains the selected child and excludes its sibling.
+module attributes {llzk.lang} {
+  struct.def @NestedPodStorage {
+    function.def @compute(%left: !felt.type, %right: !felt.type)
+        -> !struct.type<@NestedPodStorage> {
+      %self = struct.new : !struct.type<@NestedPodStorage>
+      function.return %self : !struct.type<@NestedPodStorage>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@NestedPodStorage>,
+        %left: !felt.type {function.arg_name = "left"},
+        %right: !felt.type {function.arg_name = "right"}
+    ) {
+      %inner = pod.new { @left = %left, @right = %right }
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %outer = pod.new { @nested = %inner }
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>
+      %nested = pod.read %outer[@nested]
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>,
+            !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %read = pod.read %nested[@left]
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NestedPodStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { left, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// AggregateAliasesRebaseStorageOnlyFromTheirAssignmentPoint
+// Assignment order wins over allocation order when replacing a nested POD.
+module attributes {llzk.lang} {
+  struct.def @OrderedAggregateAliases {
+    function.def @compute(%aValue: !felt.type, %bValue: !felt.type)
+        -> !struct.type<@OrderedAggregateAliases> {
+      %self = struct.new : !struct.type<@OrderedAggregateAliases>
+      function.return %self : !struct.type<@OrderedAggregateAliases>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@OrderedAggregateAliases>,
+        %aValue: !felt.type {function.arg_name = "aValue"},
+        %bValue: !felt.type {function.arg_name = "bValue"}
+    ) {
+      %b = pod.new { @value = %bValue } : !pod.type<[@value: !felt.type]>
+      %a = pod.new { @value = %aValue } : !pod.type<[@value: !felt.type]>
+      %holder = pod.new { @nested = %a }
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>
+      pod.write %holder[@nested] = %b
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+            !pod.type<[@value: !felt.type]>
+      %nested = pod.read %holder[@nested]
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+            !pod.type<[@value: !felt.type]>
+      %read = pod.read %nested[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @OrderedAggregateAliases ConstraintDependencyGraph {
+// CHECK-NEXT:      { bValue, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// StorageReadsResolveAtTheirProgramPoint
+// A read keeps its original value when constrained after a later overwrite.
+module attributes {llzk.lang} {
+  struct.def @ReadBeforeWrite {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ReadBeforeWrite> {
+      %self = struct.new : !struct.type<@ReadBeforeWrite>
+      function.return %self : !struct.type<@ReadBeforeWrite>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ReadBeforeWrite>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %storage = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %before = pod.read %storage[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %storage[@value] = %replacement
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %before, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ReadBeforeWrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// ArrayMutationsUpdateStorageDependencies (readUninitialized)
+// A first write to an uninitialized array resolves to the written value.
+module attributes {llzk.lang} {
+  struct.def @ArrayMutationsReadUninitialized {
+    function.def @compute(%uninitializedValue: !felt.type)
+        -> !struct.type<@ArrayMutationsReadUninitialized> {
+      %self = struct.new : !struct.type<@ArrayMutationsReadUninitialized>
+      function.return %self : !struct.type<@ArrayMutationsReadUninitialized>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ArrayMutationsReadUninitialized>,
+        %uninitializedValue: !felt.type {function.arg_name = "uninitializedValue"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %uninitialized = array.new : !array.type<1 x !felt.type>
+      array.write %uninitialized[%c0] = %uninitializedValue
+          : !array.type<1 x !felt.type>, !felt.type
+      %readUninitialized = array.read %uninitialized[%c0]
+          : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %readUninitialized, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ArrayMutationsReadUninitialized ConstraintDependencyGraph {
+// CHECK-NEXT:      { uninitializedValue, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// ArrayMutationsUpdateStorageDependencies (readOverwritten)
+// An overwrite of an initialized array resolves to the replacement value.
+module attributes {llzk.lang} {
+  struct.def @ArrayMutationsReadOverwritten {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ArrayMutationsReadOverwritten> {
+      %self = struct.new : !struct.type<@ArrayMutationsReadOverwritten>
+      function.return %self : !struct.type<@ArrayMutationsReadOverwritten>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ArrayMutationsReadOverwritten>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %initialized = array.new %initial : !array.type<1 x !felt.type>
+      array.write %initialized[%c0] = %replacement
+          : !array.type<1 x !felt.type>, !felt.type
+      %readOverwritten = array.read %initialized[%c0]
+          : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %readOverwritten, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ArrayMutationsReadOverwritten ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// RangedArrayReadPreservesUnwrittenStorageAfterPartialPointWrite
+// An unknown-index read retains the written value and unwritten symbolic storage.
+module attributes {llzk.lang} {
+  poly.template @TPartialArrayWrite {
+    poly.param @N : index
+
+    struct.def @PartialArrayWrite {
+      function.def @compute(%array: !array.type<@N x !felt.type>, %written: !felt.type)
+          -> !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>> {
+        %self = struct.new : !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>>
+        function.return %self : !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>>
+      }
+
+      function.def @constrain(
+          %self: !struct.type<@TPartialArrayWrite::@PartialArrayWrite<[@N]>>,
+          %array: !array.type<@N x !felt.type> {function.arg_name = "array"},
+          %written: !felt.type {function.arg_name = "written"}
+      ) {
+        %c0 = arith.constant 0 : index
+        array.write %array[%c0] = %written : !array.type<@N x !felt.type>, !felt.type
+        %unknown = llzk.nondet : index
+        %read = array.read %array[%unknown] : !array.type<@N x !felt.type>, !felt.type
+        %expected = felt.const 0
+        constrain.eq %read, %expected : !felt.type
+        function.return
+      }
+    }
+  }
+}
+// CHECK-LABEL: @TPartialArrayWrite::@PartialArrayWrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { array[<dynamic>], written },
+// CHECK-NEXT:      { array[<dynamic>], <felt.const: 0> },
+// CHECK-NEXT:      { written, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// StorageWritesResolveReadValuesBeforeLaterOverwrites
+// A stored read keeps its value after the source storage is overwritten.
+module attributes {llzk.lang} {
+  struct.def @StorageWriteSnapshotsReadValue {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@StorageWriteSnapshotsReadValue> {
+      %self = struct.new : !struct.type<@StorageWriteSnapshotsReadValue>
+      function.return %self : !struct.type<@StorageWriteSnapshotsReadValue>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@StorageWriteSnapshotsReadValue>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %source = array.new %initial : !array.type<1 x !felt.type>
+      %target = array.new : !array.type<1 x !felt.type>
+      %readSource = array.read %source[%c0] : !array.type<1 x !felt.type>, !felt.type
+      array.write %target[%c0] = %readSource : !array.type<1 x !felt.type>, !felt.type
+      array.write %source[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %readTarget = array.read %target[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %readTarget, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @StorageWriteSnapshotsReadValue ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// SkippedFirstStorageWritesPreserveUnwrittenDependencies (podRead)
+// A conditional first write retains the original POD address as an alternative.
+module attributes {llzk.lang} {
+  struct.def @SkippedFirstStorageWritesPodRead {
+    function.def @compute(%podValue: !felt.type)
+        -> !struct.type<@SkippedFirstStorageWritesPodRead> {
+      %self = struct.new : !struct.type<@SkippedFirstStorageWritesPodRead>
+      function.return %self : !struct.type<@SkippedFirstStorageWritesPodRead>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@SkippedFirstStorageWritesPodRead>,
+        %podValue: !felt.type {function.arg_name = "podValue"}
+    ) {
+      %pod = pod.new : !pod.type<[@value: !felt.type]>
+      %condition = arith.constant true
+      scf.if %condition {
+        pod.write %pod[@value] = %podValue
+            : !pod.type<[@value: !felt.type]>, !felt.type
+      }
+      %podRead = pod.read %pod[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %podRead, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @SkippedFirstStorageWritesPodRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { podValue, %pod.value },
+// CHECK-NEXT:      { podValue, <felt.const: 0> },
+// CHECK-NEXT:      { %pod.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// SkippedFirstStorageWritesPreserveUnwrittenDependencies (arrayRead)
+// A conditional first write retains the original array address as an alternative.
+module attributes {llzk.lang} {
+  struct.def @SkippedFirstStorageWritesArrayRead {
+    function.def @compute(%arrayValue: !felt.type)
+        -> !struct.type<@SkippedFirstStorageWritesArrayRead> {
+      %self = struct.new : !struct.type<@SkippedFirstStorageWritesArrayRead>
+      function.return %self : !struct.type<@SkippedFirstStorageWritesArrayRead>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@SkippedFirstStorageWritesArrayRead>,
+        %arrayValue: !felt.type {function.arg_name = "arrayValue"}
+    ) {
+      %array = array.new : !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %condition = arith.constant true
+      scf.if %condition {
+        array.write %array[%c0] = %arrayValue
+            : !array.type<1 x !felt.type>, !felt.type
+      }
+      %arrayRead = array.read %array[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %arrayRead, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @SkippedFirstStorageWritesArrayRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { arrayValue, %array[0] },
+// CHECK-NEXT:      { arrayValue, <felt.const: 0> },
+// CHECK-NEXT:      { %array[0], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// DynamicArrayWritesPreserveEarlierStorageDependencies
+// Two dynamic writes retain the original element and both possible written values.
+module attributes {llzk.lang} {
+  struct.def @DynamicArrayWrites {
+    function.def @compute(
+        %storage: !array.type<2 x !felt.type>, %i: index, %j: index,
+        %first: !felt.type, %second: !felt.type
+    ) -> !struct.type<@DynamicArrayWrites> {
+      %self = struct.new : !struct.type<@DynamicArrayWrites>
+      function.return %self : !struct.type<@DynamicArrayWrites>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DynamicArrayWrites>,
+        %storage: !array.type<2 x !felt.type> {function.arg_name = "storage"},
+        %i: index {function.arg_name = "i"},
+        %j: index {function.arg_name = "j"},
+        %first: !felt.type {function.arg_name = "first"},
+        %second: !felt.type {function.arg_name = "second"}
+    ) {
+      %c0 = arith.constant 0 : index
+      array.write %storage[%i] = %first
+          : !array.type<2 x !felt.type>, !felt.type
+      array.write %storage[%j] = %second
+          : !array.type<2 x !felt.type>, !felt.type
+      %read = array.read %storage[%c0]
+          : !array.type<2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @DynamicArrayWrites ConstraintDependencyGraph {
+// CHECK-NEXT:      { storage[0], first, second },
+// CHECK-NEXT:      { storage[0], <felt.const: 0> },
+// CHECK-NEXT:      { first, <felt.const: 0> },
+// CHECK-NEXT:      { second, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// DefiniteArrayWriteOverridesOverlappingDynamicWrite (overwritten)
+// A definite write replaces a dynamic write only at the overwritten element.
+module attributes {llzk.lang} {
+  struct.def @DefiniteArrayWriteOverridesDynamicWriteOverwritten {
+    function.def @compute(
+        %storage: !array.type<2 x !felt.type>, %i: index, %dynamic: !felt.type,
+        %replacement: !felt.type
+    ) -> !struct.type<@DefiniteArrayWriteOverridesDynamicWriteOverwritten> {
+      %self = struct.new : !struct.type<@DefiniteArrayWriteOverridesDynamicWriteOverwritten>
+      function.return %self : !struct.type<@DefiniteArrayWriteOverridesDynamicWriteOverwritten>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DefiniteArrayWriteOverridesDynamicWriteOverwritten>,
+        %storage: !array.type<2 x !felt.type> {function.arg_name = "storage"},
+        %i: index {function.arg_name = "i"},
+        %dynamic: !felt.type {function.arg_name = "dynamic"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %c0 = arith.constant 0 : index
+      array.write %storage[%i] = %dynamic
+          : !array.type<2 x !felt.type>, !felt.type
+      array.write %storage[%c0] = %replacement
+          : !array.type<2 x !felt.type>, !felt.type
+      %overwritten = array.read %storage[%c0]
+          : !array.type<2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %overwritten, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @DefiniteArrayWriteOverridesDynamicWriteOverwritten ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// DefiniteArrayWriteOverridesOverlappingDynamicWrite (remaining)
+// A definite write replaces a dynamic write only at the overwritten element.
+module attributes {llzk.lang} {
+  struct.def @DefiniteArrayWriteOverridesDynamicWriteRemaining {
+    function.def @compute(
+        %storage: !array.type<2 x !felt.type>, %i: index, %dynamic: !felt.type,
+        %replacement: !felt.type
+    ) -> !struct.type<@DefiniteArrayWriteOverridesDynamicWriteRemaining> {
+      %self = struct.new : !struct.type<@DefiniteArrayWriteOverridesDynamicWriteRemaining>
+      function.return %self : !struct.type<@DefiniteArrayWriteOverridesDynamicWriteRemaining>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DefiniteArrayWriteOverridesDynamicWriteRemaining>,
+        %storage: !array.type<2 x !felt.type> {function.arg_name = "storage"},
+        %i: index {function.arg_name = "i"},
+        %dynamic: !felt.type {function.arg_name = "dynamic"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      array.write %storage[%i] = %dynamic
+          : !array.type<2 x !felt.type>, !felt.type
+      array.write %storage[%c0] = %replacement
+          : !array.type<2 x !felt.type>, !felt.type
+      %remaining = array.read %storage[%c1]
+          : !array.type<2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %remaining, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @DefiniteArrayWriteOverridesDynamicWriteRemaining ConstraintDependencyGraph {
+// CHECK-NEXT:      { storage[1], dynamic },
+// CHECK-NEXT:      { storage[1], <felt.const: 0> },
+// CHECK-NEXT:      { dynamic, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// DefiniteMatrixWritePreservesDynamicWriteOutsideOverwrittenPoint
+// A point overwrite leaves a dynamic matrix write visible at a different point.
+module attributes {llzk.lang} {
+  struct.def @DefiniteMatrixWritePreservesDynamicWrite {
+    function.def @compute(
+        %initial00: !felt.type, %initial01: !felt.type, %initial10: !felt.type,
+        %initial11: !felt.type, %i: index, %j: index, %dynamic: !felt.type,
+        %replacement: !felt.type
+    ) -> !struct.type<@DefiniteMatrixWritePreservesDynamicWrite> {
+      %self = struct.new : !struct.type<@DefiniteMatrixWritePreservesDynamicWrite>
+      function.return %self : !struct.type<@DefiniteMatrixWritePreservesDynamicWrite>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DefiniteMatrixWritePreservesDynamicWrite>,
+        %initial00: !felt.type {function.arg_name = "initial00"},
+        %initial01: !felt.type {function.arg_name = "initial01"},
+        %initial10: !felt.type {function.arg_name = "initial10"},
+        %initial11: !felt.type {function.arg_name = "initial11"},
+        %i: index {function.arg_name = "i"},
+        %j: index {function.arg_name = "j"},
+        %dynamic: !felt.type {function.arg_name = "dynamic"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %storage = array.new %initial00, %initial01, %initial10, %initial11
+          : !array.type<2,2 x !felt.type>
+      array.write %storage[%i, %j] = %dynamic
+          : !array.type<2,2 x !felt.type>, !felt.type
+      array.write %storage[%c0, %c0] = %replacement
+          : !array.type<2,2 x !felt.type>, !felt.type
+      %remaining = array.read %storage[%c1, %c1]
+          : !array.type<2,2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %remaining, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @DefiniteMatrixWritePreservesDynamicWrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial11, dynamic },
+// CHECK-NEXT:      { initial11, <felt.const: 0> },
+// CHECK-NEXT:      { dynamic, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// DynamicArrayInsertsPreserveEarlierStorageDependencies
+// Dynamic row inserts retain both selected column values, excluding the other column.
+module attributes {llzk.lang} {
+  struct.def @DynamicArrayInserts {
+    function.def @compute(
+        %i: index, %j: index, %initial00: !felt.type, %initial01: !felt.type,
+        %initial10: !felt.type, %initial11: !felt.type, %first0: !felt.type,
+        %first1: !felt.type, %second0: !felt.type, %second1: !felt.type
+    ) -> !struct.type<@DynamicArrayInserts> {
+      %self = struct.new : !struct.type<@DynamicArrayInserts>
+      function.return %self : !struct.type<@DynamicArrayInserts>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@DynamicArrayInserts>,
+        %i: index {function.arg_name = "i"},
+        %j: index {function.arg_name = "j"},
+        %initial00: !felt.type {function.arg_name = "initial00"},
+        %initial01: !felt.type {function.arg_name = "initial01"},
+        %initial10: !felt.type {function.arg_name = "initial10"},
+        %initial11: !felt.type {function.arg_name = "initial11"},
+        %first0: !felt.type {function.arg_name = "first0"},
+        %first1: !felt.type {function.arg_name = "first1"},
+        %second0: !felt.type {function.arg_name = "second0"},
+        %second1: !felt.type {function.arg_name = "second1"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %storage = array.new %initial00, %initial01, %initial10, %initial11
+          : !array.type<2,2 x !felt.type>
+      %first = array.new %first0, %first1 : !array.type<2 x !felt.type>
+      %second = array.new %second0, %second1 : !array.type<2 x !felt.type>
+      array.insert %storage[%i] = %first
+          : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      array.insert %storage[%j] = %second
+          : !array.type<2,2 x !felt.type>, !array.type<2 x !felt.type>
+      %read = array.read %storage[%c0, %c0]
+          : !array.type<2,2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @DynamicArrayInserts ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial00, first0, second0 },
+// CHECK-NEXT:      { initial00, <felt.const: 0> },
+// CHECK-NEXT:      { first0, <felt.const: 0> },
+// CHECK-NEXT:      { second0, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// ConditionalAggregateAliasPreservesBothAlternatives
+// A conditional nested POD assignment retains both possible initializers.
+module attributes {llzk.lang} {
+  struct.def @ConditionalAggregateAlias {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ConditionalAggregateAlias> {
+      %self = struct.new : !struct.type<@ConditionalAggregateAlias>
+      function.return %self : !struct.type<@ConditionalAggregateAlias>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ConditionalAggregateAlias>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %first = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %storage = pod.new { @nested = %first }
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>
+      %condition = arith.constant true
+      scf.if %condition {
+        %second = pod.new { @value = %replacement } : !pod.type<[@value: !felt.type]>
+        pod.write %storage[@nested] = %second
+            : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+              !pod.type<[@value: !felt.type]>
+      }
+      %nested = pod.read %storage[@nested]
+          : !pod.type<[@nested: !pod.type<[@value: !felt.type]>]>,
+            !pod.type<[@value: !felt.type]>
+      %read = pod.read %nested[@value]
+          : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ConditionalAggregateAlias ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, replacement },
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// AggregateArgumentInitializerPreservesChildPath
+// An aggregate argument initializer preserves the selected child path.
+module attributes {llzk.lang} {
+  struct.def @AggregateArgumentInitializer {
+    function.def @compute(%source: !pod.type<[@left: !felt.type, @right: !felt.type]>)
+        -> !struct.type<@AggregateArgumentInitializer> {
+      %self = struct.new : !struct.type<@AggregateArgumentInitializer>
+      function.return %self : !struct.type<@AggregateArgumentInitializer>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@AggregateArgumentInitializer>,
+        %source: !pod.type<[@left: !felt.type, @right: !felt.type]> {function.arg_name = "source"}
+    ) {
+      %storage = pod.new { @nested = %source }
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>
+      %nested = pod.read %storage[@nested]
+          : !pod.type<[@nested: !pod.type<[@left: !felt.type, @right: !felt.type]>]>,
+            !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %read = pod.read %nested[@left]
+          : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %read, %expected : !felt.type
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @AggregateArgumentInitializer ConstraintDependencyGraph {
+// CHECK-NEXT:      { source.left, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// LoopBackedgeStorageWritesReachEarlierBodyReads (read)
+// Storage allocated outside the loop carries writes back to earlier body reads.
+module attributes {llzk.lang} {
+  struct.def @LoopBackedgeStorageRead {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@LoopBackedgeStorageRead> {
+      %self = struct.new : !struct.type<@LoopBackedgeStorageRead>
+      function.return %self : !struct.type<@LoopBackedgeStorageRead>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@LoopBackedgeStorageRead>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %storage = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+      scf.for %i = %c0 to %c2 step %c1 {
+        %read = pod.read %storage[@value]
+            : !pod.type<[@value: !felt.type]>, !felt.type
+        %expected = felt.const 0
+        constrain.eq %read, %expected : !felt.type
+        pod.write %storage[@value] = %replacement
+            : !pod.type<[@value: !felt.type]>, !felt.type
+      }
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @LoopBackedgeStorageRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, replacement },
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// LoopBackedgeStorageWritesReachEarlierBodyReads (whileRead)
+// Storage allocated outside the loop carries writes back to earlier body reads.
+module attributes {llzk.lang} {
+  struct.def @LoopBackedgeStorageWhileRead {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@LoopBackedgeStorageWhileRead> {
+      %self = struct.new : !struct.type<@LoopBackedgeStorageWhileRead>
+      function.return %self : !struct.type<@LoopBackedgeStorageWhileRead>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@LoopBackedgeStorageWhileRead>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %whileStorage = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %c0 = arith.constant 0 : index
+      %c2 = arith.constant 2 : index
+      %c1 = arith.constant 1 : index
+      %loop = scf.while (%i = %c0) : (index) -> index {
+        %cond = arith.cmpi slt, %i, %c2 : index
+        scf.condition(%cond) %i : index
+      } do {
+      ^bb0(%i: index):
+        %whileRead = pod.read %whileStorage[@value]
+            : !pod.type<[@value: !felt.type]>, !felt.type
+        %expected = felt.const 0
+        constrain.eq %whileRead, %expected : !felt.type
+        pod.write %whileStorage[@value] = %replacement
+            : !pod.type<[@value: !felt.type]>, !felt.type
+        %next = arith.addi %i, %c1 : index
+        scf.yield %next : index
+      }
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @LoopBackedgeStorageWhileRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, replacement },
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }

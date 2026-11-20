@@ -11,6 +11,7 @@
 
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
+#include "llzk/Dialect/Global/IR/Ops.h"
 #include "llzk/Dialect/String/IR/Types.h"
 #include "llzk/Transforms/LoweringUtils.h"
 #include "llzk/Util/Compare.h"
@@ -20,6 +21,8 @@
 #include "llzk/Util/SymbolLookup.h"
 
 #include <mlir/IR/AsmState.h>
+
+#include <algorithm>
 
 using namespace mlir;
 
@@ -202,6 +205,47 @@ bool SourceRefIndex::overlaps(const SourceRefIndex &rhs) const {
 
 /* SourceRef */
 
+SourceRef SourceRef::captureComponent() const {
+  ensure(llvm::isa<StructType>(getType()), "only component handles can be captured");
+  SourceRef captured = *this;
+  captured.capturedComponentDepth = path.size();
+  return captured;
+}
+
+bool SourceRef::protectsCapturedComponent(const SourceRef &prefix) const {
+  if (capturedComponentDepth == 0 || prefix.path.size() > capturedComponentDepth ||
+      value != prefix.value || callContext != prefix.callContext) {
+    return false;
+  }
+  return llvm::all_of(
+      llvm::zip(getPath().take_front(prefix.path.size()), prefix.getPath()),
+      [](const auto &indices) { return std::get<0>(indices).overlaps(std::get<1>(indices)); }
+  );
+}
+
+SourceRef SourceRef::inCallContext(Operation *call) const {
+  if (isConstant()) {
+    return *this;
+  }
+  ensure(llvm::isa<CallOpInterface>(call), "call context requires a call operation");
+  SourceRef scoped = *this;
+  auto *repeated = llvm::find(scoped.callContext, call);
+  scoped.callContext.erase(repeated, scoped.callContext.end());
+  scoped.callContext.push_back(call);
+  return scoped;
+}
+
+bool SourceRef::isImmutableGlobal() const {
+  auto read = llvm::dyn_cast_if_present<global::GlobalReadOp>(value.getDefiningOp());
+  if (!read) {
+    return false;
+  }
+  SymbolTableCollection tables;
+  auto globalDef =
+      llvm::cast<global::GlobalRefOpInterface>(read.getOperation()).getGlobalDefOp(tables);
+  return succeeded(globalDef) && globalDef->get().isConstant();
+}
+
 SourceRef::SortCategory SourceRef::getSortCategory() const {
   if (isBlockArgument()) {
     return SortCategory::BlockArgument;
@@ -339,7 +383,6 @@ std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, FuncDe
 }
 
 std::vector<SourceRef> SourceRef::getAllSourceRefs(StructDefOp structDef, MemberDefOp memberDef) {
-  std::vector<SourceRef> res;
   FuncDefOp constrainFnOp = structDef.getConstrainFuncOp();
   ensure(
       memberDef->getParentOfType<StructDefOp>() == structDef,
@@ -391,7 +434,8 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
 
   auto pathRef = getPath();
   auto prefixPath = prefix.getPath();
-  if (value != prefix.value || pathRef.size() < prefixPath.size()) {
+  if (value != prefix.value || callContext != prefix.callContext ||
+      pathRef.size() < prefixPath.size()) {
     return false;
   }
   for (size_t i = 0; i < prefixPath.size(); i++) {
@@ -426,7 +470,8 @@ bool SourceRef::overlaps(const SourceRef &rhs) const {
     StructDefOp rhsStruct = getSelfStruct(rhs);
     sameRoot = lhsStruct && lhsStruct == rhsStruct;
   }
-  if (isConstant() || rhs.isConstant() || !sameRoot || path.size() != rhs.path.size()) {
+  if (isConstant() || rhs.isConstant() || !sameRoot || callContext != rhs.callContext ||
+      path.size() != rhs.path.size()) {
     return false;
   }
   return llvm::all_of(llvm::zip(path, rhs.path), [](const auto &indices) {
@@ -455,18 +500,21 @@ SourceRef SourceRef::narrowRanges(const SourceRef &rhs) const {
   return result;
 }
 
-FailureOr<SourceRef::Path> SourceRef::getSuffix(const SourceRef &prefix) const {
+FailureOr<ArrayRef<SourceRefIndex>> SourceRef::getSuffix(const SourceRef &prefix) const {
   if (!isValidPrefix(prefix)) {
     return failure();
   }
-  Path suffix;
-  auto pathRef = getPath();
-  auto prefixPath = prefix.getPath();
-  suffix.reserve(pathRef.size() - prefixPath.size());
-  for (size_t i = prefixPath.size(); i < pathRef.size(); i++) {
-    suffix.push_back(pathRef[i]);
+  return getPath().drop_front(prefix.getPath().size());
+}
+
+SourceRef SourceRef::appendSuffix(const SourceRef &prefix, ArrayRef<SourceRefIndex> suffix) {
+  SourceRef result = prefix;
+  if (result.isRooted()) {
+    Path &pathRef = result.getPathMut();
+    pathRef.reserve(pathRef.size() + suffix.size());
+    pathRef.insert(pathRef.end(), suffix.begin(), suffix.end());
   }
-  return suffix;
+  return result;
 }
 
 FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceRef &other) const {
@@ -478,13 +526,14 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
     return failure();
   }
 
-  SourceRef newSignalUsage = other; // copy
-  if (newSignalUsage.isRooted()) {
-    SourceRef::Path &pathRef = newSignalUsage.getPathMut();
-    pathRef.insert(pathRef.end(), suffix->begin(), suffix->end());
+  SourceRef translated = appendSuffix(other, *suffix);
+  if (capturedComponentDepth != 0 && capturedComponentDepth >= prefix.path.size()) {
+    translated.capturedComponentDepth = std::max(
+        translated.capturedComponentDepth,
+        other.path.size() + capturedComponentDepth - prefix.path.size()
+    );
   }
-
-  return newSignalUsage;
+  return translated;
 }
 
 std::vector<SourceRef> getAllChildren(
@@ -610,6 +659,29 @@ static bool shouldPrintNamedCallResult(
 }
 
 void SourceRef::print(raw_ostream &os) const {
+  for (Operation *call : llvm::reverse(callContext)) {
+    // A call's ordinal is stable within its function, including calls without results.
+    size_t ordinal = 0;
+    Operation *scope = call;
+    if (auto function = call->getParentOfType<FuncDefOp>()) {
+      scope = function;
+    }
+    scope->walk([&](Operation *op) {
+      if (op == call) {
+        return WalkResult::interrupt();
+      }
+      ordinal += llvm::isa<CallOpInterface>(op);
+      return WalkResult::advance();
+    });
+    auto callable = llvm::cast<CallOpInterface>(call).getCallableForCallee();
+    os << "<call ";
+    if (auto symbol = llvm::dyn_cast<SymbolRefAttr>(callable)) {
+      os << symbol;
+    } else {
+      llvm::cast<Value>(callable).printAsOperand(os, OpPrintingFlags());
+    }
+    os << " #" << ordinal << ">::";
+  }
   if (isConstantFelt()) {
     os << "<felt.const: " << getConstantIdentityValue() << '>';
   } else if (isConstantIndex()) {
@@ -695,7 +767,9 @@ bool SourceRef::operator==(const SourceRef &rhs) const {
     DynamicAPInt lhsVal = getConstantIdentityValue(), rhsVal = rhs.getConstantIdentityValue();
     return getType() == rhs.getType() && lhsVal == rhsVal;
   }
-  return constant == rhs.constant && value == rhs.value && llvm::equal(getPath(), rhs.getPath());
+  return constant == rhs.constant && value == rhs.value && callContext == rhs.callContext &&
+         capturedComponentDepth == rhs.capturedComponentDepth &&
+         llvm::equal(getPath(), rhs.getPath());
 }
 
 // required for EquivalenceClasses usage
@@ -705,7 +779,19 @@ std::strong_ordering SourceRef::operator<=>(const SourceRef &rhs) const {
   if (auto cmp = lhsCategory <=> rhsCategory; cmp != std::strong_ordering::equal) {
     return cmp;
   }
-  return compareWithinCategory(rhs, lhsCategory);
+  if (auto cmp = compareWithinCategory(rhs, lhsCategory); cmp != std::strong_ordering::equal) {
+    return cmp;
+  }
+  for (auto [lhsCall, rhsCall] : llvm::zip(callContext, rhs.callContext)) {
+    if (auto cmp = comparePointers(lhsCall, rhsCall); cmp != std::strong_ordering::equal) {
+      return cmp;
+    }
+  }
+  if (auto cmp = callContext.size() <=> rhs.callContext.size();
+      cmp != std::strong_ordering::equal) {
+    return cmp;
+  }
+  return capturedComponentDepth <=> rhs.capturedComponentDepth;
 }
 
 size_t SourceRef::Hash::operator()(const SourceRef &val) const {
@@ -719,7 +805,10 @@ size_t SourceRef::Hash::operator()(const SourceRef &val) const {
         "unhandled SourceRef hash case"
     );
 
-    size_t hash = llvm::hash_value(val.getAsOpaquePointer());
+    size_t hash = llvm::hash_combine(val.getAsOpaquePointer(), val.capturedComponentDepth);
+    for (Operation *call : val.callContext) {
+      hash = llvm::hash_combine(hash, call);
+    }
     for (const auto &f : val.getPath()) {
       hash = llvm::hash_combine(hash, f.getHash());
     }

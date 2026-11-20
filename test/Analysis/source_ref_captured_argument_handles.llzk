@@ -1,0 +1,314 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// An array argument has no known initializer for its captured component.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+
+  struct.def @CapturedArgumentHandle {
+    function.def @compute(%cells: !array.type<1 x !struct.type<@Cell>>,
+                         %replacement: !struct.type<@Cell>) -> !struct.type<@CapturedArgumentHandle> {
+      %self = struct.new : !struct.type<@CapturedArgumentHandle>
+      function.return %self : !struct.type<@CapturedArgumentHandle>
+    }
+    function.def @constrain(%self: !struct.type<@CapturedArgumentHandle>,
+        %cells: !array.type<1 x !struct.type<@Cell>> {function.arg_name = "cells"},
+        %replacement: !struct.type<@Cell> {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %saved = array.read %cells[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %cells[%c0] = %replacement : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %value = struct.readm %saved[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CapturedArgumentHandle ConstraintDependencyGraph {
+// CHECK-NEXT:      { cells[0].value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// A POD argument record also denotes an initial component, not a live slot.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+
+  struct.def @CapturedPodArgumentHandle {
+    function.def @compute(%cells: !pod.type<[@cell: !struct.type<@Cell>]>,
+                         %replacement: !struct.type<@Cell>) -> !struct.type<@CapturedPodArgumentHandle> {
+      %self = struct.new : !struct.type<@CapturedPodArgumentHandle>
+      function.return %self : !struct.type<@CapturedPodArgumentHandle>
+    }
+    function.def @constrain(%self: !struct.type<@CapturedPodArgumentHandle>,
+        %cells: !pod.type<[@cell: !struct.type<@Cell>]> {function.arg_name = "cells"},
+        %replacement: !struct.type<@Cell> {function.arg_name = "replacement"}) {
+      %saved = pod.read %cells[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      pod.write %cells[@cell] = %replacement : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %value = struct.readm %saved[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CapturedPodArgumentHandle ConstraintDependencyGraph {
+// CHECK-NEXT:      { cells.cell.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Captures survive POD copies, identity calls, and reads of aggregate members.
+module attributes {llzk.lang} {
+  function.def @identity(%cell: !struct.type<@Cell>) -> !struct.type<@Cell> {
+    function.return %cell : !struct.type<@Cell>
+  }
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    struct.member @items : !array.type<1 x !felt.type> {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+
+  struct.def @ForwardedCapturedArgumentHandle {
+    function.def @compute(%cells: !array.type<1 x !struct.type<@Cell>>,
+                         %replacement: !struct.type<@Cell>) -> !struct.type<@ForwardedCapturedArgumentHandle> {
+      %self = struct.new : !struct.type<@ForwardedCapturedArgumentHandle>
+      function.return %self : !struct.type<@ForwardedCapturedArgumentHandle>
+    }
+    function.def @constrain(%self: !struct.type<@ForwardedCapturedArgumentHandle>,
+        %cells: !array.type<1 x !struct.type<@Cell>> {function.arg_name = "cells"},
+        %replacement: !struct.type<@Cell> {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %saved = array.read %cells[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %cells[%c0] = %replacement : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %holder = pod.new { @cell = %saved } : !pod.type<[@cell: !struct.type<@Cell>]>
+      %copy = pod.read %holder[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %forwarded = function.call @identity(%copy) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+      %items = struct.readm %forwarded[@items] : !struct.type<@Cell>, !array.type<1 x !felt.type>
+      %item = array.read %items[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %one = felt.const 1
+      constrain.eq %item, %one : !felt.type
+      %value = struct.readm %forwarded[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @ForwardedCapturedArgumentHandle ConstraintDependencyGraph {
+// CHECK-NEXT:      { cells[0].value, <felt.const: 0> },
+// CHECK-NEXT:      { cells[0].items[0], <felt.const: 1> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Nested constraint graphs must preserve the supplied captured handle.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      %value = struct.readm %self[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @NestedCapturedArgumentHandle {
+    function.def @compute(%cells: !pod.type<[@cell: !struct.type<@Cell>]>,
+                         %replacement: !struct.type<@Cell>) -> !struct.type<@NestedCapturedArgumentHandle> {
+      %self = struct.new : !struct.type<@NestedCapturedArgumentHandle>
+      function.return %self : !struct.type<@NestedCapturedArgumentHandle>
+    }
+    function.def @constrain(%self: !struct.type<@NestedCapturedArgumentHandle>,
+        %cells: !pod.type<[@cell: !struct.type<@Cell>]> {function.arg_name = "cells"},
+        %replacement: !struct.type<@Cell> {function.arg_name = "replacement"}) {
+      %saved = pod.read %cells[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      pod.write %cells[@cell] = %replacement : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      function.call @Cell::@constrain(%saved) : (!struct.type<@Cell>) -> ()
+      %value = struct.readm %saved[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph {
+// CHECK-NEXT:      { %self.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @NestedCapturedArgumentHandle ConstraintDependencyGraph {
+// CHECK-NEXT:      { cells.cell.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Bind callee-initial aggregate contents to the caller snapshot at entry.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  function.def @capture(%cells: !array.type<1 x !struct.type<@Cell>>, %replacement: !struct.type<@Cell>) -> (!struct.type<@Cell>, !felt.type) {
+    %c0 = arith.constant 0 : index
+    %saved = array.read %cells[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+    array.write %cells[%c0] = %replacement : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %value = struct.readm %saved[@value] : !struct.type<@Cell>, !felt.type
+    function.return %saved, %value : !struct.type<@Cell>, !felt.type
+  }
+  struct.def @CaptureAtCallEntry {
+    function.def @compute(%first: !struct.type<@Cell>, %replacement: !struct.type<@Cell>) -> !struct.type<@CaptureAtCallEntry> {
+      %self = struct.new : !struct.type<@CaptureAtCallEntry>
+      function.return %self : !struct.type<@CaptureAtCallEntry>
+    }
+    function.def @constrain(%self: !struct.type<@CaptureAtCallEntry>, %first: !struct.type<@Cell> {function.arg_name = "first"}, %replacement: !struct.type<@Cell> {function.arg_name = "replacement"}) {
+      %cells = array.new %first : !array.type<1 x !struct.type<@Cell>>
+      %saved, %value = function.call @capture(%cells, %replacement) : (!array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>) -> (!struct.type<@Cell>, !felt.type)
+      %member = struct.readm %saved[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      constrain.eq %member, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CaptureAtCallEntry ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Copying a local initial handle must not alias its mutable source and destination slots.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+
+  struct.def @CapturedLocalHandle {
+    function.def @compute(%replacement: !struct.type<@Cell>) -> !struct.type<@CapturedLocalHandle> {
+      %self = struct.new : !struct.type<@CapturedLocalHandle>
+      function.return %self : !struct.type<@CapturedLocalHandle>
+    }
+    function.def @constrain(%self: !struct.type<@CapturedLocalHandle>,
+        %replacement: !struct.type<@Cell> {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %cells = array.new : !array.type<1 x !struct.type<@Cell>>
+      %saved = array.read %cells[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %holder = pod.new { @cell = %saved } : !pod.type<[@cell: !struct.type<@Cell>]>
+      array.write %cells[%c0] = %replacement : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %copy = pod.read %holder[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %value = struct.readm %copy[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      %current = array.read %cells[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %currentValue = struct.readm %current[@value] : !struct.type<@Cell>, !felt.type
+      %one = felt.const 1
+      constrain.eq %currentValue, %one : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CapturedLocalHandle ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement.value, <felt.const: 1> },
+// CHECK-NEXT:      { %array[0].value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// An unknown-index overwrite cannot retarget a captured handle passed to a call.
+module attributes {llzk.lang} {
+  function.def @identity(%cell: !struct.type<@Cell>) -> !struct.type<@Cell> {
+    function.return %cell : !struct.type<@Cell>
+  }
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+
+  struct.def @CapturedHandleBeforeRangeWrite {
+    function.def @compute(%cells: !array.type<2 x !struct.type<@Cell>>,
+                         %which: index, %replacement: !struct.type<@Cell>) -> !struct.type<@CapturedHandleBeforeRangeWrite> {
+      %self = struct.new : !struct.type<@CapturedHandleBeforeRangeWrite>
+      function.return %self : !struct.type<@CapturedHandleBeforeRangeWrite>
+    }
+    function.def @constrain(%self: !struct.type<@CapturedHandleBeforeRangeWrite>,
+        %cells: !array.type<2 x !struct.type<@Cell>> {function.arg_name = "cells"},
+        %which: index, %replacement: !struct.type<@Cell> {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %saved = array.read %cells[%c0] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %cells[%which] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %forwarded = function.call @identity(%saved) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+      %value = struct.readm %forwarded[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %value, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CapturedHandleBeforeRangeWrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { cells[0].value, <felt.const: 0> }
+// CHECK-NEXT:  }
