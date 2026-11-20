@@ -530,6 +530,109 @@ module attributes {llzk.lang} {
   }
 }
 
+// Dynamic writes can both miss the element selected by a later independent read.
+TEST_F(IntervalStorageTests, RangedArrayWritesPreserveUnwrittenValues) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %condition: i1, %i: index, %j: index, %k: index) -> (!felt.type, !felt.type) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    scf.if %condition {
+      array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
+    %concrete = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    %ranged = array.read %array[%k] : !array.type<2 x !felt.type>, !felt.type
+    function.return %concrete, %ranged : !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  for (Value value : fn.getBody().front().getTerminator()->getOperands()) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    const auto &actual = lattice->getValue().getScalarValue();
+    auto expected = Interval::Entire(field);
+    EXPECT_TRUE(checkCond(expected, actual.getInterval(), expected == actual.getInterval()));
+    EXPECT_EQ(actual.getOptionalUnreducedInterval(), expected.firstUnreduced());
+  }
+}
+
+// Neither a ranged target nor one of several possible aliases is guaranteed to be written.
+TEST_F(IntervalStorageTests, AmbiguousArrayWritesKeepNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %matrix: !array.type<2,2 x !felt.type>, %left: !array.type<2 x !felt.type>, %right: !array.type<2 x !felt.type>, %condition: i1, %chooseLeft: i1, %i: index, %j: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %firstRow = array.extract %matrix[%i] : !array.type<2,2 x !felt.type>
+    %secondRow = array.extract %matrix[%j] : !array.type<2,2 x !felt.type>
+    %choice = scf.if %chooseLeft -> (!array.type<2 x !felt.type>) {
+      scf.yield %left : !array.type<2 x !felt.type>
+    } else {
+      scf.yield %right : !array.type<2 x !felt.type>
+    }
+    scf.if %condition {
+      array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %firstRow[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %left[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %right[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %secondRow[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %choice[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (!isa<array::WriteArrayOp, scf::IfOp>(op)) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      auto visitWrites = [&](Block &block) {
+        for (auto write : block.getOps<array::WriteArrayOp>()) {
+          ASSERT_TRUE(succeeded(visit(write)));
+        }
+      };
+      if (optionalFirst) {
+        visitWrites(*conditional.thenBlock());
+        visitWrites(fn.getBody().front());
+      } else {
+        visitWrites(fn.getBody().front());
+        visitWrites(*conditional.thenBlock());
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      auto range = SourceRefIndex::forArrayDimension(2);
+      expectStored(analysis, SourceRef(fn.getArgument(0), {range}), Interval::Entire(field));
+      expectStored(
+          analysis, SourceRef(fn.getArgument(1), {range, SourceRefIndex(0)}),
+          Interval::Entire(field)
+      );
+      for (unsigned arg : {2U, 3U}) {
+        expectStored(
+            analysis, SourceRef(fn.getArgument(arg), {SourceRefIndex(0)}), Interval::Entire(field)
+        );
+      }
+    });
+  }
+}
+
 // An unconditional write must remove the no-write alternative in either visitation order.
 TEST_F(IntervalStorageTests, UnconditionalWritesRemoveNoWriteDefaults) {
   for (bool optionalFirst : {false, true}) {
