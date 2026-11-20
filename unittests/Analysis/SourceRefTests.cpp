@@ -1042,3 +1042,72 @@ module attributes {llzk.lang} {
   EXPECT_TRUE(runCase(/*includeTrueConstraint=*/true));
   EXPECT_FALSE(runCase(/*includeTrueConstraint=*/false));
 }
+
+TEST_F(SourceRefTests, ConstraintQueriesRetainLogicalComponentPathsAlongsideInputs) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Child {
+    struct.member @out : !felt.type {llzk.pub, signal}
+    function.def @compute(%in: !felt.type) -> !struct.type<@Child> {
+      %self = struct.new : !struct.type<@Child>
+      struct.writem %self[@out] = %in : !struct.type<@Child>, !felt.type
+      function.return %self : !struct.type<@Child>
+    }
+    function.def @constrain(%self: !struct.type<@Child>, %in: !felt.type) {
+      %out = struct.readm %self[@out] : !struct.type<@Child>, !felt.type
+      %sum = felt.add %in, %in : !felt.type, !felt.type
+      constrain.eq %out, %sum : !felt.type
+      function.return
+    }
+  }
+
+  struct.def @Parent {
+    struct.member @out : !array.type<4 x !felt.type> {llzk.pub, signal}
+    struct.member @child : !struct.type<@Child>
+    function.def @compute(%in: !felt.type, %index: index) -> !struct.type<@Parent> {
+      %self = struct.new : !struct.type<@Parent>
+      function.return %self : !struct.type<@Parent>
+    }
+    function.def @constrain(
+        %self: !struct.type<@Parent>, %in: !felt.type, %index: index
+    ) {
+      %out = struct.readm %self[@out] : !struct.type<@Parent>, !array.type<4 x !felt.type>
+      %selected = array.read %out[%index] : !array.type<4 x !felt.type>, !felt.type
+      constrain.eq %selected, %in : !felt.type
+      %child = struct.readm %self[@child] : !struct.type<@Parent>, !struct.type<@Child>
+      %childOut = struct.readm %child[@out] : !struct.type<@Child>, !felt.type
+      %c3 = arith.constant 3 : index
+      %last = array.read %out[%c3] : !array.type<4 x !felt.type>, !felt.type
+      constrain.eq %last, %childOut : !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto parent = *std::next(mod->getOps<StructDefOp>().begin());
+  auto constrainFn = parent.getConstrainFuncOp();
+  auto members = llvm::to_vector(parent.getOps<MemberDefOp>());
+  auto child = *mod->getOps<StructDefOp>().begin();
+  auto childOut = *child.getOps<MemberDefOp>().begin();
+
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(parent);
+
+  SourceRef output(
+      constrainFn.getArgument(0), {SourceRefIndex(members[0]), SourceRefIndex(DynamicAPInt(3))}
+  );
+  SourceRef logicalChild(
+      constrainFn.getArgument(0), {SourceRefIndex(members[1]), SourceRefIndex(childOut)}
+  );
+  SourceRefSet dependencies = graph.getConstrainingValues(output);
+  EXPECT_TRUE(llvm::any_of(dependencies, [&](const SourceRef &dependency) {
+    return dependency == logicalChild;
+  })) << buildStringViaInsertionOp(dependencies);
+  EXPECT_TRUE(dependencies.contains(SourceRef(constrainFn.getArgument(1))));
+}
