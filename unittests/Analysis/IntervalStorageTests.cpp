@@ -789,42 +789,6 @@ module attributes {llzk.lang} {
   }
 }
 
-// Overlapping writes use a concrete element's own fallback, including an unwritten default.
-TEST_F(IntervalStorageTests, OverlappingWritesKeepConcreteNoWriteValues) {
-  auto mod = parseModule(R"mlir(
-module attributes {llzk.lang} {
-  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %j: index) -> (!felt.type, !felt.type, !felt.type) {
-    %zero = arith.constant 0 : index
-    %one = arith.constant 1 : index
-    %seven = felt.const 7
-    %nine = felt.const 9
-    array.write %array[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
-    array.write %array[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
-    %known = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
-    %unwritten = array.read %array[%one] : !array.type<2 x !felt.type>, !felt.type
-    %ranged = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
-    function.return %known, %unwritten, %ranged : !felt.type, !felt.type, !felt.type
-  }
-}
-)mlir");
-  ASSERT_TRUE(mod);
-  auto fn = *mod->getOps<function::FuncDefOp>().begin();
-  auto smt = llvm::CreateZ3Solver();
-  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
-  llzk::dataflow::loadRequiredAnalyses(solver);
-  solver.load<SourceRefAnalysis>();
-  solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
-  for (auto [i, value] : llvm::enumerate(fn.getBody().front().getTerminator()->getOperands())) {
-    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
-    ASSERT_NE(lattice, nullptr);
-    const auto &actual = lattice->getValue().getScalarValue();
-    auto expected = i == 0 ? UnreducedInterval(7, 9).reduce(field) : Interval::Entire(field);
-    EXPECT_TRUE(checkCond(expected, actual.getInterval(), expected == actual.getInterval()));
-    EXPECT_EQ(actual.getOptionalUnreducedInterval(), expected.firstUnreduced());
-  }
-}
-
 // Exact ranged writes lose their defaults only when concrete writes cover every candidate.
 TEST_F(IntervalStorageTests, ExactRangedWritesRecomputeDefaultsFromConcreteCoverage) {
   for (bool rangedFirst : {false, true}) {
@@ -866,7 +830,7 @@ module attributes {llzk.lang} {
     auto writes = llvm::to_vector(fn.getOps<array::WriteArrayOp>());
     auto conditional = *fn.getOps<scf::IfOp>().begin();
     auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
-    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
       for (Operation &op : fn.getBody().front()) {
         if (&op == writes.front().getOperation()) {
           break;
@@ -889,7 +853,7 @@ module attributes {llzk.lang} {
       for (Operation *op = conditional->getNextNode(); op; op = op->getNextNode()) {
         ASSERT_TRUE(succeeded(visit(op)));
       }
-    }, [&](IntervalDataFlowAnalysis &analysis) {
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
       llvm::StringRef names[] = {"full", "partial", "optional", "unbounded"};
       for (auto [i, name] : llvm::enumerate(names)) {
         SourceRefIndex record(StringAttr::get(&ctx, name));

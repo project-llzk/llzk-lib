@@ -1,0 +1,25 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// An overlapping write joins a known element but preserves unwritten alternatives.
+module attributes {llzk.lang} {
+  struct.def @OverlappingWritesKeepDefaults {
+    function.def @product(%array: !array.type<2 x !felt.type>, %i: index, %j: index) -> !struct.type<@OverlappingWritesKeepDefaults> {
+      %self = struct.new : !struct.type<@OverlappingWritesKeepDefaults>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      array.write %array[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %array[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
+      %known = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+      %unwritten = array.read %array[%one] : !array.type<2 x !felt.type>, !felt.type
+      %ranged = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@OverlappingWritesKeepDefaults>
+    }
+  }
+}
+
+// CHECK-LABEL: @OverlappingWritesKeepDefaults SSAIntervals {
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
