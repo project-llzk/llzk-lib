@@ -1,2 +1,3 @@
 fixed:
   - Preserve unknown alternatives and merge all live branches when propagating intervals through conditional aggregate yields.
+  - Revisit aggregate joins when new source fields appear, waiting for pending producers before publishing their intervals.

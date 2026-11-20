@@ -20,6 +20,7 @@
 #include "llzk/Util/StreamHelper.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
 #include <array>
@@ -672,6 +673,70 @@ module attributes {llzk.lang} {
     return analysis.getSolver().lookupState<IntervalAnalysisLattice>(value);
   }
 };
+
+// A join can run before aggregate initializers when the worklist discovers new live regions.
+TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsRevisitConditionalYield) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = felt.const 0
+    %seven = felt.const 7
+    %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+    %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+    %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+      scf.yield %left : !pod.type<[@value: !felt.type]>
+    } else {
+      scf.yield %right : !pod.type<[@value: !felt.type]>
+    }
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+
+  // Settle liveness and storage identities first, then explicitly exercise the legal
+  // worklist order where both yields precede the writes that materialize their sources.
+  auto visit = [&](Operation *op) {
+    SmallVector<const IntervalAnalysisLattice *> operands;
+    SmallVector<IntervalAnalysisLattice *> results;
+    for (Value value : op->getOperands()) {
+      operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    for (Value value : op->getResults()) {
+      results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    return analysis->visitOperation(op, operands, results);
+  };
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto conditional = *fn.getOps<scf::IfOp>().begin();
+  ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+  ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+  auto resultField = SourceRef(conditional->getResult(0))
+                         .createChild(SourceRefIndex(StringAttr::get(&ctx, "value")));
+  ASSERT_TRUE(succeeded(resultField));
+  EXPECT_FALSE(analysis->getWriteResults().contains(*resultField));
+
+  for (Operation &op : fn.getBody().front()) {
+    if (isa<felt::FeltConstantOp, pod::NewPodOp>(op)) {
+      ASSERT_TRUE(succeeded(visit(&op)));
+    }
+  }
+  // Drain only queued dependencies. Reinitializing the analysis would revisit every yield
+  // and mask a missing storage subscription.
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [](DataFlowAnalysis &) { return false; })));
+  const auto &writes = analysis->getWriteResults();
+  auto stored = writes.find(*resultField);
+  ASSERT_NE(stored, writes.end());
+  EXPECT_EQ(stored->second.getInterval(), UnreducedInterval(0, 7).reduce(field));
+  EXPECT_EQ(stored->second.getOptionalUnreducedInterval(), UnreducedInterval(0, 7));
+}
 
 // Equal-looking values in separate functions must still have separate SMT identities.
 TEST_F(IntervalAnalysisAPITests, ValueSymbolsCacheIdentityAndPreserveSorts) {
