@@ -1274,6 +1274,16 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
       continue;
     }
 
+    // No alternative may have written a leaf yet. Include the type's scalar paths so
+    // unwritten fields (especially i1) retain their defaults when the result is copied.
+    auto rootModule = getRootModule(parent);
+    ensure(succeeded(rootModule), "conditional aggregate result must be within a module");
+    for (const SourceRef &ref : SourceRef::getAllSourceRefs(tables, *rootModule, resultRef)) {
+      if (ref.isScalar()) {
+        destinations.insert(ref);
+      }
+    }
+
     bool changed = false;
     for (const SourceRef &destination : destinations) {
       std::optional<ExpressionValue> merged;
