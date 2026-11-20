@@ -710,4 +710,72 @@ module attributes {llzk.lang} {
   }
 }
 
+// A product decomposition requires one value in every factor, not matching index ranges.
+TEST_F(IntervalStorageTests, DecompositionRejectsIndependentRangedMembers) {
+  for (unsigned selection : {0U, 1U, 2U}) {
+    SCOPED_TRACE(selection); // Independent dynamic reads, one SSA value, one concrete location.
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @test(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index) -> (!felt.type, !felt.type)
+      attributes {function.allow_constraint} {
+    %index = arith.constant 0 : index
+    %zero = felt.const 0
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %right = array.read %array[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+    %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+    %xMinusSeven = felt.sub %x, %seven
+    %yMinusNine = felt.sub %y, %nine
+    %product = felt.mul %xMinusSeven, %yMinusNine
+    constrain.eq %product, %zero : !felt.type
+    function.return %x, %y : !felt.type, !felt.type
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto members = llvm::to_vector(fn.getOps<component::MemberReadOp>());
+    if (selection == 1) {
+      auto subtractions = llvm::to_vector(fn.getOps<felt::SubFeltOp>());
+      subtractions.back()->setOperand(0, members.front().getResult());
+    } else if (selection == 2) {
+      Value index = fn.getBody().front().front().getResult(0);
+      for (auto read : fn.getOps<array::ReadArrayOp>()) {
+        read->setOperand(1, index);
+      }
+    }
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    for (auto [i, read] : llvm::enumerate(members)) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(read.getResult());
+      ASSERT_NE(lattice, nullptr);
+      const auto &actual = lattice->getValue().getScalarValue().getInterval();
+      auto expected = selection == 2 || (selection == 1 && i == 0)
+                          ? UnreducedInterval(7, 9).reduce(field)
+                          : Interval::Entire(field);
+      EXPECT_TRUE(checkCond(expected, actual, expected == actual));
+      if (selection == 0) {
+        auto witness = Interval::Degenerate(field, field.felt(i == 0 ? 11 : 9));
+        EXPECT_FALSE(actual.intersect(witness).isEmpty());
+      }
+    }
+  }
+}
+
 } // namespace
