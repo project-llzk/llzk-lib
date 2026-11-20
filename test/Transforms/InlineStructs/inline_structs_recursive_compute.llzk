@@ -3,7 +3,6 @@
 // A recursive helper used only by @compute is prover-side code. The inline-structs pass must not
 // reject it just because it creates a cycle in the whole SymbolUseGraph.
 module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
-  // CHECK-LABEL: function.def @gcd
   function.def @gcd(%a: !felt.type, %b: !felt.type) -> !felt.type
       attributes {function.allow_witness, function.allow_non_native_field_ops} {
     %b_idx = cast.toindex %b
@@ -13,14 +12,12 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
       scf.yield %a : !felt.type
     } else {
       %r = felt.umod %a, %b : !felt.type, !felt.type
-      // CHECK: function.call @gcd
       %g = function.call @gcd(%b, %r) : (!felt.type, !felt.type) -> !felt.type
       scf.yield %g : !felt.type
     }
     function.return %result : !felt.type
   }
 
-  // CHECK-LABEL: struct.def @Main
   struct.def @Main {
     struct.member @x       : !felt.type
     struct.member @x_inv   : !felt.type
@@ -49,3 +46,6 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: function.def @gcd
+// CHECK: function.call @gcd
+// CHECK-LABEL: struct.def @Main

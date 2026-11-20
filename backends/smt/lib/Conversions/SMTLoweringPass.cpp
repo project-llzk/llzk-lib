@@ -113,8 +113,8 @@ public:
     captureMemberRanges(intervals->getConstrainIntervals(), constraintRanges);
   }
 
-  bool isScalarFeltType(Type type) const { return isa<felt::FeltType>(type); }
-  bool isArrayFeltType(Type type) const {
+  static bool isScalarFeltType(Type type) { return isa<felt::FeltType>(type); }
+  static bool isArrayFeltType(Type type) {
     if (auto arrType = dyn_cast<array::ArrayType>(type)) {
       return isa<felt::FeltType>(arrType.getElementType());
     }
@@ -210,7 +210,7 @@ private:
     return ref.isRooted() && ref.getPath().size() == 1 && ref.getPath().front().isMember();
   }
 
-  void captureMemberRanges(
+  static void captureMemberRanges(
       const llvm::MapVector<SourceRef, Interval> &reducedRanges,
       llvm::StringMap<UnreducedInterval> &out
   ) {
@@ -288,7 +288,7 @@ public:
       const StructIntervals *intervals = nullptr
   );
 
-  bool isScalarFeltType(Type type) const;
+  static bool isScalarFeltType(Type type);
   UnreducedInterval getDefaultFeltRange() const;
   UnreducedInterval getScalarValueRange(Value value) const;
   UnreducedInterval getConstraintMemberRange(StringRef memberName) const;
@@ -573,8 +573,8 @@ OptimizedNonNativeStrategy::OptimizedNonNativeStrategy(
     : reasoner(selectedField, dataflowSolver, intervals),
       emitter(std::make_unique<SMTIntTheoryEmitter>(context, toAPSInt(reasoner.getPrime()))) {}
 
-bool OptimizedNonNativeStrategy::isScalarFeltType(Type type) const {
-  return reasoner.isScalarFeltType(type);
+bool OptimizedNonNativeStrategy::isScalarFeltType(Type type) {
+  return ModularReasoner::isScalarFeltType(type);
 }
 
 UnreducedInterval OptimizedNonNativeStrategy::getDefaultFeltRange() const {
@@ -605,7 +605,7 @@ void OptimizedNonNativeStrategy::emitArrayRangeConstraint(
 ) const {
 
   auto arrayElementInRange = [this, &range, &builder, &loc, &array](ValueRange indices) -> Value {
-    auto element = emitter->emitArraySelect(loc, array, indices, builder);
+    auto element = SMTIntTheoryEmitter::emitArraySelect(loc, array, indices, builder);
     auto [rangeLo, rangeHi] = emitter->getRangeBoundAssertions(builder, loc, element, range);
     return mlir::smt::AndOp::create(builder, loc, rangeLo, rangeHi).getResult();
   };
@@ -736,8 +736,8 @@ LogicalResult OptimizedNonNativeStrategy::emitCongruenceEqualityAssertion(
     auto extents = getExtents(arrType);
     auto equalAtPosition = [this, &loc, &lhs, &rhs, &builder, &lhsRange, &rhsRange,
                             &prefix](ValueRange indices) -> Value {
-      auto lhsElement = emitter->emitArraySelect(loc, lhs, indices, builder);
-      auto rhsElement = emitter->emitArraySelect(loc, rhs, indices, builder);
+      auto lhsElement = SMTIntTheoryEmitter::emitArraySelect(loc, lhs, indices, builder);
+      auto rhsElement = SMTIntTheoryEmitter::emitArraySelect(loc, rhs, indices, builder);
       return buildCongruenceEqualityPredicate(
           builder, loc, lhsElement, lhsRange, rhsElement, rhsRange, prefix
       );

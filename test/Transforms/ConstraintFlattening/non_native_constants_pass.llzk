@@ -40,47 +40,47 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK-LABEL:    struct.def @Main {
-// CHECK-NEXT:      function.def @compute(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.def @compute(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_7]] : index, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.const  8 : <"bn128">
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = felt.const  7296080957279758407415468581752425029516121466805344781232734728858602831875 : <"bn128">
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663745 : <"bn128">
+// CHECK-NEXT:      function.def @constrain(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[VAL_7]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = felt.const  8 : <"bn128">
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = felt.const  7296080957279758407415468581752425029516121466805344781232734728858602831875 : <"bn128">
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663745 : <"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_13]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_14]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_10]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_11]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_12]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_15]] : index, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_\.]+]] = felt.const  4 : <"bn128">
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"bn128">
-// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = felt.const  9 : <"bn128">
-// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"bn128">
-// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_\.]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663745 : <"bn128">
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[VAL_15]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_17:[0-9a-zA-Z_.-]+]] = felt.const  4 : <"bn128">
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"bn128">
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_.-]+]] = felt.const  9 : <"bn128">
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"bn128">
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_.-]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663745 : <"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_21]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_22]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_17]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_18]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_19]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_20]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_23]] : index, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
-// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"bn128">
-// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_\.]+]] = felt.const  1 : <"bn128">
-// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = felt.const  100 : <"bn128">
-// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663748 : <"bn128">
-// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663745 : <"bn128">
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[VAL_23]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_25:[0-9a-zA-Z_.-]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"bn128">
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_.-]+]] = felt.const  1 : <"bn128">
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_.-]+]] = felt.const  100 : <"bn128">
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_.-]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663748 : <"bn128">
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_.-]+]] = felt.const  14592161914559516814830937163504850059032242933610689562465469457717205663745 : <"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_29]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_30]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_25]], %[[VAL_6]] : !felt.type<"bn128">, !felt.type<"bn128">

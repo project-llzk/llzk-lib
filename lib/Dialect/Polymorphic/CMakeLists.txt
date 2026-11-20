@@ -2,7 +2,7 @@ add_library(LLZKPolymorphicDialect)
 add_library(LLZK::LLZKPolymorphicDialect ALIAS LLZKPolymorphicDialect)
 target_link_libraries(LLZKAllDialects INTERFACE LLZKPolymorphicDialect)
 
-file(GLOB_RECURSE LLZKPolymorphicDialect_SOURCES "**/*.cpp")
+file(GLOB_RECURSE LLZKPolymorphicDialect_SOURCES CONFIGURE_DEPENDS "**/*.cpp")
 target_sources(LLZKPolymorphicDialect PRIVATE ${LLZKPolymorphicDialect_SOURCES})
 target_link_libraries(
   LLZKPolymorphicDialect

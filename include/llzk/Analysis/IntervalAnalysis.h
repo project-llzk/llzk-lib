@@ -149,9 +149,10 @@ public:
   friend ExpressionValue
   mul(const llvm::SMTSolverRef &solver, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
+  /// Divide using an analysis-scoped symbol for the divisor's inverse.
   friend ExpressionValue
   div(const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
-      const ExpressionValue &rhs);
+      const ExpressionValue &rhs, llvm::SMTExprRef inverseSymbol);
 
   friend ExpressionValue uintDiv(
       const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &lhs,
@@ -202,8 +203,10 @@ public:
 
   friend ExpressionValue boolNot(const llvm::SMTSolverRef &solver, const ExpressionValue &val);
 
+  /// Overapproximate a unary operation, using an analysis-scoped symbol for field inversion.
   friend ExpressionValue fallbackUnaryOp(
-      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &val
+      const llvm::SMTSolverRef &solver, mlir::Operation *op, const ExpressionValue &val,
+      llvm::SMTExprRef inverseSymbol
   );
 
   /* Utility */
@@ -238,7 +241,7 @@ class IntervalAnalysisLatticeValue
 
 public:
   explicit IntervalAnalysisLatticeValue(ExpressionValue e) : Base(std::move(e)) {}
-  IntervalAnalysisLatticeValue() : Base() {}
+  IntervalAnalysisLatticeValue() = default;
   explicit IntervalAnalysisLatticeValue(mlir::ArrayRef<int64_t> shape) : Base(shape) {}
   IntervalAnalysisLatticeValue(const IntervalAnalysisLatticeValue &) = default;
   IntervalAnalysisLatticeValue(IntervalAnalysisLatticeValue &&) = default;
@@ -308,21 +311,20 @@ public:
   explicit IntervalDataFlowAnalysis(
       mlir::DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &f,
       bool propInputConstraints, bool shouldTrackUnreducedIntervals
-  )
-      : Base::SparseForwardDataFlowAnalysis(dataflowSolver), _dataflowSolver(dataflowSolver),
-        smtSolver(std::move(smt)), field(f), propagateInputConstraints(propInputConstraints),
-        trackUnreducedIntervals(shouldTrackUnreducedIntervals) {}
+  );
 
   mlir::LogicalResult visitOperation(
       mlir::Operation *op, mlir::ArrayRef<const Lattice *> operands,
       mlir::ArrayRef<Lattice *> results
   ) override;
 
-  /// @brief Either return the existing SMT expression that corresponds to the SourceRef,
-  /// or create one.
-  /// @param r
-  /// @return
+  /// Return the cached symbol for a source reference, allocating an internal identity on
+  /// first use. Printed reference names do not determine SMT symbol identity.
   llvm::SMTExprRef getOrCreateSymbol(const SourceRef &r);
+
+  /// Return the cached symbol for a value, allocating an internal identity on first use.
+  /// Value and SourceRef symbols occupy separate namespaces, unique within the SMT solver.
+  llvm::SMTExprRef getOrCreateSymbol(mlir::Value val);
 
   const llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> &getReadResults() const {
     return readResults;
@@ -331,12 +333,35 @@ public:
   const llvm::DenseMap<SourceRef, ExpressionValue> &getWriteResults() const { return writeResults; }
 
 private:
+  /// Dataflow solver used to query source-reference analysis state.
   mlir::DataFlowSolver &_dataflowSolver;
+
+  /// Shared SMT solver that owns the symbols and expressions used by this analysis.
   llvm::SMTSolverRef smtSolver;
+
+  /// Cached SMT symbols keyed by source-reference identity.
   SymbolMap refSymbols;
+
+  /// Cached SMT symbols keyed by SSA value identity, independent of printed value names.
+  mlir::DenseMap<mlir::Value, llvm::SMTExprRef> valueSymbols;
+
+  /// Cached inverse symbols keyed by operation identity, separate from value and ref symbols.
+  mlir::DenseMap<mlir::Operation *, llvm::SMTExprRef> inverseSymbols;
+
+  /// Symbol-name prefix unique to this analysis within `smtSolver`.
+  /// Reserved for the solver's entire lifetime, even after this analysis is destroyed.
+  std::string symbolNamespace;
+
+  /// Finite field used for modular intervals and SMT bitvector widths.
   std::reference_wrapper<const Field> field;
+
+  /// Whether to propagate constrain-function input intervals to matching compute inputs.
   bool propagateInputConstraints;
+
+  /// Whether to track integer bounds before field reduction alongside modular intervals.
   bool trackUnreducedIntervals;
+
+  /// Cached symbol tables used to resolve struct member definitions.
   mlir::SymbolTableCollection tables;
 
   // Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
@@ -366,23 +391,22 @@ private:
 
   llvm::SMTExprRef createSymbol(mlir::Type ty, const char *name) const;
 
-  llvm::SMTExprRef createSymbol(const SourceRef &r) const;
+  /// Return a stable, analysis-scoped inverse symbol for a felt.inv or felt.div operation.
+  llvm::SMTExprRef getOrCreateInverseSymbol(mlir::Operation *op);
 
-  llvm::SMTExprRef createSymbol(mlir::Value val) const;
-
-  ExpressionValue createUnknownValue(mlir::Value val) const {
+  ExpressionValue createUnknownValue(mlir::Value val) {
     return ExpressionValue(
-        createSymbol(val), getDefaultIntervalForType(val.getType()),
+        getOrCreateSymbol(val), getDefaultIntervalForType(val.getType()),
         getDefaultUnreducedIntervalForType(val.getType())
     );
   }
 
-  inline bool isConstOp(mlir::Operation *op) const {
+  static inline bool isConstOp(mlir::Operation *op) {
     return llvm::isa<
         felt::FeltConstantOp, mlir::arith::ConstantIndexOp, mlir::arith::ConstantIntOp>(op);
   }
 
-  inline bool isBoolConstOp(mlir::Operation *op) const {
+  static inline bool isBoolConstOp(mlir::Operation *op) {
     if (auto constIntOp = llvm::dyn_cast<mlir::arith::ConstantIntOp>(op)) {
       auto valAttr = dyn_cast<mlir::IntegerAttr>(constIntOp.getValue());
       ensure(valAttr != nullptr, "arith::ConstantIntOp must have an IntegerAttr as its value");
@@ -403,7 +427,7 @@ private:
 
   llvm::SMTExprRef createConstBoolExpr(bool v) const { return smtSolver->mkBoolean(v); }
 
-  bool isArithmeticOp(mlir::Operation *op) const {
+  static bool isArithmeticOp(mlir::Operation *op) {
     return llvm::isa<
         felt::AddFeltOp, felt::SubFeltOp, felt::MulFeltOp, felt::DivFeltOp, felt::UnsignedModFeltOp,
         felt::SignedModFeltOp, felt::SignedIntDivFeltOp, felt::UnsignedIntDivFeltOp,
@@ -429,18 +453,18 @@ private:
   mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 
-  bool isReadOp(mlir::Operation *op) const {
+  static bool isReadOp(mlir::Operation *op) {
     return llvm::isa<
         component::MemberReadOp, polymorphic::ConstReadOp, array::ReadArrayOp, pod::ReadPodOp>(op);
   }
 
-  bool isDefinitionOp(mlir::Operation *op) const {
+  static bool isDefinitionOp(mlir::Operation *op) {
     return llvm::isa<
         component::StructDefOp, function::FuncDefOp, component::MemberDefOp, global::GlobalDefOp,
         mlir::ModuleOp>(op);
   }
 
-  bool isReturnOp(mlir::Operation *op) const { return llvm::isa<function::ReturnOp>(op); }
+  static bool isReturnOp(mlir::Operation *op) { return llvm::isa<function::ReturnOp>(op); }
 
   /// @brief Convert an array access op's indices into SourceRef path components.
   /// Constant indices are tracked precisely, while dynamic indices are widened to

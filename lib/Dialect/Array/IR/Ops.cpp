@@ -68,9 +68,9 @@ void CreateArrayOp::build(
   );
 }
 
-LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult CreateArrayOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, llvm::cast<Type>(getType()));
+  return verifyTypeResolution(symbolTables, *this, getType());
 }
 
 void CreateArrayOp::getAsmResultNames(OpAsmSetValueNameFn setNameFn) {
@@ -87,10 +87,10 @@ ParseResult CreateArrayOp::parseInferredArrayType(
     OpAsmParser & /*parser*/, llvm::SmallVector<Type, 1> &elementsTypes,
     ArrayRef<OpAsmParser::UnresolvedOperand> elements, Type resultType
 ) {
-  assert(elementsTypes.size() == 0); // it was not yet initialized
+  assert(elementsTypes.empty()); // it was not yet initialized
   // If the '$elements' operand is not empty, then the expected type for the operand
   //  is computed to match the type of the '$result'. Otherwise, it remains empty.
-  if (elements.size() > 0) {
+  if (!elements.empty()) {
     elementsTypes.append(resultTypeToElementsTypes(resultType));
   }
   return success();
@@ -356,9 +356,11 @@ verifyScalarArrayAccess(ArrayType ty, size_t numIndices, const OwningEmitErrorFn
 
 } // namespace
 
-LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult ReadArrayOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, ArrayRef<Type> {getArrRef().getType(), getType()});
+  return verifyTypeResolution(
+      symbolTables, *this, ArrayRef<Type> {getArrRef().getType(), getType()}
+  );
 }
 
 LogicalResult ReadArrayOp::inferReturnTypes(
@@ -407,10 +409,10 @@ DeletionKind ReadArrayOp::removeBlockingUses(
 // WriteArrayOp
 //===------------------------------------------------------------------===//
 
-LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult WriteArrayOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getArrRefType(), getRvalue().getType()}
+      symbolTables, *this, ArrayRef<Type> {getArrRefType(), getRvalue().getType()}
   );
 }
 
@@ -442,9 +444,9 @@ DeletionKind WriteArrayOp::removeBlockingUses(
 // ExtractArrayOp
 //===------------------------------------------------------------------===//
 
-LogicalResult ExtractArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult ExtractArrayOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
-  return verifyTypeResolution(tables, *this, getArrRefType());
+  return verifyTypeResolution(symbolTables, *this, getArrRefType());
 }
 
 LogicalResult ExtractArrayOp::inferReturnTypes(
@@ -485,10 +487,10 @@ bool ExtractArrayOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 // InsertArrayOp
 //===------------------------------------------------------------------===//
 
-LogicalResult InsertArrayOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult InsertArrayOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the types are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getArrRefType(), getRvalue().getType()}
+      symbolTables, *this, ArrayRef<Type> {getArrRefType(), getRvalue().getType()}
   );
 }
 
@@ -527,9 +529,9 @@ LogicalResult InsertArrayOp::verify() {
 // ArrayLengthOp
 //===------------------------------------------------------------------===//
 
-LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult ArrayLengthOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
-  if (failed(verifyTypeResolution(tables, *this, getArrRefType()))) {
+  if (failed(verifyTypeResolution(symbolTables, *this, getArrRefType()))) {
     return failure();
   }
 

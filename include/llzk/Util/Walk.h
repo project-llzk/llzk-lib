@@ -33,21 +33,22 @@ inline static bool walkContains(R &root, llvm::function_ref<bool(MatchType)> pre
   }).wasInterrupted();
 }
 
-/// Walk operations of type `MatchType` from `root` and collect them in walk order.
-template <typename MatchType, typename R>
+/// Walk operations of type `MatchType` from `root` and collect them in the specified order.
+/// Defaults to postorder, matching MLIR's default walk order.
+template <typename MatchType, mlir::WalkOrder Order = mlir::WalkOrder::PostOrder, typename R>
 inline static llvm::SmallVector<MatchType> walkCollect(R &root) {
   llvm::SmallVector<MatchType> collected;
-  root.walk([&collected](MatchType op) { collected.push_back(op); });
+  root.template walk<Order>([&collected](MatchType op) { collected.push_back(op); });
   return collected;
 }
 
 /// Walk operations of type `MatchType` from `root` and collect all operations satisfying `pred` in
-/// walk order.
-template <typename MatchType, typename R>
+/// the specified order. Defaults to postorder, matching MLIR's default walk order.
+template <typename MatchType, mlir::WalkOrder Order = mlir::WalkOrder::PostOrder, typename R>
 inline static llvm::SmallVector<MatchType>
 walkCollect(R &root, llvm::function_ref<bool(MatchType)> pred) {
   llvm::SmallVector<MatchType> collected;
-  root.walk([&collected, &pred](MatchType op) {
+  root.template walk<Order>([&collected, &pred](MatchType op) {
     if (pred(op)) {
       collected.push_back(op);
     }

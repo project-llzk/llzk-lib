@@ -1,0 +1,161 @@
+// RUN: llzk-opt -split-input-file -llzk-poly-lowering-pass="max-degree=2" --verify-each -verify-diagnostics %s
+
+// Multiple allocations are ambiguous even when both dominate the return.
+module attributes {llzk.lang} {
+  struct.def @IfAmbiguous {
+    function.def @compute(%cond: i1, %a: !felt.type) -> !struct.type<@IfAmbiguous> {
+      %left = struct.new : !struct.type<@IfAmbiguous>
+      %right = struct.new : !struct.type<@IfAmbiguous>
+      %forwarded = scf.if %cond -> (!struct.type<@IfAmbiguous>) {
+        scf.yield %left : !struct.type<@IfAmbiguous>
+      } else {
+        scf.yield %right : !struct.type<@IfAmbiguous>
+      }
+      // expected-error@+1 {{poly lowering requires the returned component to resolve to one local 'struct.new' result}}
+      function.return %forwarded : !struct.type<@IfAmbiguous>
+    }
+    function.def @constrain(%self: !struct.type<@IfAmbiguous>, %cond: i1, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Check both successor edges, even when they have the same predecessor block.
+module attributes {llzk.lang} {
+  struct.def @CfgAmbiguous {
+    function.def @compute(%cond: i1, %a: !felt.type) -> !struct.type<@CfgAmbiguous> {
+      %left = struct.new : !struct.type<@CfgAmbiguous>
+      %right = struct.new : !struct.type<@CfgAmbiguous>
+      cf.cond_br %cond, ^exit(%left : !struct.type<@CfgAmbiguous>), ^exit(%right : !struct.type<@CfgAmbiguous>)
+    ^exit(%forwarded: !struct.type<@CfgAmbiguous>):
+      // expected-error@+1 {{poly lowering requires the returned component to resolve to one local 'struct.new' result}}
+      function.return %forwarded : !struct.type<@CfgAmbiguous>
+    }
+    function.def @constrain(%self: !struct.type<@CfgAmbiguous>, %cond: i1, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// One allocation is insufficient when its SSA result is scoped inside a region.
+module attributes {llzk.lang} {
+  struct.def @NonDominating {
+    function.def @compute(%a: !felt.type) -> !struct.type<@NonDominating> {
+      %forwarded = scf.execute_region -> !struct.type<@NonDominating> {
+        %self = struct.new : !struct.type<@NonDominating>
+        scf.yield %self : !struct.type<@NonDominating>
+      }
+      // expected-error@+1 {{poly lowering requires the returned component's 'struct.new' to dominate the return}}
+      function.return %forwarded : !struct.type<@NonDominating>
+    }
+    function.def @constrain(%self: !struct.type<@NonDominating>, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// A local allocation on one path does not prove an argument is local on another.
+module attributes {llzk.lang} {
+  struct.def @UnknownArgument {
+    function.def @compute(%other: !struct.type<@UnknownArgument>, %cond: i1, %a: !felt.type) -> !struct.type<@UnknownArgument> {
+      %self = struct.new : !struct.type<@UnknownArgument>
+      %forwarded = scf.if %cond -> (!struct.type<@UnknownArgument>) {
+        scf.yield %self : !struct.type<@UnknownArgument>
+      } else {
+        scf.yield %other : !struct.type<@UnknownArgument>
+      }
+      // expected-error@+1 {{poly lowering requires the returned component to resolve to one local 'struct.new' result}}
+      function.return %forwarded : !struct.type<@UnknownArgument>
+    }
+    function.def @constrain(%self: !struct.type<@UnknownArgument>, %other: !struct.type<@UnknownArgument>, %cond: i1, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Opaque producers must not be treated as forwarding their operands.
+module attributes {llzk.lang} {
+  function.def private @get() -> !struct.type<@UnknownCall> attributes {function.allow_witness}
+  struct.def @UnknownCall {
+    function.def @compute(%a: !felt.type) -> !struct.type<@UnknownCall> {
+      %other = function.call @get() : () -> !struct.type<@UnknownCall>
+      // expected-error@+1 {{poly lowering requires the returned component to resolve to one local 'struct.new' result}}
+      function.return %other : !struct.type<@UnknownCall>
+    }
+    function.def @constrain(%self: !struct.type<@UnknownCall>, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Loop results include the initial value as well as values from the backedge.
+module attributes {llzk.lang} {
+  struct.def @LoopAmbiguous {
+    function.def @compute(%bound: index, %a: !felt.type) -> !struct.type<@LoopAmbiguous> {
+      %first = struct.new : !struct.type<@LoopAmbiguous>
+      %second = struct.new : !struct.type<@LoopAmbiguous>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %forwarded = scf.for %i = %c0 to %bound step %c1 iter_args(%iter = %first) -> (!struct.type<@LoopAmbiguous>) {
+        scf.yield %second : !struct.type<@LoopAmbiguous>
+      }
+      // expected-error@+1 {{poly lowering requires the returned component to resolve to one local 'struct.new' result}}
+      function.return %forwarded : !struct.type<@LoopAmbiguous>
+    }
+    function.def @constrain(%self: !struct.type<@LoopAmbiguous>, %bound: index, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// An ungrounded cycle is not evidence of a local origin, even if another incoming
+// path has a known allocation. The cycle is deliberately unreachable.
+module attributes {llzk.lang} {
+  struct.def @UngroundedCycle {
+    function.def @compute(%cond: i1, %a: !felt.type) -> !struct.type<@UngroundedCycle> {
+      %self = struct.new : !struct.type<@UngroundedCycle>
+      cf.br ^exit(%self : !struct.type<@UngroundedCycle>)
+    ^cycle(%unknown: !struct.type<@UngroundedCycle>):
+      cf.cond_br %cond, ^cycle(%unknown : !struct.type<@UngroundedCycle>), ^exit(%unknown : !struct.type<@UngroundedCycle>)
+    ^exit(%forwarded: !struct.type<@UngroundedCycle>):
+      // expected-error@+1 {{poly lowering requires the returned component to resolve to one local 'struct.new' result}}
+      function.return %forwarded : !struct.type<@UngroundedCycle>
+    }
+    function.def @constrain(%self: !struct.type<@UngroundedCycle>, %cond: i1, %a: !felt.type) {
+      %square = felt.mul %a, %a : !felt.type, !felt.type
+      %cube = felt.mul %square, %a : !felt.type, !felt.type
+      constrain.eq %cube, %a : !felt.type
+      function.return
+    }
+  }
+}

@@ -1,0 +1,6 @@
+changed:
+  - The flattening pass unrolls loops using trusted `llzk.loopbounds` annotations, warning when an independently computed trip count disagrees with the annotation.
+  - Annotated `scf.while` loops are unrolled while preserving condition-region side effects and final forwarded results.
+  - The flattening pass defaults to a per-loop trip-count limit of 100,000 (`max-unroll`), including annotated loops; exceeding it emits a warning and leaves the loop unchanged.
+fixed:
+  - Check annotated trip-count conversions even when assertions are disabled, avoiding unchecked `llvm::Expected` failures with checked LLVM builds.

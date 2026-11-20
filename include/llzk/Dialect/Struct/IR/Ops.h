@@ -51,7 +51,7 @@ mlir::InFlightDiagnostic
 genCompareErr(StructDefOp expected, mlir::Operation *origin, const char *aspect);
 
 mlir::LogicalResult checkSelfType(
-    mlir::SymbolTableCollection &symbolTable, StructDefOp expectedStruct, mlir::Type actualType,
+    mlir::SymbolTableCollection &symbolTables, StructDefOp expectedStruct, mlir::Type actualType,
     mlir::Operation *origin, const char *aspect
 );
 

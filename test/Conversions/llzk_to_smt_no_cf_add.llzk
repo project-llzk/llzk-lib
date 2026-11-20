@@ -4,7 +4,7 @@
 
 module attributes {llzk.lang} {
     struct.def @A {
-        
+
         struct.member @sum : !F {llzk.pub}
         struct.member @diff: !F {llzk.pub}
 
@@ -32,16 +32,16 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_\.]+]]: !smt.int, %[[B:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// CHECK-DAG: %[[SUMC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "sum_c" : !smt.int
-// CHECK-DAG: %[[SUMW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "sum_w" : !smt.int
-// CHECK-DAG: %[[DIFFC:[0-9a-zA-Z_\.]+]] = smt.declare_fun "diff_c" : !smt.int
-// CHECK-DAG: %[[DIFFW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "diff_w" : !smt.int
-// CHECK: %[[SUM:[0-9a-zA-Z_\.]+]] = smt.int.add %[[A]], %[[B]]
-// CHECK: %[[DIFF:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[A]], %[[B]]
+// CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_.-]+]]: !smt.int, %[[B:[0-9a-zA-Z_.-]+]]: !smt.int) {
+// CHECK-DAG: %[[SUMC:[0-9a-zA-Z_.-]+]] = smt.declare_fun "sum_c" : !smt.int
+// CHECK-DAG: %[[SUMW:[0-9a-zA-Z_.-]+]] = smt.declare_fun "sum_w" : !smt.int
+// CHECK-DAG: %[[DIFFC:[0-9a-zA-Z_.-]+]] = smt.declare_fun "diff_c" : !smt.int
+// CHECK-DAG: %[[DIFFW:[0-9a-zA-Z_.-]+]] = smt.declare_fun "diff_w" : !smt.int
+// CHECK: %[[SUM:[0-9a-zA-Z_.-]+]] = smt.int.add %[[A]], %[[B]]
+// CHECK: %[[DIFF:[0-9a-zA-Z_.-]+]] = smt.int.sub %[[A]], %[[B]]
 // CHECK: smt.assert
 // CHECK: smt.assert
-// CHECK: %[[SUM2:[0-9a-zA-Z_\.]+]] = smt.int.add %[[A]], %[[B]]
-// CHECK: %[[DIFF2:[0-9a-zA-Z_\.]+]] = smt.int.sub %[[A]], %[[B]]
+// CHECK: %[[SUM2:[0-9a-zA-Z_.-]+]] = smt.int.add %[[A]], %[[B]]
+// CHECK: %[[DIFF2:[0-9a-zA-Z_.-]+]] = smt.int.sub %[[A]], %[[B]]
 // CHECK: smt.assert
 // CHECK: smt.assert

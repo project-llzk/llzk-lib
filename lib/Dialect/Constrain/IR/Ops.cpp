@@ -28,10 +28,10 @@ namespace llzk::constrain {
 // EmitEqualityOp
 //===------------------------------------------------------------------===//
 
-LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult EmitEqualityOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+      symbolTables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
   );
 }
 
@@ -41,18 +41,17 @@ Type EmitEqualityOp::inferRHS(Type lhsType) { return lhsType; }
 // EmitContainmentOp
 //===------------------------------------------------------------------===//
 
-LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &tables) {
+LogicalResult EmitContainmentOp::verifySymbolUses(SymbolTableCollection &symbolTables) {
   // Ensure any SymbolRef used in the type are valid
   return verifyTypeResolution(
-      tables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
+      symbolTables, *this, ArrayRef<Type> {getLhs().getType(), getRhs().getType()}
   );
 }
 
-LogicalResult EmitContainmentOp::verify() {
-  auto arrType = llvm::cast<ArrayType>(getLhs().getType()); // per the ODS definition
-  OwningEmitErrorFn errFn = getEmitOpErrFn(this);
-
-  if (failed(verifySubArrayOrElementType(errFn, arrType, getRhs().getType()))) {
+/// Check containment types with the caller's diagnostic policy.
+static LogicalResult
+verifyContainmentOperandTypes(ArrayType arrType, Type rhsType, EmitErrorFn errFn) {
+  if (failed(verifySubArrayOrElementType(errFn, arrType, rhsType))) {
     // error already reported
     return failure();
   }
@@ -65,6 +64,27 @@ LogicalResult EmitContainmentOp::verify() {
     );
   }
   return success();
+}
+
+LogicalResult EmitContainmentOp::verify() {
+  return verifyContainmentOperandTypes(
+      getLhs().getType(), getRhs().getType(), getEmitOpErrFn(this)
+  );
+}
+
+bool areValidContainmentOperandTypes(Type lhsType, Type rhsType) {
+  auto arrayType = dyn_cast<ArrayType>(lhsType);
+  if (!arrayType) {
+    return false;
+  }
+  // Silent diagnostics carry no failure status, so remember whether validation requested one.
+  bool valid = true;
+  auto silentError = [&]() {
+    valid = false;
+    return InFlightDiagnosticWrapper::createSilent(lhsType.getContext());
+  };
+  (void)verifyContainmentOperandTypes(arrayType, rhsType, silentError);
+  return valid;
 }
 
 } // namespace llzk::constrain

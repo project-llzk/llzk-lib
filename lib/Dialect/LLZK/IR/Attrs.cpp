@@ -15,11 +15,38 @@
 
 #include <mlir/IR/BuiltinAttributes.h>
 
+#include <algorithm>
+#include <cassert>
+
 using namespace mlir;
 
 namespace llzk {
 
 using namespace component;
+
+LogicalResult LoopBoundsAttr::verify(
+    llvm::function_ref<InFlightDiagnostic()> emitError,
+    // TableGen requires these parameters to be passed by value.
+    DynamicAPIntValue,            // NOLINT(performance-unnecessary-value-param)
+    DynamicAPIntValue,            // NOLINT(performance-unnecessary-value-param)
+    DynamicAPIntValue stepWrapper // NOLINT(performance-unnecessary-value-param)
+) {
+  const llvm::DynamicAPInt &step = stepWrapper;
+  if (step == 0) {
+    return emitError() << "loopbounds step must be nonzero";
+  }
+  return success();
+}
+
+llvm::DynamicAPInt LoopBoundsAttr::getTripCount() const {
+  assert(getStep() != 0 && "loopbounds step must be nonzero");
+  return std::max(llvm::ceilDiv(getUpper() - getLower(), getStep()), llvm::DynamicAPInt(0));
+}
+
+llvm::DynamicAPInt LoopBoundsAttr::getInductionValue(const llvm::DynamicAPInt &iteration) const {
+  assert(iteration >= 0 && "iteration must be nonnegative");
+  return getLower() + iteration * getStep();
+}
 
 FailureOr<StructType> getTypeFromLlzkMainAttr(ModuleOp op, Attribute attr) {
   assert(op);   // pre-condition

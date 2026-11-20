@@ -114,7 +114,7 @@ BuildShortTypeString &BuildShortTypeString::append(Type type) {
     void caseString(StringType) { outer.ss << 's'; }
     void caseTypeVar(TypeVarType t) {
       outer.ss << "!t<";
-      outer.appendSymName(llvm::cast<TypeVarType>(t).getRefName());
+      outer.appendSymName(t.getRefName());
       outer.ss << '>';
     }
     void caseArray(ArrayType t) {
@@ -293,7 +293,7 @@ class AllowedTypes {
   /// Validates that, if columns are a requirement, the struct type has columns.
   /// If columns are not a requirement returns true early since the pointers required
   /// for lookup may be null.
-  bool validColumns(StructType s) {
+  bool validColumns(StructType s) const {
     if (!must_be_column) {
       return true;
     }
@@ -364,7 +364,8 @@ public:
   // This is the main check for allowed types.
   bool isValidTypeImpl(Type type);
 
-  bool areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) {
+  bool
+  areValidArrayDimSizes(ArrayRef<Attribute> dimensionSizes, EmitErrorFn emitError = nullptr) const {
     // In LLZK, the number of array dimensions must always be known, i.e., `hasRank()==true`
     if (dimensionSizes.empty()) {
       if (emitError) {
@@ -488,11 +489,11 @@ bool AllowedTypes::isValidTypeImpl(Type type) {
     AllowedTypes &outer;
     Impl(AllowedTypes &outerRef) : outer(outerRef) {}
 
-    bool caseBool(IntegerType t) { return !outer.no_int && t.isSignlessInteger(1); }
-    bool caseIndex(IndexType) { return !outer.no_int; }
-    bool caseFelt(FeltType) { return !outer.no_felt; }
-    bool caseString(StringType) { return !outer.no_string; }
-    bool caseTypeVar(TypeVarType) { return !outer.no_var; }
+    bool caseBool(IntegerType t) const { return !outer.no_int && t.isSignlessInteger(1); }
+    bool caseIndex(IndexType) const { return !outer.no_int; }
+    bool caseFelt(FeltType) const { return !outer.no_felt; }
+    bool caseString(StringType) const { return !outer.no_string; }
+    bool caseTypeVar(TypeVarType) const { return !outer.no_var; }
     bool caseArray(ArrayType t) {
       return !outer.no_array &&
              outer.isValidArrayTypeImpl(t.getElementType(), t.getDimensionSizes());
@@ -615,6 +616,7 @@ struct UnifierImpl {
   // This optional function can be used to provide an exception to the standard unification
   // rules and return a true/success result when it otherwise may not.
   llvm::function_ref<bool(Type oldTy, Type newTy)> overrideSuccess;
+  llvm::function_ref<void(Side, SymbolRefAttr, Attribute)> bindingListener = nullptr;
 
   UnifierImpl(UnificationMap *unificationMap, ArrayRef<StringRef> rhsReversePrefix = {})
       : rhsRevPrefix(rhsReversePrefix), unifications(unificationMap), affineToIntTracker(nullptr),
@@ -632,6 +634,13 @@ struct UnifierImpl {
 
   UnifierImpl &withOverrides(llvm::function_ref<bool(Type oldTy, Type newTy)> overrides) {
     this->overrideSuccess = overrides;
+    return *this;
+  }
+
+  /// Observe each symbolic binding before unequal occurrences are collapsed to null in the map.
+  UnifierImpl &
+  withBindingListener(llvm::function_ref<void(Side, SymbolRefAttr, Attribute)> listener) {
+    bindingListener = listener;
     return *this;
   }
 
@@ -728,7 +737,7 @@ struct UnifierImpl {
   }
 
   bool typesUnify(Type lhs, Type rhs) {
-    if (lhs == rhs) {
+    if (lhs == rhs && !bindingListener) {
       // Equal syntax in an included signature still refers to the included namespace.
       if (!rhsRevPrefix.empty()) {
         if (auto lhsStruct = llvm::dyn_cast<StructType>(lhs)) {
@@ -770,7 +779,7 @@ struct UnifierImpl {
     if (llvm::isa<FunctionType>(lhs) && llvm::isa<FunctionType>(rhs)) {
       return functionTypesUnify(llvm::cast<FunctionType>(lhs), llvm::cast<FunctionType>(rhs));
     }
-    return false;
+    return lhs == rhs;
   }
 
 private:
@@ -785,8 +794,18 @@ private:
     }
   }
 
-  void track(Side side, SymbolRefAttr symRef, Type ty) {
+  /// Record one binding in the optional map and notify the consistency checker.
+  void recordBinding(Side side, SymbolRefAttr symRef, Attribute attr) {
     if (unifications) {
+      track(*unifications, side, symRef, attr);
+    }
+    if (bindingListener) {
+      bindingListener(side, symRef, attr);
+    }
+  }
+
+  void track(Side side, SymbolRefAttr symRef, Type ty) {
+    if (unifications || bindingListener) {
       Attribute attr;
       if (TypeVarType tvar = dyn_cast<TypeVarType>(ty)) {
         // If 'ty' is TypeVarType<@S>, just map to @S directly.
@@ -797,12 +816,12 @@ private:
       }
       assert(symRef);
       assert(attr);
-      track(*unifications, side, symRef, attr);
+      recordBinding(side, symRef, attr);
     }
   }
 
   void track(Side side, SymbolRefAttr symRef, Attribute attr) {
-    if (unifications) {
+    if (unifications || bindingListener) {
       // If 'attr' is TypeAttr<TypeVarType<@S>>, just map to @S directly.
       if (TypeAttr tyAttr = dyn_cast<TypeAttr>(attr)) {
         if (TypeVarType tvar = dyn_cast<TypeVarType>(tyAttr.getValue())) {
@@ -816,9 +835,9 @@ private:
       // checks on the UnificationMap may do LHS checks, and in the case of both being
       // SymbolRefAttr, unification in either direction is possible.
       if (SymbolRefAttr otherSymAttr = dyn_cast<SymbolRefAttr>(attr)) {
-        track(*unifications, reverse(side), otherSymAttr, symRef);
+        recordBinding(reverse(side), otherSymAttr, symRef);
       }
-      track(*unifications, side, symRef, attr);
+      recordBinding(side, symRef, attr);
     }
   }
 
@@ -835,7 +854,7 @@ private:
     assertValidAttrForParamOfType(lhsAttr);
     assertValidAttrForParamOfType(rhsAttr);
     // Straightforward equality check.
-    if (lhsAttr == rhsAttr) {
+    if (lhsAttr == rhsAttr && !bindingListener) {
       if (!rhsRevPrefix.empty()) {
         if (auto lhsType = llvm::dyn_cast<TypeAttr>(lhsAttr)) {
           return typesUnify(lhsType.getValue(), llvm::cast<TypeAttr>(rhsAttr).getValue());
@@ -908,8 +927,173 @@ private:
         return typesUnify(lhsTy.getValue(), rhsTy.getValue());
       }
     }
-    // Otherwise, they do not unify.
-    return false;
+    // Equality must still succeed after traversing bindings in matching aggregate syntax.
+    return lhsAttr == rhsAttr;
+  }
+};
+
+/// Solve shared signature bindings as equations between side-qualified variables and terms.
+/// Keep every compatible term: an affine or unresolved term can unify with two concrete terms
+/// that conflict with each other. Unioning aliases must compare their entire sets of evidence.
+class SignatureBindingChecker {
+  /// Symbolic parameter identified by its name and originating signature side.
+  using Variable = UnificationMap::key_type;
+  /// Type or value attribute paired with its originating signature side.
+  using Term = std::pair<Attribute, Side>;
+  /// Union-find parent links for aliased variables; representatives point to themselves.
+  DenseMap<Variable, Variable> parents;
+  /// All distinct terms bound to each representative, retained for pairwise compatibility checks.
+  DenseMap<Variable, SmallVector<Term>> terms;
+  /// Worklist of term equations awaiting alias resolution, binding, or structural comparison.
+  SmallVector<std::pair<Term, Term>> pending;
+  /// Non-variable term pairs already compared, avoiding repeated structural checks.
+  DenseSet<std::pair<Term, Term>> compared;
+  /// Reversed RHS namespace prefix used when comparing terms from different signature scopes.
+  ArrayRef<StringRef> rhsNamespace;
+
+  /// Find the representative for a variable without conflating the two signature scopes.
+  Variable find(Variable variable) {
+    auto [it, inserted] = parents.try_emplace(variable, variable);
+    if (inserted || it->second == variable) {
+      return variable;
+    }
+    Variable root = find(it->second);
+    parents[variable] = root;
+    return root;
+  }
+
+  /// Interpret symbolic type and value parameters uniformly, preserving their origin scope.
+  std::optional<Variable> variable(Term term) {
+    Attribute attr = term.first;
+    if (auto type = dyn_cast<TypeAttr>(attr)) {
+      if (auto typeVar = dyn_cast<TypeVarType>(type.getValue())) {
+        attr = typeVar.getNameRef();
+      }
+    }
+    if (auto name = dyn_cast<SymbolRefAttr>(attr)) {
+      return find({name, term.second});
+    }
+    return std::nullopt;
+  }
+
+  /// Reject recursive type equations, including cycles closed by a later alias binding.
+  bool occurs(Variable needle, Term term, DenseSet<Variable> &visited) {
+    if (auto root = variable(term)) {
+      if (*root == needle) {
+        return true;
+      }
+      if (!visited.insert(*root).second) {
+        return false;
+      }
+      auto it = terms.find(*root);
+      return it != terms.end() &&
+             llvm::any_of(it->second, [&](Term nested) { return occurs(needle, nested, visited); });
+    }
+    auto type = dyn_cast<TypeAttr>(term.first);
+    if (!type) {
+      return false;
+    }
+    return type.getValue()
+        .walk([&](Type nested) {
+      if (isa<TypeVarType>(nested) &&
+          occurs(needle, {TypeAttr::get(nested), term.second}, visited)) {
+        return WalkResult::interrupt();
+      }
+      ArrayRef<Attribute> params;
+      if (auto structure = dyn_cast<StructType>(nested); structure && structure.getParams()) {
+        params = structure.getParams().getValue();
+      } else if (auto array = dyn_cast<ArrayType>(nested)) {
+        params = array.getDimensionSizes();
+      }
+      for (Attribute param : params) {
+        if (isa<SymbolRefAttr>(param) && occurs(needle, {param, term.second}, visited)) {
+          return WalkResult::interrupt();
+        }
+      }
+      return WalkResult::advance();
+    }).wasInterrupted();
+  }
+
+  bool occurs(Variable needle, Term term) {
+    DenseSet<Variable> visited;
+    return occurs(needle, term, visited);
+  }
+
+  /// Add one term to an equivalence class and compare it with all prior evidence.
+  bool bind(Variable root, Term term) {
+    if (occurs(root, term)) {
+      return false;
+    }
+    auto &bindings = terms[root];
+    if (!llvm::is_contained(bindings, term)) {
+      for (Term previous : bindings) {
+        pending.emplace_back(previous, term);
+      }
+      bindings.push_back(term);
+    }
+    return true;
+  }
+
+public:
+  explicit SignatureBindingChecker(ArrayRef<StringRef> ns) : rhsNamespace(ns) {}
+
+  /// Collect structural equations and solve aliases to a fixed point without changing IR.
+  bool check(FunctionType lhs, FunctionType rhs) {
+    auto record = [&](Side side, SymbolRefAttr name, Attribute value) {
+      pending.push_back({{name, side}, {value, reverse(side)}});
+    };
+    if (!UnifierImpl(nullptr, rhsNamespace)
+             .withBindingListener(record)
+             .functionTypesUnify(lhs, rhs)) {
+      return false;
+    }
+    while (!pending.empty()) {
+      auto [left, right] = pending.pop_back_val();
+      auto leftVar = variable(left), rightVar = variable(right);
+      if (leftVar && rightVar) {
+        if (*leftVar == *rightVar) {
+          continue;
+        }
+        SmallVector<Term> merged = std::move(terms[*rightVar]);
+        terms.erase(*rightVar);
+        parents[*rightVar] = *leftVar;
+        for (Term term : terms[*leftVar]) {
+          if (occurs(*leftVar, term)) {
+            return false;
+          }
+        }
+        for (Term term : merged) {
+          if (!bind(*leftVar, term)) {
+            return false;
+          }
+        }
+      } else if (leftVar || rightVar) {
+        if (!bind(leftVar ? *leftVar : *rightVar, leftVar ? right : left)) {
+          return false;
+        }
+      } else {
+        // Cross-scope comparisons use the original callee namespace; comparisons of two
+        // terms originating in the same signature need no namespace adjustment.
+        if (left.second == Side::RHS && right.second == Side::LHS) {
+          std::swap(left, right);
+        }
+        if (!compared.insert({left, right}).second) {
+          continue;
+        }
+        auto recordNested = [&](Side side, SymbolRefAttr name, Attribute value) {
+          Side origin = side == Side::LHS ? left.second : right.second;
+          Side other = side == Side::LHS ? right.second : left.second;
+          pending.push_back({{name, origin}, {value, other}});
+        };
+        ArrayRef<StringRef> ns = left.second == right.second ? ArrayRef<StringRef>() : rhsNamespace;
+        if (!UnifierImpl(nullptr, ns)
+                 .withBindingListener(recordNested)
+                 .typeParamsUnify({left.first}, {right.first})) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 };
 
@@ -954,6 +1138,12 @@ bool functionTypesUnify(
     UnificationMap *unifications
 ) {
   return UnifierImpl(unifications, rhsReversePrefix).functionTypesUnify(lhs, rhs);
+}
+
+bool functionTypesUnifyConsistently(
+    FunctionType lhs, FunctionType rhs, ArrayRef<StringRef> rhsReversePrefix
+) {
+  return SignatureBindingChecker(rhsReversePrefix).check(lhs, rhs);
 }
 
 bool typesUnify(
@@ -1120,7 +1310,7 @@ verifySubArrayType(EmitErrorFn emitError, ArrayType arrayType, ArrayType subArra
     llvm::interleaveComma(dimsFromArrReduced, ss, appendOne);
     ss << "] with [";
     llvm::interleaveComma(dimsFromSubArr, ss, appendOne);
-    ss << "]";
+    ss << ']';
     return emitError().append(message);
   }
 
@@ -1157,12 +1347,9 @@ bool isFeltOrSimpleFeltAggregate(Type ty) {
     return isFeltOrSimpleFeltAggregate(arrTy.getElementType());
   })
       .Case<PodType>([](auto podTy) {
-    for (auto record : podTy.getRecords()) {
-      if (!isFeltOrSimpleFeltAggregate(record.getType())) {
-        return false;
-      }
-    }
-    return true;
+    return llvm::all_of(podTy.getRecords(), [](auto record) {
+      return isFeltOrSimpleFeltAggregate(record.getType());
+    });
   }).Default([](auto) { return false; });
 }
 

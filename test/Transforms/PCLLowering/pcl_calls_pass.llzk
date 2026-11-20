@@ -12,7 +12,7 @@ module attributes {llzk.lang} {
       function.return %self : !B
     }
     function.def @constrain(%self: !B, %0: !F) attributes {function.allow_constraint} {
-      %1 = struct.readm %self[@foo] : !B, !F 
+      %1 = struct.readm %self[@foo] : !B, !F
       constrain.eq %1, %0 : !F, !F
       function.return
     }
@@ -50,39 +50,39 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   func.func @B(
-// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "foo" true
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[ARG_0]]
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_.-]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = pcl.var "foo" true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_0]], %[[ARG_0]]
 // CHECK-NEXT:      pcl.assert %[[VAL_1]]
 // CHECK-NEXT:      return %[[VAL_0]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-LABEL:   func.func @A(
-// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_1:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_2:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = call @B(%[[ARG_0]]) : (!pcl.felt) -> !pcl.felt
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b1.foo" false 
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_.-]+]]: !pcl.felt, %[[ARG_1:[0-9a-zA-Z_.-]+]]: !pcl.felt, %[[ARG_2:[0-9a-zA-Z_.-]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt, !pcl.felt) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = call @B(%[[ARG_0]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.var "b1.foo" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
 // CHECK-NEXT:      pcl.assert %[[VAL_2]]
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = call @B(%[[ARG_1]]) : (!pcl.felt) -> !pcl.felt
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "b2.foo" false 
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_3]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = call @B(%[[ARG_1]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = pcl.var "b2.foo" false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_3]]
 // CHECK-NEXT:      pcl.assert %[[VAL_5]]
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = call @B(%[[ARG_2]]) : (!pcl.felt) -> !pcl.felt
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.var "b3.foo" false 
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7]], %[[VAL_6]]
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = call @B(%[[ARG_2]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = pcl.var "b3.foo" false
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_7]], %[[VAL_6]]
 // CHECK-NEXT:      pcl.assert %[[VAL_8]]
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.var "out1" true 
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_9]], %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = pcl.var "out1" true
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_9]], %[[VAL_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_10]]
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.var "out2" true 
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_11]], %[[VAL_4]]
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = pcl.var "out2" true
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_11]], %[[VAL_4]]
 // CHECK-NEXT:      pcl.assert %[[VAL_12]]
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = pcl.var "out3" true 
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_13]], %[[VAL_7]]
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_.-]+]] = pcl.var "out3" true
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_13]], %[[VAL_7]]
 // CHECK-NEXT:      pcl.assert %[[VAL_14]]
 // CHECK-NEXT:      return %[[VAL_9]], %[[VAL_11]], %[[VAL_13]] : !pcl.felt, !pcl.felt, !pcl.felt
 // CHECK-NEXT:    }
 
-// ----- 
+// -----
 
 !F = !felt.type<"babybear">
 !A = !struct.type<@A>
@@ -96,7 +96,7 @@ module attributes {llzk.lang} {
         function.return %self : !B
       }
       function.def @constrain(%self: !B, %0: !F) attributes {function.allow_constraint} {
-        %1 = struct.readm %self[@foo] : !B, !F 
+        %1 = struct.readm %self[@foo] : !B, !F
         constrain.eq %1, %0 : !F, !F
         function.return
       }
@@ -135,34 +135,34 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL:   func.func @"C::B"(
-// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.var "foo" true
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_0]], %[[ARG_0]]
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_.-]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = pcl.var "foo" true
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_0]], %[[ARG_0]]
 // CHECK-NEXT:      pcl.assert %[[VAL_1]]
 // CHECK-NEXT:      return %[[VAL_0]] : !pcl.felt
 // CHECK-NEXT:    }
 // CHECK-LABEL:   func.func @A(
-// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_1:[0-9a-zA-Z_\.]+]]: !pcl.felt, %[[ARG_2:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt, !pcl.felt) {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = call @"C::B"(%[[ARG_0]]) : (!pcl.felt) -> !pcl.felt
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.var "b1.foo" false 
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
+// CHECK-SAME:        %[[ARG_0:[0-9a-zA-Z_.-]+]]: !pcl.felt, %[[ARG_1:[0-9a-zA-Z_.-]+]]: !pcl.felt, %[[ARG_2:[0-9a-zA-Z_.-]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt, !pcl.felt) {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = call @"C::B"(%[[ARG_0]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.var "b1.foo" false
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_1]], %[[VAL_0]]
 // CHECK-NEXT:      pcl.assert %[[VAL_2]]
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = call @"C::B"(%[[ARG_1]]) : (!pcl.felt) -> !pcl.felt
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "b2.foo" false 
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_3]]
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = call @"C::B"(%[[ARG_1]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = pcl.var "b2.foo" false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_3]]
 // CHECK-NEXT:      pcl.assert %[[VAL_5]]
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = call @"C::B"(%[[ARG_2]]) : (!pcl.felt) -> !pcl.felt
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.var "b3.foo" false 
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_7]], %[[VAL_6]]
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = call @"C::B"(%[[ARG_2]]) : (!pcl.felt) -> !pcl.felt
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = pcl.var "b3.foo" false
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_7]], %[[VAL_6]]
 // CHECK-NEXT:      pcl.assert %[[VAL_8]]
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.var "out1" true 
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_9]], %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = pcl.var "out1" true
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_9]], %[[VAL_1]]
 // CHECK-NEXT:      pcl.assert %[[VAL_10]]
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.var "out2" true 
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_11]], %[[VAL_4]]
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = pcl.var "out2" true
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_11]], %[[VAL_4]]
 // CHECK-NEXT:      pcl.assert %[[VAL_12]]
-// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_\.]+]] = pcl.var "out3" true 
-// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_13]], %[[VAL_7]]
+// CHECK-NEXT:      %[[VAL_13:[0-9a-zA-Z_.-]+]] = pcl.var "out3" true
+// CHECK-NEXT:      %[[VAL_14:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_13]], %[[VAL_7]]
 // CHECK-NEXT:      pcl.assert %[[VAL_14]]
 // CHECK-NEXT:      return %[[VAL_9]], %[[VAL_11]], %[[VAL_13]] : !pcl.felt, !pcl.felt, !pcl.felt
 // CHECK-NEXT:    }

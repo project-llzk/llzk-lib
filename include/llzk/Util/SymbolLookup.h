@@ -40,9 +40,7 @@ public:
   SymbolLookupResultUntyped() : op(nullptr) {}
   SymbolLookupResultUntyped(mlir::Operation *opPtr) : op(opPtr) {}
 
-  SymbolLookupResultUntyped(const SymbolLookupResultUntyped &other)
-      : op(other.op), managedResources(other.managedResources),
-        includeSymNameStack(other.includeSymNameStack), namespaceStack(other.namespaceStack) {}
+  SymbolLookupResultUntyped(const SymbolLookupResultUntyped &other) = default;
   template <typename T> SymbolLookupResultUntyped(const SymbolLookupResult<T> &other);
 
   SymbolLookupResultUntyped &operator=(const SymbolLookupResultUntyped &other) {

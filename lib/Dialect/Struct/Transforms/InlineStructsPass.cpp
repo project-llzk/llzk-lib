@@ -704,7 +704,7 @@ private:
   /// Helper function to determine if an Operation is contained in 'otherRefsToBeDeleted'
   inline bool opWillBeDeleted(Operation *otherOp) const {
     return std::apply([&](const auto &...sets) {
-      return ((sets.contains(otherOp)) || ...);
+      return (sets.contains(otherOp) || ...);
     }, otherRefsToBeDeleted);
   }
 

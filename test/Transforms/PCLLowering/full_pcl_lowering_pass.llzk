@@ -41,19 +41,19 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 
 // Independent variable declarations may be emitted in either order.
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<21888242871839275222246405745257275088548364400416034343698204186575808495617>} {
-// CHECK-NEXT:    func.func @Main(%[[INPUT:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt) {
-// CHECK-DAG:      %[[OUT_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "out_0" true
-// CHECK-DAG:      %[[OUT_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "out_1" true
-// CHECK-DAG:      %[[CACHE_ZERO:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_2" false
-// CHECK-DAG:      %[[CACHE_ONE:[0-9a-zA-Z_\.]+]] = pcl.var "cache_values_3" false
-// CHECK:      %[[SQUARE:[0-9a-zA-Z_\.]+]] = pcl.mul %[[INPUT]], %[[INPUT]]
-// CHECK-NEXT:      %[[CACHE_ZERO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CACHE_ZERO]], %[[SQUARE]]
+// CHECK-NEXT:    func.func @Main(%[[INPUT:[0-9a-zA-Z_.-]+]]: !pcl.felt) -> (!pcl.felt, !pcl.felt) {
+// CHECK-DAG:      %[[OUT_ZERO:[0-9a-zA-Z_.-]+]] = pcl.var "out_0" true
+// CHECK-DAG:      %[[OUT_ONE:[0-9a-zA-Z_.-]+]] = pcl.var "out_1" true
+// CHECK-DAG:      %[[CACHE_ZERO:[0-9a-zA-Z_.-]+]] = pcl.var "cache_values_2" false
+// CHECK-DAG:      %[[CACHE_ONE:[0-9a-zA-Z_.-]+]] = pcl.var "cache_values_3" false
+// CHECK:      %[[SQUARE:[0-9a-zA-Z_.-]+]] = pcl.mul %[[INPUT]], %[[INPUT]]
+// CHECK-NEXT:      %[[CACHE_ZERO_EQ:[0-9a-zA-Z_.-]+]] = pcl.eq %[[CACHE_ZERO]], %[[SQUARE]]
 // CHECK-NEXT:      pcl.assert %[[CACHE_ZERO_EQ]]
-// CHECK-NEXT:      %[[OUT_ZERO_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[OUT_ZERO]], %[[CACHE_ZERO]]
+// CHECK-NEXT:      %[[OUT_ZERO_EQ:[0-9a-zA-Z_.-]+]] = pcl.eq %[[OUT_ZERO]], %[[CACHE_ZERO]]
 // CHECK-NEXT:      pcl.assert %[[OUT_ZERO_EQ]]
-// CHECK-NEXT:      %[[CACHE_ONE_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[CACHE_ONE]], %[[SQUARE]]
+// CHECK-NEXT:      %[[CACHE_ONE_EQ:[0-9a-zA-Z_.-]+]] = pcl.eq %[[CACHE_ONE]], %[[SQUARE]]
 // CHECK-NEXT:      pcl.assert %[[CACHE_ONE_EQ]]
-// CHECK-NEXT:      %[[OUT_ONE_EQ:[0-9a-zA-Z_\.]+]] = pcl.eq %[[OUT_ONE]], %[[CACHE_ONE]]
+// CHECK-NEXT:      %[[OUT_ONE_EQ:[0-9a-zA-Z_.-]+]] = pcl.eq %[[OUT_ONE]], %[[CACHE_ONE]]
 // CHECK-NEXT:      pcl.assert %[[OUT_ONE_EQ]]
 // CHECK-NEXT:      return %[[OUT_ZERO]], %[[OUT_ONE]] : !pcl.felt, !pcl.felt
 // CHECK-NEXT:    }

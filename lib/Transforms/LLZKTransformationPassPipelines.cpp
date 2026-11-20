@@ -140,8 +140,12 @@ void buildFullPolyLoweringPipeline(OpPassManager &pm, const FullPolyLoweringConf
 //===----------------------------------------------------------------------===//
 
 void buildConstraintFlatteningPipeline(OpPassManager &pm) {
+  // Inline frontend execute_region wrappers before specialization discovery.
+  pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(polymorphic::createTemplateMonomorphizationPass());
   pm.addPass(component::createExposeChildMembersPass());
+  // Fold specialized constants and remove empty branches before expansion.
+  pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(polymorphic::createConstraintFlatteningPass());
 }
 

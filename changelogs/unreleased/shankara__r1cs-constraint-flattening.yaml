@@ -1,0 +1,3 @@
+added:
+  - Add the llzk-constraint-flattening-r1cs-lowering pipeline to flatten main constraints, lower their degree, and convert them to R1CS.
+  - Add output-llzk and output-layout options to emit LLZK with auxiliary fields and compute assignments, a layout-to-wire CSV, and R1CS IR in one lowering run.

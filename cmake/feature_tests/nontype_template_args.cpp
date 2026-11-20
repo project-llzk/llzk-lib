@@ -12,7 +12,7 @@ template <std::pair<Thing, Thing>... Pairs> static bool areOneOf(const A &a, con
 }
 
 int main() {
-  A a, b;
+  A a {Thing::One}, b {Thing::Two};
 
   (void)areOneOf<{Thing::One, Thing::Two}, {Thing::One, Thing::Three}>(a, b);
 }

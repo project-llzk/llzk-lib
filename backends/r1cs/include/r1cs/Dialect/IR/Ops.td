@@ -28,6 +28,12 @@ def R1CS_CircuitDefOp : R1CS_Op<"circuit", [Symbol, IsolatedFromAbove,
 
     Signals defined with `r1cs.def` and marked `public` are considered outputs.
 
+    The optional `r1cs.input_labels` array supplies one explicit wire ID for
+    each input, in block-argument order. When present, all wire IDs must be
+    consecutive after constant one, ordered as public outputs, public inputs,
+    private inputs, then internal signals. Circuits may omit this attribute
+    when the binary exporter will assign input labels.
+
     Example:
 
     ```mlir

@@ -34,7 +34,7 @@ class CmpAttrTest : public CAPITest,
 
 TEST_P(CmpAttrTest, llzk_felt_cmp_predicate_attr_get) {
   auto attr = llzkBool_FeltCmpPredicateAttrGet(context, GetParam());
-  EXPECT_NE(attr.ptr, (void *)NULL);
+  EXPECT_NE(attr.ptr, (void *)nullptr);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -75,7 +75,7 @@ std::unique_ptr<AssertOpBuildFuncHelper> AssertOpBuildFuncHelper::get() {
     ) override {
       mlir::Value cppValue = CAPITest::cppGenBoolConstant(builder, location);
       return llzkBool_AssertOpBuild(
-          builder, location, wrap(cppValue), MlirIdentifier {.ptr = NULL}
+          builder, location, wrap(cppValue), MlirIdentifier {.ptr = nullptr}
       );
     }
   };

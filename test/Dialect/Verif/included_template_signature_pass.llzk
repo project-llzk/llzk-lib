@@ -29,16 +29,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    include.from "Inputs/template_signature_namespace.llzk" as @Lib
 // CHECK-NEXT:    poly.template @Caller {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
-// CHECK-NEXT:      function.def @explicit(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:      function.def @explicit(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
-// CHECK-NEXT:      verif.contract @Explicit for @Caller::@explicit (%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:      verif.contract @Explicit for @Caller::@explicit (%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
 // CHECK-NEXT:        verif.include @Lib::@Target::@Base<[@T]>(%[[VAL_1]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @inferred(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:      function.def @inferred(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
-// CHECK-NEXT:      verif.contract @Inferred for @Caller::@inferred (%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:      verif.contract @Inferred for @Caller::@inferred (%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
 // CHECK-NEXT:        verif.include @Lib::@Target::@Base(%[[VAL_3]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

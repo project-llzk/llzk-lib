@@ -1,0 +1,79 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// The complete return must preserve the shared T binding before either read is replaced.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Return {
+    poly.param @T : !poly.tvar<@T>
+    function.def @conflicting_return() -> (!poly.tvar<@T>, !poly.tvar<@T>) attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %a = llzk.nondet : !struct.type<@TCell::@Cell<[0]>>
+      %b = llzk.nondet : !struct.type<@TCell::@Cell<[1]>>
+      %array = array.new : !array.type<2 x !poly.tvar<@T>>
+      array.write %array[%c0] = %a : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %array[%c1] = %b : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[1]>>
+      // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function return}}
+      %read0 = array.read %array[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      %read1 = array.read %array[%c1] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      // expected-note@+1 {{replacement return signature '() -> (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_1_Cell>)' does not unify with declared return signature '() -> (!poly.tvar<@T>, !poly.tvar<@T>)'}}
+      function.return %read0, %read1 : !poly.tvar<@T>, !poly.tvar<@T>
+    }
+  }
+}
+
+// -----
+
+// The complete return must preserve the shared T binding before either read is replaced.
+module attributes {llzk.lang} {
+  poly.template @TCell {
+    poly.param @N : index
+
+    struct.def @Cell {
+      function.def @compute() -> !struct.type<@TCell::@Cell<[@N]>> {
+        %self = struct.new : !struct.type<@TCell::@Cell<[@N]>>
+        function.return %self : !struct.type<@TCell::@Cell<[@N]>>
+      }
+
+      function.def @constrain(%self: !struct.type<@TCell::@Cell<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @Return {
+    poly.param @T : !poly.tvar<@T>
+    function.def @conflicting_return() -> (!poly.tvar<@T>, !poly.tvar<@T>) attributes {function.allow_witness} {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %a = llzk.nondet : !struct.type<@TCell::@Cell<[0]>>
+      %b = llzk.nondet : !struct.type<@TCell::@Cell<[1]>>
+      %array = array.new : !array.type<2 x !poly.tvar<@T>>
+      array.write %array[%c0] = %a : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %array[%c1] = %b : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[1]>>
+      // The companion read is planned by a different scalarization candidate.
+      %other = array.new : !array.type<2 x !poly.tvar<@T>>
+      array.write %other[%c0] = %a : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[0]>>
+      array.write %other[%c1] = %b : !array.type<2 x !poly.tvar<@T>>, !struct.type<@TCell::@Cell<[1]>>
+      // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with a function return}}
+      %read0 = array.read %array[%c0] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      %read1 = array.read %other[%c1] : !array.type<2 x !poly.tvar<@T>>, !poly.tvar<@T>
+      // expected-note@+1 {{replacement return signature '() -> (!struct.type<@TCell_0_Cell>, !struct.type<@TCell_1_Cell>)' does not unify with declared return signature '() -> (!poly.tvar<@T>, !poly.tvar<@T>)'}}
+      function.return %read0, %read1 : !poly.tvar<@T>, !poly.tvar<@T>
+    }
+  }
+}

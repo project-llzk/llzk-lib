@@ -22,7 +22,7 @@ protected:
   mlir::MLIRContext ctx;
   mlir::Location loc;
 
-  LLZKTest() : ctx(), loc(llzk::getUnknownLoc(&ctx)) {
+  LLZKTest() : loc(llzk::getUnknownLoc(&ctx)) {
     mlir::DialectRegistry registry;
     llzk::registerDialects(registry);
     ctx.appendDialectRegistry(registry);

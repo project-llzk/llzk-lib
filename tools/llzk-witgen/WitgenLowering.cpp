@@ -533,6 +533,25 @@ static Value normalizeWideValue(
   );
 }
 
+/// Add the modulus p to a negative value in [-p, p), yielding a value in [0, p).
+///
+/// That result has the widened intermediate integer type so the final result must be
+/// truncated to the field's `dstWidth` bit width. Since `[0, p)` fits in that width,
+/// it discards only leading zero bits and preserves the value.
+static Value addModulusIfNegative(
+    OpBuilder &builder, Location loc, Value wideValue, Value modulus, unsigned dstWidth
+) {
+  auto wideType = llvm::cast<IntegerType>(wideValue.getType());
+  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(wideType, 0));
+  Value isNegative =
+      arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::slt, wideValue, zero);
+  Value adjusted = arith::AddIOp::create(builder, loc, wideValue, modulus);
+  Value canonical = arith::SelectOp::create(builder, loc, isNegative, adjusted, wideValue);
+  return arith::TruncIOp::create(
+      builder, loc, IntegerType::get(builder.getContext(), dstWidth), canonical
+  );
+}
+
 /// Normalize a signed widened integer back into the field modulus and truncate it.
 static Value normalizeSignedWideValue(
     OpBuilder &builder, Location loc, Value wideValue, unsigned dstWidth, const Field &field
@@ -542,13 +561,28 @@ static Value normalizeSignedWideValue(
       builder, loc, field.getPrimeAttr(builder.getContext(), wideType.getWidth())
   );
   Value reduced = arith::RemSIOp::create(builder, loc, wideValue, modulus);
-  Value zero = arith::ConstantOp::create(builder, loc, IntegerAttr::get(wideType, 0));
-  Value isNegative = arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::slt, reduced, zero);
-  Value adjusted = arith::AddIOp::create(builder, loc, reduced, modulus);
-  Value canonical = arith::SelectOp::create(builder, loc, isNegative, adjusted, reduced);
-  return arith::TruncIOp::create(
-      builder, loc, IntegerType::get(builder.getContext(), dstWidth), canonical
-  );
+  return addModulusIfNegative(builder, loc, reduced, modulus, dstWidth);
+}
+
+/// Reduce a signed index modulo the field without narrowing before reduction.
+/// Like the interpreter and the other cast lowerings, this assumes a 64-bit
+/// index (IndexType::kInternalStorageBitWidth). The extra field bit keeps the
+/// modulus positive for signed arithmetic, including fields wider than index.
+static Value
+lowerWrappingIndexToFelt(OpBuilder &builder, Location loc, Value operand, const Field &field) {
+  unsigned indexWidth = IndexType::kInternalStorageBitWidth;
+  unsigned wideWidth = std::max(indexWidth, field.bitWidth() + 1);
+  auto wideType = IntegerType::get(builder.getContext(), wideWidth);
+  Value widened = arith::IndexCastOp::create(builder, loc, wideType, operand);
+  if (field.prime() < (llvm::DynamicAPInt(1) << (indexWidth - 1))) {
+    return normalizeSignedWideValue(builder, loc, widened, field.bitWidth(), field);
+  }
+
+  // Here -p <= index < p, so only negative indices need one addition. Avoid
+  // wide remainder operations for fields such as Goldilocks and BN128.
+  Value modulus =
+      arith::ConstantOp::create(builder, loc, field.getPrimeAttr(builder.getContext(), wideWidth));
+  return addModulusIfNegative(builder, loc, widened, modulus, field.bitWidth());
 }
 
 /// Reinterpret a canonical field element as a signed integer in a widened type.
@@ -915,9 +949,9 @@ createElementSubview(OpBuilder &builder, Location loc, Value source, ValueRange 
   if (desiredShape.empty()) {
     desiredShape.push_back(1);
   }
-  auto resultType = llvm::cast<MemRefType>(memref::SubViewOp::inferRankReducedResultType(
+  MemRefType resultType = memref::SubViewOp::inferRankReducedResultType(
       desiredShape, sourceType, mixedOffsets, mixedSizes, mixedStrides
-  ));
+  );
   auto op = memref::SubViewOp::create(
       builder, loc, resultType, source, mixedOffsets, mixedSizes, mixedStrides
   );
@@ -1486,19 +1520,24 @@ private:
     }
 
     if (auto intToFelt = dyn_cast<cast::IntToFeltOp>(op)) {
-      if (intToFelt.getOverflow() != cast::OverflowSemantics::ASSERT) {
+      auto overflow = intToFelt.getOverflow();
+      if (overflow != cast::OverflowSemantics::ASSERT &&
+          overflow != cast::OverflowSemantics::WRAP) {
         return intToFelt.emitError(
-            "witgen lowering does not currently support non-assert cast overflow semantics"
+            "witgen lowering only supports assert and wrap overflow semantics for cast.tofelt"
         );
       }
       auto operand = lookupScalar(intToFelt.getValue(), valueMap, intToFelt.getOperation());
       if (failed(operand)) {
         return failure();
       }
-      const Field &resultField = intToFelt.getType().getField();
+      felt::FeltType resultType = intToFelt.getType(); // local avoids dangling ref warning
+      const Field &resultField = resultType.getField();
       auto dstType = IntegerType::get(builder.getContext(), resultField.bitWidth());
       Value lowered;
-      if (isa<IndexType>((*operand).getType())) {
+      if (isa<IndexType>((*operand).getType()) && overflow == cast::OverflowSemantics::WRAP) {
+        lowered = lowerWrappingIndexToFelt(builder, loc, *operand, resultField);
+      } else if (isa<IndexType>((*operand).getType())) {
         Value zero = makeIndexConstant(builder, loc, 0);
         Value isNonNegative =
             arith::CmpIOp::create(builder, loc, arith::CmpIPredicate::sge, *operand, zero);
@@ -1696,10 +1735,8 @@ private:
       if (failed(arrayValue)) {
         return failure();
       }
-      auto lowered = readArrayElement(
-          builder, loc, llvm::cast<array::ArrayType>(readArrayOp.getArrRef().getType()),
-          *arrayValue, indices
-      );
+      auto lowered =
+          readArrayElement(builder, loc, readArrayOp.getArrRef().getType(), *arrayValue, indices);
       if (failed(lowered)) {
         return failure();
       }
@@ -1719,8 +1756,8 @@ private:
         return failure();
       }
       return writeArrayElement(
-          builder, loc, llvm::cast<array::ArrayType>(writeArrayOp.getArrRef().getType()),
-          valueMap[writeArrayOp.getArrRef()], indices, *elementValue
+          builder, loc, writeArrayOp.getArrRef().getType(), valueMap[writeArrayOp.getArrRef()],
+          indices, *elementValue
       );
     }
 

@@ -38,16 +38,16 @@ module attributes {llzk.lang, llzk.main = !struct.type<@MulOut>} {
 }
 
 // CHECK-LABEL:   r1cs.circuit @MulOut inputs (
-// CHECK-SAME:                                  %[[A:[0-9a-zA-Z_\.]+]]: !r1cs.signal {pub = #r1cs.pub},
-// CHECK-SAME:                                  %[[B:[0-9a-zA-Z_\.]+]]: !r1cs.signal) {
-// CHECK:           %[[LHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK:           %[[RHS_OUT:[0-9a-zA-Z_\.]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
-// CHECK:           %[[A_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[A]] : !r1cs.signal to !r1cs.linear
-// CHECK:           %[[B_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[B]] : !r1cs.signal to !r1cs.linear
-// CHECK:           %[[LHS_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[LHS_OUT]] : !r1cs.signal to !r1cs.linear
+// CHECK-SAME:                                  %[[A:[0-9a-zA-Z_.-]+]]: !r1cs.signal {pub = #r1cs.pub},
+// CHECK-SAME:                                  %[[B:[0-9a-zA-Z_.-]+]]: !r1cs.signal) {
+// CHECK:           %[[LHS_OUT:[0-9a-zA-Z_.-]+]] = r1cs.def 1 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK:           %[[RHS_OUT:[0-9a-zA-Z_.-]+]] = r1cs.def 2 : !r1cs.signal {pub = #r1cs.pub}
+// CHECK:           %[[A_LIN:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[A]] : !r1cs.signal to !r1cs.linear
+// CHECK:           %[[B_LIN:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[B]] : !r1cs.signal to !r1cs.linear
+// CHECK:           %[[LHS_LIN:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[LHS_OUT]] : !r1cs.signal to !r1cs.linear
 // CHECK-NOT:       r1cs.mul_const %[[LHS_LIN]],  -1
 // CHECK:           r1cs.constrain %[[A_LIN]], %[[B_LIN]], %[[LHS_LIN]] : !r1cs.linear
-// CHECK:           %[[RHS_LIN:[0-9a-zA-Z_\.]+]] = r1cs.to_linear %[[RHS_OUT]] : !r1cs.signal to !r1cs.linear
+// CHECK:           %[[RHS_LIN:[0-9a-zA-Z_.-]+]] = r1cs.to_linear %[[RHS_OUT]] : !r1cs.signal to !r1cs.linear
 // CHECK-NOT:       r1cs.mul_const %[[RHS_LIN]],  -1
 // CHECK:           r1cs.constrain %[[A_LIN]], %[[B_LIN]], %[[RHS_LIN]] : !r1cs.linear
 // CHECK:         }

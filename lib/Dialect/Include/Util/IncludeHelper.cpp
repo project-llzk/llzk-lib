@@ -50,7 +50,7 @@ inline FailureOr<OpenFile> openFile(EmitErrorFn emitError, const StringRef filen
     return emitError() << "could not find file \"" << filename << '"';
   }
   r.buffer = std::move(*buffer);
-  return std::move(r);
+  return r;
 }
 
 FailureOr<OwningOpRef<ModuleOp>> parseFile(const StringRef filename, Operation *origin) {

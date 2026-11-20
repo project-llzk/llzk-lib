@@ -1,0 +1,318 @@
+// RUN: llzk-opt -llzk-flatten -split-input-file -verify-diagnostics %s
+
+// A fully generic shared witness cannot be split to satisfy conflicting members.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[0]>>'}}
+    struct.member @zero : !struct.type<@TPair::@Pair<[0]>> {column}
+    // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[1]>>'}}
+    struct.member @one : !struct.type<@TPair::@Pair<[1]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[#id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@zero] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      struct.writem %self[@one] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// Reversing the writes must reject the same conflicting requirements.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[0]>>'}}
+    struct.member @zero : !struct.type<@TPair::@Pair<[0]>> {column}
+    // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[1]>>'}}
+    struct.member @one : !struct.type<@TPair::@Pair<[1]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[#id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@one] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      struct.writem %self[@zero] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// A partially instantiated witness rejects conflicting members before conversion.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[0, 0]>>'}}
+    struct.member @zero : !struct.type<@TPair::@Pair<[0, 0]>> {column}
+    // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[0, 1]>>'}}
+    struct.member @one : !struct.type<@TPair::@Pair<[0, 1]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@zero] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      struct.writem %self[@one] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// The opposite order cannot commit the other partial refinement.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[0, 0]>>'}}
+    struct.member @zero : !struct.type<@TPair::@Pair<[0, 0]>> {column}
+    // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[0, 1]>>'}}
+    struct.member @one : !struct.type<@TPair::@Pair<[0, 1]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@one] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      struct.writem %self[@zero] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// A cumulative conflict must be diagnosed after collecting all member uses.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    poly.param @C : index
+    poly.param @D : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B, @C, @D]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[affine_map<(d0) -> (d0)>, 1, affine_map<(d0) -> (d0)>, affine_map<(d0) -> (d0)>]>>'}}
+    struct.member @first : !struct.type<@TPair::@Pair<[#id, 1, #id, #id]>> {column}
+    struct.member @second : !struct.type<@TPair::@Pair<[#id, #id, 2, #id]>> {column}
+    // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[affine_map<(d0) -> (d0)>, 3, affine_map<(d0) -> (d0)>, affine_map<(d0) -> (d0)>]>>'}}
+    struct.member @third : !struct.type<@TPair::@Pair<[#id, 3, #id, #id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id, #id, #id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@first] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      struct.writem %self[@second] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      struct.writem %self[@third] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id, #id, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// Distinct witnesses connected by one member must have compatible requirements.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TPair::@Pair<[#id, #id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+2 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[0, affine_map<(d0) -> (d0)>]>>'}}
+      %zero = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>> {product_source = "zero"}
+      %one = llzk.nondet : !struct.type<@TPair::@Pair<[1, #id]>> {product_source = "one"}
+      struct.writem %self[@item] = %zero : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[1, affine_map<(d0) -> (d0)>]>>'}}
+      struct.writem %self[@item] = %one : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[1, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// Connected witnesses reject conflicting requirements in either write order.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    poly.param @B : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A, @B]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A, @B]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A, @B]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A, @B]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @item : !struct.type<@TPair::@Pair<[#id, #id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+2 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[0, affine_map<(d0) -> (d0)>]>>'}}
+      %zero = llzk.nondet : !struct.type<@TPair::@Pair<[0, #id]>> {product_source = "zero"}
+      %one = llzk.nondet : !struct.type<@TPair::@Pair<[1, #id]>> {product_source = "one"}
+      // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[1, affine_map<(d0) -> (d0)>]>>'}}
+      struct.writem %self[@item] = %one : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[1, #id]>>
+      struct.writem %self[@item] = %zero : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0, #id]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// Concrete writers cannot cause a shared generic witness to split later.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute() -> !struct.type<@TPair::@Pair<[@A]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A]>>) { function.return }
+    }
+  }
+  struct.def @Holder {
+    struct.member @zero : !struct.type<@TPair::@Pair<[#id]>> {column}
+    struct.member @one : !struct.type<@TPair::@Pair<[#id]>> {column}
+    function.def @compute() -> !struct.type<@Holder> {
+      %self = struct.new : !struct.type<@Holder>
+      // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+      %shared = llzk.nondet : !struct.type<@TPair::@Pair<[#id]>> {product_source = "shared", test.marker = 42 : i64}
+      struct.writem %self[@zero] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      struct.writem %self[@one] = %shared : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[#id]>>
+      %zero = function.call @TPair::@Pair::@compute() : () -> !struct.type<@TPair::@Pair<[0]>>
+      // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[0]>>'}}
+      struct.writem %self[@zero] = %zero : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[0]>>
+      %one = function.call @TPair::@Pair::@compute() : () -> !struct.type<@TPair::@Pair<[1]>>
+      // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[1]>>'}}
+      struct.writem %self[@one] = %one : !struct.type<@Holder>, !struct.type<@TPair::@Pair<[1]>>
+      function.return %self : !struct.type<@Holder>
+    }
+    function.def @constrain(%self: !struct.type<@Holder>) { function.return }
+  }
+}
+
+// -----
+
+// Every initial member/write type is generic. Step4 infers 0 and 1 from call arguments,
+// exposing conflicting requirements only after the Step1 preflight has completed.
+#id = affine_map<(i) -> (i)>
+module attributes {llzk.lang} {
+  poly.template @TPair {
+    poly.param @A : index
+    struct.def @Pair {
+      struct.member @value : !felt.type {column}
+      function.def @compute(%values: !array.type<@A x !felt.type>) -> !struct.type<@TPair::@Pair<[@A]>> {
+        %self = struct.new : !struct.type<@TPair::@Pair<[@A]>>
+        function.return %self : !struct.type<@TPair::@Pair<[@A]>>
+      }
+      function.def @constrain(%self: !struct.type<@TPair::@Pair<[@A]>>, %values: !array.type<@A x !felt.type>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @N0 : index
+    poly.param @N1 : index
+    struct.def @Holder {
+      struct.member @zero : !struct.type<@TPair::@Pair<[#id]>> {column}
+      struct.member @one : !struct.type<@TPair::@Pair<[#id]>> {column}
+      function.def @compute(%empty: !array.type<0 x !felt.type>, %oneValue: !array.type<1 x !felt.type>) -> !struct.type<@Outer::@Holder<[@N0, @N1]>> {
+        %self = struct.new : !struct.type<@Outer::@Holder<[@N0, @N1]>>
+        // expected-error@+1 {{cannot refine shared nondeterministic witness because member writes require incompatible types}}
+        %shared = llzk.nondet : !struct.type<@TPair::@Pair<[#id]>> {product_source = "shared", test.marker = 42 : i64}
+        struct.writem %self[@zero] = %shared : !struct.type<@Outer::@Holder<[@N0, @N1]>>, !struct.type<@TPair::@Pair<[#id]>>
+        struct.writem %self[@one] = %shared : !struct.type<@Outer::@Holder<[@N0, @N1]>>, !struct.type<@TPair::@Pair<[#id]>>
+        %zero = function.call @TPair::@Pair::@compute(%empty) : (!array.type<0 x !felt.type>) -> !struct.type<@TPair::@Pair<[@N0]>>
+        // expected-note@+1 {{first required type: '!struct.type<@TPair::@Pair<[0]>>'}}
+        struct.writem %self[@zero] = %zero : !struct.type<@Outer::@Holder<[@N0, @N1]>>, !struct.type<@TPair::@Pair<[@N0]>>
+        %one = function.call @TPair::@Pair::@compute(%oneValue) : (!array.type<1 x !felt.type>) -> !struct.type<@TPair::@Pair<[@N1]>>
+        // expected-note@+1 {{conflicting required type: '!struct.type<@TPair::@Pair<[1]>>'}}
+        struct.writem %self[@one] = %one : !struct.type<@Outer::@Holder<[@N0, @N1]>>, !struct.type<@TPair::@Pair<[@N1]>>
+        function.return %self : !struct.type<@Outer::@Holder<[@N0, @N1]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Holder<[@N0, @N1]>>, %empty: !array.type<0 x !felt.type>, %oneValue: !array.type<1 x !felt.type>) { function.return }
+    }
+  }
+}

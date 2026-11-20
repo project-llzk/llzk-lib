@@ -43,13 +43,13 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 // CHECK-NEXT:    struct.def @ShapeCarrier {
 // CHECK-NEXT:      struct.member @shape : !array.type<? x none>
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x none>) -> !struct.type<@ShapeCarrier> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@ShapeCarrier>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<? x none>) -> !struct.type<@ShapeCarrier> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@ShapeCarrier>
 // CHECK-NEXT:        struct.writem %[[VAL_1]][@shape] = %[[VAL_0]] : <@ShapeCarrier>, !array.type<? x none>
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@ShapeCarrier>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@ShapeCarrier>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !array.type<? x none>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_2]][@shape] : <@ShapeCarrier>, !array.type<? x none>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@ShapeCarrier>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !array.type<? x none>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_2]][@shape] : <@ShapeCarrier>, !array.type<? x none>
 // CHECK-NEXT:        constrain.eq %[[VAL_4]], %[[VAL_3]] : !array.type<? x none>, !array.type<? x none>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -58,15 +58,15 @@ module attributes {llzk.main = !struct.type<@Main>, llzk.lang} {
 // CHECK-NEXT:      struct.member @"carrier:!s<@ShapeCarrier>+shape" : !array.type<? x none>
 // CHECK-NEXT:      struct.member @shape : !array.type<? x none>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = llzk.nondet : !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<? x none>
 // CHECK-NEXT:        struct.writem %[[VAL_5]][@"carrier:!s<@ShapeCarrier>+shape"] = %[[VAL_6]] : <@Main>, !array.type<? x none>
 // CHECK-NEXT:        struct.writem %[[VAL_5]][@shape] = %[[VAL_6]] : <@Main>, !array.type<? x none>
 // CHECK-NEXT:        function.return %[[VAL_5]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@shape] : <@Main>, !array.type<? x none>
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@"carrier:!s<@ShapeCarrier>+shape"] : <@Main>, !array.type<? x none>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@shape] : <@Main>, !array.type<? x none>
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@"carrier:!s<@ShapeCarrier>+shape"] : <@Main>, !array.type<? x none>
 // CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_8]] : !array.type<? x none>, !array.type<? x none>
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

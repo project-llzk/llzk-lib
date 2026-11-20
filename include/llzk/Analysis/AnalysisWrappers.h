@@ -31,7 +31,10 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 
+#include <llvm/ADT/StringRef.h>
+
 #include <map>
+#include <string>
 
 namespace llzk {
 
@@ -234,9 +237,10 @@ protected:
         mlir::LogicalResult childAnalysisRes = childAnalysis.runAnalysis(solver, am, ctx);
 
         if (mlir::failed(childAnalysisRes)) {
-          auto error_message = "StructAnalysis failed to run for " + s.getName();
+          const std::string error_message =
+              ("StructAnalysis failed to run for " + s.getName()).str();
           s->emitError(error_message).report();
-          llvm::report_fatal_error(error_message);
+          llvm::report_fatal_error(llvm::StringRef(error_message));
         }
       }
 

@@ -106,7 +106,7 @@ class PredecessorAnalysis
   [[maybe_unused]]
   raw_ostream &os;
 
-  ProgramPoint *getPoint(const PredecessorLattice &l) const {
+  static ProgramPoint *getPoint(const PredecessorLattice &l) {
     return dyn_cast<ProgramPoint *>(l.getAnchor());
   }
 

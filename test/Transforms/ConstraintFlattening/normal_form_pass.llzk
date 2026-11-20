@@ -25,17 +25,17 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK-LABEL:   struct.def @Main {
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.constant 5 : index
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_3]], %[[VAL_5]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = felt.sub %[[VAL_6]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_7]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = felt.neg %[[VAL_8]] : !felt.type<"bn128">
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.constant 5 : index
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[VAL_4]] : index, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_3]], %[[VAL_5]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_.-]+]] = felt.sub %[[VAL_6]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_7]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = felt.neg %[[VAL_8]] : !felt.type<"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_9]], %[[VAL_3]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

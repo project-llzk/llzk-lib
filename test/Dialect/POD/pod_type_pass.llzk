@@ -5,8 +5,8 @@ function.def @unify_cast_pod(%0: !pod.type<[]>) -> !pod.type<[]> {
   function.return %1 : !pod.type<[]>
 }
 //CHECK-LABEL:  function.def @unify_cast_pod(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[]>) -> !pod.type<[]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A1]] : (!pod.type<[]>) -> !pod.type<[]>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !pod.type<[]>) -> !pod.type<[]> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[A1]] : (!pod.type<[]>) -> !pod.type<[]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[]>
 //CHECK-NEXT:   }
 
@@ -17,8 +17,8 @@ function.def @unify_cast_pod(%0: !pod.type<[@n: index]>) -> !pod.type<[@n: index
   function.return %1 : !pod.type<[@n: index]>
 }
 //CHECK-LABEL:  function.def @unify_cast_pod(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index]>) -> !pod.type<[@n: index]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A1]] : (!pod.type<[@n: index]>) -> !pod.type<[@n: index]>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index]>) -> !pod.type<[@n: index]> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[A1]] : (!pod.type<[@n: index]>) -> !pod.type<[@n: index]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: index]>
 //CHECK-NEXT:   }
 
@@ -29,8 +29,8 @@ function.def @unify_cast_pod(%0: !pod.type<[@n: index, @x: !felt.type]>) -> !pod
   function.return %1 : !pod.type<[@n: index, @x: !felt.type]>
 }
 //CHECK-LABEL:  function.def @unify_cast_pod(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index, @x: !felt.type]>) -> !pod.type<[@n: index, @x: !felt.type]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A1]] : (!pod.type<[@n: index, @x: !felt.type]>) -> !pod.type<[@n: index, @x: !felt.type]>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index, @x: !felt.type]>) -> !pod.type<[@n: index, @x: !felt.type]> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[A1]] : (!pod.type<[@n: index, @x: !felt.type]>) -> !pod.type<[@n: index, @x: !felt.type]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: index, @x: !felt.type]>
 //CHECK-NEXT:   }
 
@@ -49,16 +49,15 @@ module attributes {llzk.lang} {
     function.return %1 : !pod.type<[@n: index, @x: !struct.type<@S<[]>>]>
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @S {
 // CHECK-NEXT:      function.def @product() -> !struct.type<@S> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@S>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@S>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@S>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @unify_struct_pod(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index, @x: !struct.type<@S<[]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@S<[]>>]> {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!pod.type<[@n: index, @x: !struct.type<@S<[]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@S<[]>>]>
+// CHECK-NEXT:    function.def @unify_struct_pod(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index, @x: !struct.type<@S<[]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@S<[]>>]> {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_1]] : (!pod.type<[@n: index, @x: !struct.type<@S<[]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@S<[]>>]>
 // CHECK-NEXT:      function.return %[[VAL_2]] : !pod.type<[@n: index, @x: !struct.type<@S<[]>>]>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -84,21 +83,20 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @TS {
 // CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @S {
 // CHECK-NEXT:        function.def @product() -> !struct.type<@TS::@S<[@N]>> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TS::@S<[@N]>>
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TS::@S<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@TS::@S<[@N]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @Caller {
 // CHECK-NEXT:      poly.param @A : index
-// CHECK-NEXT:      function.def @unify_template_pod(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index, @x: !struct.type<@TS::@S<[1]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@TS::@S<[@A]>>]> {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_1]] : (!pod.type<[@n: index, @x: !struct.type<@TS::@S<[1]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@TS::@S<[@A]>>]>
+// CHECK-NEXT:      function.def @unify_template_pod(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index, @x: !struct.type<@TS::@S<[1]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@TS::@S<[@A]>>]> {
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_1]] : (!pod.type<[@n: index, @x: !struct.type<@TS::@S<[1]>>]>) -> !pod.type<[@n: index, @x: !struct.type<@TS::@S<[@A]>>]>
 // CHECK-NEXT:        function.return %[[VAL_2]] : !pod.type<[@n: index, @x: !struct.type<@TS::@S<[@A]>>]>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -114,11 +112,11 @@ function.def @unify_cast_pod(
       !pod.type<[@n: index, @x: !array.type<#map x !felt.type>]>
   function.return %1 : !pod.type<[@n: index, @x: !array.type<#map x !felt.type>]>
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
 //CHECK-LABEL:  function.def @unify_cast_pod(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: index, @x: !array.type<10 x !felt.type>]>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: index, @x: !array.type<10 x !felt.type>]>
 //CHECK-SAME:   ) -> !pod.type<[@n: index, @x: !array.type<#[[$M0]] x !felt.type>]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[A1]] :
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[A1]] :
 //CHECK-SAME:         (!pod.type<[@n: index, @x: !array.type<10 x !felt.type>]>) ->
 //CHECK-SAME:            !pod.type<[@n: index, @x: !array.type<#[[$M0]] x !felt.type>]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: index, @x: !array.type<#[[$M0]] x !felt.type>]>
@@ -146,8 +144,8 @@ module attributes { llzk.lang} {
   }
 }
 //CHECK-LABEL:  function.def @constrain(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type]>,
-//CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type]>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: !felt.type]>,
+//CHECK-SAME:      %[[A2:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: !felt.type]>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
 //CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !pod.type<[@n: !felt.type]>, !pod.type<[@n: !felt.type]>
@@ -176,8 +174,8 @@ module attributes { llzk.lang} {
   }
 }
 //CHECK-LABEL:  function.def @constrain(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !felt.type]>,
-//CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !felt.type]>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: !felt.type, @m: !felt.type]>,
+//CHECK-SAME:      %[[A2:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: !felt.type, @m: !felt.type]>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
 //CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !pod.type<[@n: !felt.type, @m: !felt.type]>, !pod.type<[@n: !felt.type, @m: !felt.type]>
@@ -206,8 +204,8 @@ module attributes { llzk.lang} {
   }
 }
 //CHECK-LABEL:  function.def @constrain(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
-//CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>,
+//CHECK-SAME:      %[[A2:[0-9a-zA-Z_.-]+]]: !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
 //CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>, !pod.type<[@n: !felt.type, @m: !array.type<5 x !felt.type>]>
@@ -236,8 +234,8 @@ module attributes { llzk.lang} {
   }
 }
 //CHECK-LABEL:  function.def @constrain(
-//CHECK-SAME:      %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
-//CHECK-SAME:      %[[A2:[0-9a-zA-Z_\.]+]]: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
+//CHECK-SAME:      %[[A1:[0-9a-zA-Z_.-]+]]: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>,
+//CHECK-SAME:      %[[A2:[0-9a-zA-Z_.-]+]]: !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
 //CHECK-SAME:   ) attributes {function.allow_constraint} {
 //CHECK-NEXT:     constrain.eq %[[A1]], %[[A2]] :
 //CHECK-SAME:         !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>, !array.type<5 x !pod.type<[@n: !felt.type, @m: !felt.type]>>
@@ -249,5 +247,5 @@ module attributes { llzk.lang} {
 %0 = pod.new : !pod.type<[@x: !pod.type<[@y: index]>]>
 
 //CHECK: module {
-//CHECK:      %[[A1:[0-9a-zA-Z_\.]+]] = pod.new : <[@x: !pod.type<[@y: index]>]>
+//CHECK:      %[[A1:[0-9a-zA-Z_.-]+]] = pod.new : <[@x: !pod.type<[@y: index]>]>
 //CHECK: }

@@ -23,18 +23,18 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @product
-// CHECK-SAME:  (%[[LO:[0-9a-zA-Z_\.]+]]: !felt.type, %[[HI:[0-9a-zA-Z_\.]+]]: !felt.type, %[[STEP:[0-9a-zA-Z_\.]+]]: !felt.type)
-// CHECK:         %[[ZERO:[0-9a-zA-Z_\.]+]] = felt.const{{ +}}0
-// CHECK:         %[[ARRAY:[0-9a-zA-Z_\.]+]] = array.new
-// CHECK:         %[[LO_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[LO]]
-// CHECK:         %[[HI_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[HI]]
-// CHECK:         %[[STEP_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[STEP]]
+// CHECK-SAME:  (%[[LO:[0-9a-zA-Z_.-]+]]: !felt.type, %[[HI:[0-9a-zA-Z_.-]+]]: !felt.type, %[[STEP:[0-9a-zA-Z_.-]+]]: !felt.type)
+// CHECK:         %[[ZERO:[0-9a-zA-Z_.-]+]] = felt.const{{ +}}0
+// CHECK:         %[[ARRAY:[0-9a-zA-Z_.-]+]] = array.new
+// CHECK:         %[[LO_IDX:[0-9a-zA-Z_.-]+]] = cast.toindex %[[LO]]
+// CHECK:         %[[HI_IDX:[0-9a-zA-Z_.-]+]] = cast.toindex %[[HI]]
+// CHECK:         %[[STEP_IDX:[0-9a-zA-Z_.-]+]] = cast.toindex %[[STEP]]
 // CHECK-NOT:     scf.while
-// CHECK:         %{{.*}} = scf.for %[[IV:[0-9a-zA-Z_\.]+]] = %[[LO_IDX]] to %[[HI_IDX]] step %[[STEP_IDX]] iter_args(%[[ACC:[0-9a-zA-Z_\.]+]] = %[[ZERO]]) -> (!felt.type) {
-// CHECK-NEXT:      %[[IV_FELT:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[IV]]
-// CHECK-NEXT:      %[[READ_IDX:[0-9a-zA-Z_\.]+]] = cast.toindex %[[IV_FELT]]
-// CHECK-NEXT:      %[[CUR:[0-9a-zA-Z_\.]+]] = array.read %[[ARRAY]][%[[READ_IDX]]]
-// CHECK-NEXT:      %[[NEXT_SUM:[0-9a-zA-Z_\.]+]] = felt.add %[[CUR]], %[[ACC]]
+// CHECK:         %{{.*}} = scf.for %[[IV:[0-9a-zA-Z_.-]+]] = %[[LO_IDX]] to %[[HI_IDX]] step %[[STEP_IDX]] iter_args(%[[ACC:[0-9a-zA-Z_.-]+]] = %[[ZERO]]) -> (!felt.type) {
+// CHECK-NEXT:      %[[IV_FELT:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[IV]]
+// CHECK-NEXT:      %[[READ_IDX:[0-9a-zA-Z_.-]+]] = cast.toindex %[[IV_FELT]]
+// CHECK-NEXT:      %[[CUR:[0-9a-zA-Z_.-]+]] = array.read %[[ARRAY]][%[[READ_IDX]]]
+// CHECK-NEXT:      %[[NEXT_SUM:[0-9a-zA-Z_.-]+]] = felt.add %[[CUR]], %[[ACC]]
 // CHECK-NEXT:      scf.yield %[[NEXT_SUM]]
 // CHECK-NEXT:    }
 // CHECK-NOT:     scf.while

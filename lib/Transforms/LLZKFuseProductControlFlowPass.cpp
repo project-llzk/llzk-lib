@@ -124,7 +124,9 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
       solver->mkEqual(tripCount(a, solver.get()), tripCount(b, solver.get()))
   ));
 
-  return !*solver->check();
+  // An unknown solver result cannot prove that the trip counts are equal.
+  auto countsDiffer = solver->check();
+  return countsDiffer.has_value() && !*countsDiffer;
 }
 
 /// Determine which ops need to sink past `constraintLoop`, or return failure() if some of these

@@ -25,7 +25,7 @@ module attributes {llzk.lang} {
     function.return %loaded : index
   }
   // CHECK-LABEL: function.def @array_scalar_read_write(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: index) -> index
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: index) -> index
   // CHECK: array.write {{.*}} = %[[SOURCE]] : <1 x index>, index
   // CHECK-NOT: array.read
   // CHECK: function.return %[[SOURCE]] : index
@@ -39,7 +39,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @array_from_array(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: array.insert {{.*}} = %[[SOURCE]] : <1,1 x index>, <1 x index>
   // CHECK-NOT: array.extract
   // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
@@ -52,7 +52,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @pod_from_array(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
   // CHECK-NOT: pod.read
   // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
@@ -66,7 +66,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !pod.type<[@field: index]>
   }
   // CHECK-LABEL: function.def @pod_from_pod(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !pod.type<[@field: index]>)
   // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
   // CHECK-NOT: pod.read
   // CHECK: function.return %[[SOURCE]] : !pod.type<[@field: index]>
@@ -79,7 +79,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @pod_from_struct(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !struct.type<@Payload>)
   // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
   // CHECK-NOT: pod.read
   // CHECK: function.return %[[SOURCE]] : !struct.type<@Payload>
@@ -91,7 +91,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @global_from_array(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: global.write @array = %[[SOURCE]] : !array.type<1 x index>
   // CHECK-NOT: global.read
   // CHECK: function.return %[[SOURCE]] : !array.type<1 x index>
@@ -103,7 +103,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !pod.type<[@field: index]>
   }
   // CHECK-LABEL: function.def @global_from_pod(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !pod.type<[@field: index]>)
   // CHECK: global.write @pod = %[[SOURCE]] : !pod.type<[@field: index]>
   // CHECK-NOT: global.read
   // CHECK: function.return %[[SOURCE]] : !pod.type<[@field: index]>
@@ -115,7 +115,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @global_from_struct(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !struct.type<@Payload>)
   // CHECK: global.write @struct = %[[SOURCE]] : !struct.type<@Payload>
   // CHECK-NOT: global.read
   // CHECK: function.return %[[SOURCE]] : !struct.type<@Payload>
@@ -128,7 +128,7 @@ module attributes {llzk.lang} {
     function.return %second : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @array_read_cse(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !struct.type<@Payload>>, !struct.type<@Payload>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = array.read {{.*}} : <1 x !struct.type<@Payload>>, !struct.type<@Payload>
   // CHECK-NOT: array.read
   // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
 
@@ -140,7 +140,7 @@ module attributes {llzk.lang} {
     function.return %second : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @array_extract_cse(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = array.extract {{.*}} : <1,1 x index>
   // CHECK-NOT: array.extract
   // CHECK: function.return %[[FIRST]] : !array.type<1 x index>
 
@@ -151,7 +151,7 @@ module attributes {llzk.lang} {
     function.return %second : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @pod_read_cse(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = pod.read {{.*}} : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
   // CHECK-NOT: pod.read
   // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
 
@@ -161,7 +161,7 @@ module attributes {llzk.lang} {
     function.return %second : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @global_read_cse() -> !struct.type<@Payload>
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = global.read @struct : !struct.type<@Payload>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = global.read @struct : !struct.type<@Payload>
   // CHECK-NOT: global.read
   // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
 
@@ -175,7 +175,7 @@ module attributes {llzk.lang} {
     function.return %first : !pod.type<[@field: index]>
   }
   // CHECK-LABEL: function.def @array_read_writeback(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
   // CHECK-NOT: array.write
   // CHECK: function.return %[[FIRST]] : !pod.type<[@field: index]>
 
@@ -189,7 +189,7 @@ module attributes {llzk.lang} {
     function.return %first : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @array_extract_insert_readback(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = array.extract {{.*}} : <1,1 x index>
   // CHECK-NOT: array.insert
   // CHECK: function.return %[[FIRST]] : !array.type<1 x index>
 
@@ -201,7 +201,7 @@ module attributes {llzk.lang} {
     function.return %first : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @pod_read_writeback(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
   // CHECK-NOT: pod.write
   // CHECK: function.return %[[FIRST]] : !array.type<1 x index>
 
@@ -214,7 +214,7 @@ module attributes {llzk.lang} {
     function.return %first : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @global_read_writeback() -> !struct.type<@Payload>
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = global.read @struct : !struct.type<@Payload>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = global.read @struct : !struct.type<@Payload>
   // CHECK-NOT: global.write
   // CHECK: function.return %[[FIRST]] : !struct.type<@Payload>
 
@@ -227,9 +227,9 @@ module attributes {llzk.lang} {
     function.return %second : !pod.type<[@field: index]>
   }
   // CHECK-LABEL: function.def @array_read_cse_mutation(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
   // CHECK: pod.write %[[FIRST]][@field]
-  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
+  // CHECK: %[[SECOND:[0-9a-zA-Z_.-]+]] = array.read {{.*}} : <1 x !pod.type<[@field: index]>>, !pod.type<[@field: index]>
   // CHECK: function.return %[[SECOND]] : !pod.type<[@field: index]>
 
   function.def @array_extract_cse_mutation(%source: !array.type<1,1 x index>, %value: index)
@@ -241,9 +241,9 @@ module attributes {llzk.lang} {
     function.return %second : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @array_extract_cse_mutation(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = array.extract {{.*}} : <1,1 x index>
   // CHECK: array.write %[[FIRST]]
-  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: %[[SECOND:[0-9a-zA-Z_.-]+]] = array.extract {{.*}} : <1,1 x index>
   // CHECK: function.return %[[SECOND]] : !array.type<1 x index>
 
   // A scalar write below a previously extracted row changes the source row,
@@ -260,9 +260,9 @@ module attributes {llzk.lang} {
     function.return %first, %second : !array.type<1 x index>, !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @array_extract_cse_descendant_mutation(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = array.extract {{.*}} : <1,1 x index>
   // CHECK: array.write {{.*}} : <1,1 x index>, index
-  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = array.extract {{.*}} : <1,1 x index>
+  // CHECK: %[[SECOND:[0-9a-zA-Z_.-]+]] = array.extract {{.*}} : <1,1 x index>
   // CHECK: function.return %[[FIRST]], %[[SECOND]] : !array.type<1 x index>, !array.type<1 x index>
 
   function.def @pod_read_cse_mutation(%source: !pod.type<[@value: !array.type<1 x index>]>, %value: index)
@@ -274,9 +274,9 @@ module attributes {llzk.lang} {
     function.return %second : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @pod_read_cse_mutation(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
   // CHECK: array.write %[[FIRST]]
-  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
+  // CHECK: %[[SECOND:[0-9a-zA-Z_.-]+]] = pod.read {{.*}} : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
   // CHECK: function.return %[[SECOND]] : !array.type<1 x index>
 
   function.def @global_read_cse_mutation(%value: index) -> !array.type<1 x index>
@@ -288,9 +288,9 @@ module attributes {llzk.lang} {
     function.return %second : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @global_read_cse_mutation(
-  // CHECK: %[[FIRST:[0-9a-zA-Z_\.]+]] = global.read @array : !array.type<1 x index>
+  // CHECK: %[[FIRST:[0-9a-zA-Z_.-]+]] = global.read @array : !array.type<1 x index>
   // CHECK: array.write %[[FIRST]]
-  // CHECK: %[[SECOND:[0-9a-zA-Z_\.]+]] = global.read @array : !array.type<1 x index>
+  // CHECK: %[[SECOND:[0-9a-zA-Z_.-]+]] = global.read @array : !array.type<1 x index>
   // CHECK: function.return %[[SECOND]] : !array.type<1 x index>
 
   function.def @duplicate_array_insert(%source: !array.type<1 x index>) -> !array.type<1 x index>
@@ -303,7 +303,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @duplicate_array_insert(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: array.insert {{.*}} = %[[SOURCE]] : <1,1 x index>, <1 x index>
   // CHECK-NOT: array.insert
   // CHECK-NOT: array.extract
@@ -318,7 +318,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !pod.type<[@field: index]>
   }
   // CHECK-LABEL: function.def @duplicate_pod_write(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !pod.type<[@field: index]>)
   // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !pod.type<[@field: index]>]>, !pod.type<[@field: index]>
   // CHECK-NOT: pod.write
   // CHECK-NOT: pod.read
@@ -333,7 +333,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @duplicate_pod_write_array(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !array.type<1 x index>]>, !array.type<1 x index>
   // CHECK-NOT: pod.write
   // CHECK-NOT: pod.read
@@ -348,7 +348,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @duplicate_pod_write_struct(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !struct.type<@Payload>)
   // CHECK: pod.write {{.*}} = %[[SOURCE]] : <[@value: !struct.type<@Payload>]>, !struct.type<@Payload>
   // CHECK-NOT: pod.write
   // CHECK-NOT: pod.read
@@ -362,7 +362,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !struct.type<@Payload>
   }
   // CHECK-LABEL: function.def @duplicate_global_write(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !struct.type<@Payload>)
   // CHECK: global.write @struct = %[[SOURCE]] : !struct.type<@Payload>
   // CHECK-NOT: global.write
   // CHECK-NOT: global.read
@@ -376,7 +376,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !array.type<1 x index>
   }
   // CHECK-LABEL: function.def @duplicate_global_write_array(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: global.write @array = %[[SOURCE]] : !array.type<1 x index>
   // CHECK-NOT: global.write
   // CHECK-NOT: global.read
@@ -390,7 +390,7 @@ module attributes {llzk.lang} {
     function.return %loaded : !pod.type<[@field: index]>
   }
   // CHECK-LABEL: function.def @duplicate_global_write_pod(
-  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK-SAME: %[[SOURCE:[0-9a-zA-Z_.-]+]]: !pod.type<[@field: index]>)
   // CHECK: global.write @pod = %[[SOURCE]] : !pod.type<[@field: index]>
   // CHECK-NOT: global.write
   // CHECK-NOT: global.read
@@ -409,7 +409,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@StructFromArray>, %source: !array.type<1 x index>) { function.return }
   }
   // CHECK-LABEL: struct.def @StructFromArray {
-  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@StructFromArray>, !array.type<1 x index>
   // CHECK-NOT: struct.readm
   // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@StructFromArray>, !array.type<1 x index>
@@ -428,7 +428,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@StructFromPod>, %source: !pod.type<[@field: index]>) { function.return }
   }
   // CHECK-LABEL: struct.def @StructFromPod {
-  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_.-]+]]: !pod.type<[@field: index]>)
   // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@StructFromPod>, !pod.type<[@field: index]>
   // CHECK-NOT: struct.readm
   // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@StructFromPod>, !pod.type<[@field: index]>
@@ -446,7 +446,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@StructFromStruct>, %source: !struct.type<@Payload>) { function.return }
   }
   // CHECK-LABEL: struct.def @StructFromStruct {
-  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_.-]+]]: !struct.type<@Payload>)
   // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@StructFromStruct>, !struct.type<@Payload>
   // CHECK-NOT: struct.readm
   // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[SOURCE]] : <@StructFromStruct>, !struct.type<@Payload>
@@ -465,7 +465,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@DuplicateStructWriteArray>, %source: !array.type<1 x index>) { function.return }
   }
   // CHECK-LABEL: struct.def @DuplicateStructWriteArray {
-  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !array.type<1 x index>)
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_.-]+]]: !array.type<1 x index>)
   // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@DuplicateStructWriteArray>, !array.type<1 x index>
   // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
   // CHECK-NOT: struct.readm
@@ -485,7 +485,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@DuplicateStructWritePod>, %source: !pod.type<[@field: index]>) { function.return }
   }
   // CHECK-LABEL: struct.def @DuplicateStructWritePod {
-  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !pod.type<[@field: index]>)
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_.-]+]]: !pod.type<[@field: index]>)
   // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@DuplicateStructWritePod>, !pod.type<[@field: index]>
   // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
   // CHECK-NOT: struct.readm
@@ -505,7 +505,7 @@ module attributes {llzk.lang} {
     function.def @constrain(%self: !struct.type<@DuplicateStructWrite>, %source: !struct.type<@Payload>) { function.return }
   }
   // CHECK-LABEL: struct.def @DuplicateStructWrite {
-  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_\.]+]]: !struct.type<@Payload>)
+  // CHECK: function.def @compute(%[[SOURCE:[0-9a-zA-Z_.-]+]]: !struct.type<@Payload>)
   // CHECK: struct.writem {{.*}}{{\[}}@value] = %[[SOURCE]] : <@DuplicateStructWrite>, !struct.type<@Payload>
   // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
   // CHECK-NOT: struct.readm
@@ -527,7 +527,7 @@ module attributes {llzk.lang} {
   }
   // CHECK-LABEL: struct.def @StructReadBackWrite {
   // CHECK: function.def @compute() -> !struct.type<@StructReadBackWrite>
-  // CHECK: %[[LOADED:[0-9a-zA-Z_\.]+]] = struct.readm {{.*}}{{\[}}@value] : <@StructReadBackWrite>, !array.type<1 x index>
+  // CHECK: %[[LOADED:[0-9a-zA-Z_.-]+]] = struct.readm {{.*}}{{\[}}@value] : <@StructReadBackWrite>, !array.type<1 x index>
   // CHECK-NOT: struct.writem {{.*}}{{\[}}@value]
   // CHECK: struct.writem {{.*}}{{\[}}@result] = %[[LOADED]] : <@StructReadBackWrite>, !array.type<1 x index>
 }

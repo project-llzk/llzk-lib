@@ -103,10 +103,10 @@ public:
   /// Store the field prime and cache its integer attribute in the lowering context.
   NaiveNonNativeStrategy(const llvm::DynamicAPInt &fieldPrime, MLIRContext *ctx);
 
-  mlir::smt::IntConstantOp
-  createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
-  mlir::smt::IntConstantOp
-  createOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) const;
+  static mlir::smt::IntConstantOp
+  createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx);
+  static mlir::smt::IntConstantOp
+  createOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx);
   Value createModPrimeExpr(OpBuilder &builder, Location loc, Value value) const;
   Value emitSignedIntDivisionValue(
       OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
@@ -122,10 +122,10 @@ public:
 
 private:
   Value createSignedFeltExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
-  Value createAbsExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx) const;
-  Value createTruncatingSignedDivExpr(
+  static Value createAbsExpr(OpBuilder &builder, Location loc, Value value, MLIRContext *ctx);
+  static Value createTruncatingSignedDivExpr(
       OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
-  ) const;
+  );
   const llvm::DynamicAPInt prime;
   /// Reuse the prime's attribute without repeating the DynamicAPInt conversion.
   const IntegerAttr primeAttr;
@@ -147,7 +147,7 @@ public:
         rewriter, op->getLoc(), mlir::smt::IntType::get(getContext()),
         StringAttr::get(getContext(), strategy->getFreshName("felt_div"))
     );
-    auto zero = strategy->createZeroConstant(rewriter, op->getLoc(), getContext());
+    auto zero = NaiveNonNativeStrategy::createZeroConstant(rewriter, op->getLoc(), getContext());
     auto denominatorIsZero =
         mlir::smt::EqOp::create(rewriter, op->getLoc(), adaptor.getRhs(), zero.getResult());
     auto divIsZero =
@@ -187,8 +187,8 @@ public:
         rewriter, op->getLoc(), mlir::smt::IntType::get(getContext()),
         StringAttr::get(getContext(), strategy->getFreshName("inv"))
     );
-    auto zero = strategy->createZeroConstant(rewriter, op->getLoc(), getContext());
-    auto one = strategy->createOneConstant(rewriter, op->getLoc(), getContext());
+    auto zero = NaiveNonNativeStrategy::createZeroConstant(rewriter, op->getLoc(), getContext());
+    auto one = NaiveNonNativeStrategy::createOneConstant(rewriter, op->getLoc(), getContext());
     auto operandIsZero =
         mlir::smt::EqOp::create(rewriter, op->getLoc(), adaptor.getOperand(), zero.getResult());
     auto invIsZero =
@@ -354,15 +354,13 @@ NaiveNonNativeStrategy::NaiveNonNativeStrategy(
 )
     : prime(fieldPrime), primeAttr(IntegerAttr::get(ctx, toAPSInt(prime))) {}
 
-mlir::smt::IntConstantOp NaiveNonNativeStrategy::createZeroConstant(
-    OpBuilder &builder, Location loc, MLIRContext *ctx
-) const {
+mlir::smt::IntConstantOp
+NaiveNonNativeStrategy::createZeroConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) {
   return createSMTZeroConstant(builder, loc, ctx);
 }
 
-mlir::smt::IntConstantOp NaiveNonNativeStrategy::createOneConstant(
-    OpBuilder &builder, Location loc, MLIRContext *ctx
-) const {
+mlir::smt::IntConstantOp
+NaiveNonNativeStrategy::createOneConstant(OpBuilder &builder, Location loc, MLIRContext *ctx) {
   return createSMTOneConstant(builder, loc, ctx);
 }
 
@@ -391,7 +389,7 @@ Value NaiveNonNativeStrategy::createSignedFeltExpr(
 
 Value NaiveNonNativeStrategy::createAbsExpr(
     OpBuilder &builder, Location loc, Value value, MLIRContext *ctx
-) const {
+) {
   Value zero = createZeroConstant(builder, loc, ctx).getResult();
   auto isNegative =
       mlir::smt::IntCmpOp::create(builder, loc, mlir::smt::IntPredicate::lt, value, zero);
@@ -401,7 +399,7 @@ Value NaiveNonNativeStrategy::createAbsExpr(
 
 Value NaiveNonNativeStrategy::createTruncatingSignedDivExpr(
     OpBuilder &builder, Location loc, Value lhs, Value rhs, MLIRContext *ctx
-) const {
+) {
   Value zero = createZeroConstant(builder, loc, ctx).getResult();
   auto lhsNeg = mlir::smt::IntCmpOp::create(builder, loc, mlir::smt::IntPredicate::lt, lhs, zero);
   auto rhsNeg = mlir::smt::IntCmpOp::create(builder, loc, mlir::smt::IntPredicate::lt, rhs, zero);

@@ -1,0 +1,80 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten %s | FileCheck --enable-var-scope %s
+
+// Matching concrete compute arguments instantiate the result.
+module attributes {llzk.lang} {
+  poly.template @Family {
+    poly.param @T
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+      function.def @compute(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
+        function.return %self : !struct.type<@Family::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @S
+    function.def @caller(%a: !felt.type, %b: !felt.type) attributes {function.allow_witness} {
+      %result = function.call @Family::@Box::@compute(%a, %b) : (!felt.type, !felt.type) -> !struct.type<@Family::@Box<[@S]>>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_witness} {
+// CHECK:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Family_f_Box::@compute(%[[VAL_6]], %[[VAL_7]]) : (!felt.type, !felt.type) -> !struct.type<@Family_f_Box>
+
+// -----
+
+// An unresolved companion remains compatible with a concrete binding.
+module attributes {llzk.lang} {
+  poly.template @Family {
+    poly.param @T
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+      function.def @compute(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
+        function.return %self : !struct.type<@Family::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @S
+    function.def @caller(%a: !felt.type, %b: !poly.tvar<@S>) attributes {function.allow_witness} {
+      %result = function.call @Family::@Box::@compute(%a, %b) : (!felt.type, !poly.tvar<@S>) -> !struct.type<@Family::@Box<[@S]>>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !poly.tvar<@S>) attributes {function.allow_witness} {
+// CHECK:        %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Family_f_Box::@compute(%[[VAL_6]], %[[VAL_7]]) : (!felt.type, !poly.tvar<@S>) -> !struct.type<@Family_f_Box>
+
+// -----
+
+// Compatible unresolved receivers remain valid in constrain calls.
+module attributes {llzk.lang} {
+  poly.template @Family {
+    poly.param @T
+    struct.def @Box {
+      struct.member @value : !poly.tvar<@T>
+      function.def @compute(%a: !poly.tvar<@T>, %b: !poly.tvar<@T>) -> !struct.type<@Family::@Box<[@T]>> {
+        %self = struct.new : !struct.type<@Family::@Box<[@T]>>
+        function.return %self : !struct.type<@Family::@Box<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@Family::@Box<[@T]>>, %a: !poly.tvar<@T>, %b: !poly.tvar<@T>) { function.return }
+    }
+  }
+  poly.template @Caller {
+    poly.param @S
+    function.def @caller(%self: !struct.type<@Family::@Box<[@S]>>, %a: !felt.type, %b: !felt.type) attributes {function.allow_constraint} {
+      function.call @Family::@Box::@constrain(%self, %a, %b) : (!struct.type<@Family::@Box<[@S]>>, !felt.type, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK:      function.def @caller(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Family::@Box<[@S]>>, %[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK:        function.call @Family::@Box::@constrain(%[[VAL_6]], %[[VAL_7]], %[[VAL_8]]) : (!struct.type<@Family::@Box<[@S]>>, !felt.type, !felt.type) -> ()

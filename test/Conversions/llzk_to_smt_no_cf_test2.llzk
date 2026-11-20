@@ -10,7 +10,7 @@ module attributes {llzk.lang} {
             %lt = bool.cmp lt (%a, %0)
             %1 = scf.if %lt -> !felt.type {
                 scf.yield %a : !felt.type
-                
+
             } else {
                 scf.yield %b : !felt.type
             }
@@ -22,16 +22,16 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_\.]+]]: !smt.int, %[[B:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// CHECK-DAG: %[[FOOW:[0-9a-zA-Z_\.]+]] = smt.declare_fun "foo_w" : !smt.int
-// CHECK: %[[CMP:[0-9a-zA-Z_\.]+]] = smt.int.cmp lt %[[A]], %{{[0-9a-zA-Z_\.]+}}
-// CHECK: %[[COND:[0-9a-zA-Z_\.]+]] = builtin.unrealized_conversion_cast %[[CMP]] : !smt.bool to i1
-// CHECK: %[[SEL:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!smt.int) {
+// CHECK: func.func @smt_A(%[[A:[0-9a-zA-Z_.-]+]]: !smt.int, %[[B:[0-9a-zA-Z_.-]+]]: !smt.int) {
+// CHECK-DAG: %[[FOOW:[0-9a-zA-Z_.-]+]] = smt.declare_fun "foo_w" : !smt.int
+// CHECK: %[[CMP:[0-9a-zA-Z_.-]+]] = smt.int.cmp lt %[[A]], %{{[0-9a-zA-Z_.-]+}}
+// CHECK: %[[COND:[0-9a-zA-Z_.-]+]] = builtin.unrealized_conversion_cast %[[CMP]] : !smt.bool to i1
+// CHECK: %[[SEL:[0-9a-zA-Z_.-]+]] = scf.if %[[COND]] -> (!smt.int) {
 // CHECK:   scf.yield %[[A]] : !smt.int
 // CHECK: } else {
 // CHECK:   scf.yield %[[B]] : !smt.int
 // CHECK: }
-// CHECK: %[[EQ:[0-9a-zA-Z_\.]+]] = smt.eq %[[FOOW]], %[[SEL]] : !smt.int
+// CHECK: %[[EQ:[0-9a-zA-Z_.-]+]] = smt.eq %[[FOOW]], %[[SEL]] : !smt.int
 // CHECK: smt.assert %[[EQ]]
 // CHECK-NOT: smt.int.mod
 // CHECK: return

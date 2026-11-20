@@ -179,7 +179,7 @@ static llvm::Expected<BufferPack> createBufferPack(Type type, const Field &field
   }
   buffer.storage.resize(storageBytes);
   if (auto error = buildDescriptor(buffer)) {
-    return std::move(error);
+    return error;
   }
   return buffer;
 }
@@ -449,7 +449,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
       return buffer.takeError();
     }
     if (auto err = fillInputBuffer(*buffer, parsed)) {
-      return std::move(err);
+      return err;
     }
     inputBuffers.push_back(std::move(*buffer));
   }
@@ -483,7 +483,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
   maybeDumpModule(**loweredModule, options.dumpJITCore, "llzk-witgen JIT core");
   if (auto err = finalizeExecutionEngineModule(**loweredModule)) {
-    return std::move(err);
+    return err;
   }
   maybeDumpModule(**loweredModule, options.dumpJITLLVM, "llzk-witgen JIT LLVM");
 
@@ -523,7 +523,7 @@ llvm::Expected<llvm::json::Value> runWithExecutionEngine(
   }
 
   if (auto err = (*maybeEngine)->invokePacked("_mlir_ciface___llzk_witgen_main", packedArgs)) {
-    return std::move(err);
+    return err;
   }
 
   llvm::SmallVector<llvm::json::Value> serializedOutputs;

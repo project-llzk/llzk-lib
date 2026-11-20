@@ -37,7 +37,6 @@
 #include <cstdlib>
 #include <exception>
 #include <string>
-#include <tuple>
 
 #if LLZK_WITH_PCL
 #include "pcl/DialectRegistration.h"
@@ -81,8 +80,7 @@ static int runMain(int argc, char **argv) {
 #endif // LLZK_WITH_PCL
 
   // Register and parse command line options.
-  std::string inputFilename, outputFilename;
-  std::tie(inputFilename, outputFilename) =
+  auto [inputFilename, outputFilename] =
       registerAndParseCLIOptions(argc, argv, "llzk-opt", registry);
 
   if (PrintAllOps) {

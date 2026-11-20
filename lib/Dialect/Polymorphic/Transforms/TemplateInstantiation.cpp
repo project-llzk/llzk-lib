@@ -1,8 +1,8 @@
-//===-- TemplateInstantiation.cpp ---------------------------------*- C++ -*-===//
+//===-- TemplateInstantiation.cpp -------------------------------*- C++ -*-===//
 //
 // Part of the LLZK Project, under the Apache License v2.0.
 // See LICENSE.txt for license information.
-// Copyright 2026 Veridise Inc.
+// Copyright 2026 Project LLZK
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
@@ -18,15 +18,20 @@
 #include "SharedImpl.h"
 
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
+#include "llzk/Dialect/POD/IR/Types.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/SymbolTableLLZK.h"
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/AttrTypeSubElements.h>
+#include <mlir/IR/Matchers.h>
+#include <mlir/IR/OwningOpRef.h>
+#include <mlir/Transforms/FoldUtils.h>
 
 #include <llvm/ADT/TypeSwitch.h>
 
@@ -42,6 +47,20 @@ using namespace llzk::felt;
 using namespace llzk::function;
 using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
+
+/// Substitute every POD field type while preserving record names and order.
+/// Recursive calls use the caller's array, struct and type-variable conversions.
+static pod::PodType convertPodType(pod::PodType type, const TypeConverter &converter) {
+  SmallVector<pod::RecordAttr> records;
+  for (auto record : type.getRecords()) {
+    Type converted = converter.convertType(record.getType());
+    if (!converted) {
+      return {};
+    }
+    records.push_back(pod::RecordAttr::get(type.getContext(), record.getName(), converted));
+  }
+  return pod::PodType::get(type.getContext(), records);
+}
 
 namespace {
 
@@ -79,9 +98,9 @@ public:
     llvm::TypeSwitch<Attribute, LogicalResult> TS(res->second);
     llvm::TypeSwitch<Attribute, LogicalResult> *ptr = &TS;
 
-    ((ptr = &(ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
+    ((ptr = &ptr->template Case<HandledAttrs>([&](HandledAttrs a) {
       return static_cast<const Impl *>(this)->handleRewrite(res->first, op, adaptor, rewriter, a);
-    }))),
+    })),
      ...);
 
     return TS.Default([&](Attribute a) {
@@ -121,25 +140,9 @@ public:
       return op->emitOpError().append("could not convert result type ", origResTy);
     }
 
-    if (FeltType ty = llvm::dyn_cast<FeltType>(newResTy)) {
-      replaceOpWithNewOp<FeltConstantOp>(
-          rewriter, op, FeltConstAttr::get(getContext(), integerAttrToDynamicAPInt(a), ty)
-      );
-      return success();
-    }
-
-    if (llvm::isa<IndexType>(newResTy)) {
-      replaceOpWithNewOp<arith::ConstantIndexOp>(rewriter, op, fromAPInt(attrValue));
-      return success();
-    }
-
     if (newResTy.isSignlessInteger(1)) {
       // Treat 0 as false and any other value as true (but give a warning if it's not 1)
-      if (attrValue.isZero()) {
-        replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, false);
-        return success();
-      }
-      if (!attrValue.isOne()) {
+      if (!attrValue.isZero() && !attrValue.isOne()) {
         Location opLoc = op.getLoc();
         Diagnostic diag(opLoc, DiagnosticSeverity::Warning);
         diag << "Interpreting non-zero value " << stringWithoutType(a) << " as true";
@@ -151,7 +154,10 @@ public:
             << "\" for this specialization";
         diagnostics.push_back(std::move(diag));
       }
-      replaceOpWithNewOp<arith::ConstantIntOp>(rewriter, op, newResTy, true);
+    }
+    if (Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a)) {
+      replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+      rewriter.replaceOp(op, replacement);
       return success();
     }
     return op->emitOpError().append("unexpected result type ", newResTy);
@@ -160,7 +166,15 @@ public:
   LogicalResult handleRewrite(
       Attribute, ConstReadOp op, OpAdaptor, ConversionPatternRewriter &rewriter, FeltConstAttr a
   ) const {
-    replaceOpWithNewOp<FeltConstantOp>(rewriter, op, a);
+    Type origResTy = op.getType();
+    Type newResTy = getTypeConverter()->convertType(origResTy);
+    if (!newResTy) {
+      return op->emitOpError().append("could not convert result type ", origResTy);
+    }
+    Value replacement = materializeTemplateConstant(rewriter, op.getLoc(), newResTy, a);
+    assert(replacement && "felt template values must materialize as felt constants");
+    replacement.getDefiningOp()->setDiscardableAttrs(op->getDiscardableAttrDictionary());
+    rewriter.replaceOp(op, replacement);
     return success();
   }
 };
@@ -233,10 +247,11 @@ public:
       /// Instantiated values for the parameter names in `originalType`
       const DenseMap<Attribute, Attribute> &paramNameToInstantiatedValue
   )
-      : TypeConverter(), origTy(originalType), newTy(newType),
-        paramNameToValue(paramNameToInstantiatedValue) {
+      : origTy(originalType), newTy(newType), paramNameToValue(paramNameToInstantiatedValue) {
 
     addConversion([](Type inputTy) { return inputTy; });
+
+    addConversion([this](pod::PodType type) { return convertPodType(type, *this); });
 
     addConversion([this](StructType inputTy) {
       LLVM_DEBUG(llvm::dbgs() << "[MappedTypeConverter] convert " << inputTy << '\n');
@@ -269,7 +284,11 @@ public:
         for (Attribute a : dimSizes) {
           updated.push_back(convertIfPossible(a));
         }
-        return ArrayType::get(this->convertType(inputTy.getElementType()), updated);
+        // Array-valued type arguments add dimensions instead of nesting array elements.
+        return flattenArrayElementType(
+            inputTy.cloneWith(inputTy.getElementType(), updated),
+            this->convertType(inputTy.getElementType())
+        );
       }
       // Otherwise, return the type unchanged
       return inputTy;
@@ -288,6 +307,49 @@ public:
       }
       return inputTy;
     });
+  }
+};
+
+/// Initialize a rank-expanded array by inserting each converted subarray into a fresh allocation.
+/// Initializer positions follow the original outer shape's row-major order.
+class ClonedBodyCreateArrayOpPattern final : public OpConversionPattern<CreateArrayOp> {
+public:
+  using OpConversionPattern<CreateArrayOp>::OpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      CreateArrayOp op, OpAdaptor adaptor, ConversionPatternRewriter &rewriter
+  ) const override {
+    if (op.getElements().empty()) {
+      return failure();
+    }
+    auto newElemTy = dyn_cast_if_present<ArrayType>(
+        getTypeConverter()->convertType(op.getType().getElementType())
+    );
+    auto newResultTy =
+        dyn_cast_if_present<ArrayType>(getTypeConverter()->convertType(op.getType()));
+    if (!newElemTy || !newResultTy) {
+      return failure();
+    }
+    if (!op.getType().hasStaticShape()) {
+      return rewriter.notifyMatchFailure(op, "initialized array requires a static outer shape");
+    }
+    for (Value element : adaptor.getElements()) {
+      if (element.getType() != newElemTy) {
+        return rewriter.notifyMatchFailure(op, "converted initializer has unexpected type");
+      }
+    }
+
+    Location loc = op.getLoc();
+    auto allocation =
+        preserveDiscardableAttrs(op, CreateArrayOp::create(rewriter, loc, newResultTy));
+    ArrayIndexGen idxGen = ArrayIndexGen::from(op.getType());
+    for (auto [index, element] : llvm::enumerate(adaptor.getElements())) {
+      auto indices = idxGen.delinearize(checkedCast<int64_t>(index), loc, rewriter);
+      assert(indices && "static array initializer index should delinearize");
+      InsertArrayOp::create(rewriter, loc, allocation.getResult(), ValueRange(*indices), element);
+    }
+    rewriter.replaceOp(op, allocation.getResult());
+    return success();
   }
 };
 
@@ -358,12 +420,17 @@ convertCalleeSymRefs(SymbolRefAttr callee, const DenseMap<Attribute, Attribute> 
 /// constant-folded; otherwise returns `std::nullopt`.
 static std::optional<Attribute>
 evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramNameToConcrete) {
-  // Map from SSA value in the expr body to its concrete Attribute.
-  DenseMap<Value, Attribute> valueMap;
-  for (Operation &bodyOp : exprOp.getInitializerRegion().front()) {
+  // Folding may rewrite operations in place. Evaluate a disposable copy so subsequent
+  // specializations and partially instantiated templates retain the original expression.
+  OwningOpRef<TemplateExprOp> evaluation(exprOp.clone());
+  TemplateTypeConverter typeConverter(paramNameToConcrete);
+  IRRewriter rewriter(exprOp.getContext());
+  OperationFolder folder(exprOp.getContext());
+  for (Operation &bodyOp : llvm::make_early_inc_range(evaluation->getInitializerRegion().front())) {
     if (auto yieldOp = llvm::dyn_cast<YieldOp>(bodyOp)) {
-      auto it = valueMap.find(yieldOp.getVal());
-      return it != valueMap.end() ? std::make_optional(it->second) : std::nullopt;
+      Attribute result;
+      return matchPattern(yieldOp.getVal(), m_Constant(&result)) ? std::make_optional(result)
+                                                                 : std::nullopt;
     }
 
     if (auto constReadOp = llvm::dyn_cast<ConstReadOp>(bodyOp)) {
@@ -371,41 +438,23 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
       if (it == paramNameToConcrete.end()) {
         return std::nullopt; // a referenced param is not concrete
       }
-      // If the attribute type is `FeltType` but it's stored as an IntegerAttr, promote to
-      // a `FeltConstAttr`.
-      Attribute val = it->second;
-      if (auto intAttr = llvm::dyn_cast<IntegerAttr>(val)) {
-        if (auto feltTy = llvm::dyn_cast<FeltType>(constReadOp.getResult().getType())) {
-          val = FeltConstAttr::get(bodyOp.getContext(), integerAttrToDynamicAPInt(intAttr), feltTy);
-        }
+      Type resultType = typeConverter.convertType(constReadOp.getType());
+      if (!resultType) {
+        return std::nullopt;
       }
-      valueMap[constReadOp.getResult()] = val;
+      rewriter.setInsertionPoint(constReadOp);
+      Value constant =
+          materializeTemplateConstant(rewriter, constReadOp.getLoc(), resultType, it->second);
+      if (!constant) {
+        return std::nullopt;
+      }
+      rewriter.replaceOp(constReadOp, constant);
       continue;
     }
 
-    // Gather constant attributes for all operands.
-    SmallVector<Attribute> operandAttrs;
-    operandAttrs.reserve(bodyOp.getNumOperands());
-    for (Value operand : bodyOp.getOperands()) {
-      auto it = valueMap.find(operand);
-      if (it == valueMap.end()) {
-        return std::nullopt; // operand not known as a constant
-      }
-      operandAttrs.push_back(it->second);
-    }
-
-    // Try constant folding.
-    SmallVector<OpFoldResult> foldResults;
-    if (succeeded(bodyOp.fold(operandAttrs, foldResults)) &&
-        foldResults.size() == bodyOp.getNumResults()) {
-      for (auto [result, fr] : llvm::zip_equal(bodyOp.getResults(), foldResults)) {
-        if (Attribute a = llvm::dyn_cast<Attribute>(fr)) {
-          valueMap[result] = a;
-        } else {
-          return std::nullopt;
-        }
-      }
-    }
+    // Use the standard folder for attribute results, existing SSA values and in-place
+    // updates. A non-foldable result remains non-constant and cannot be yielded below.
+    (void)folder.tryToFold(&bodyOp);
   }
   return std::nullopt; // no YieldOp found (shouldn't happen in a valid expr)
 }
@@ -413,6 +462,25 @@ evaluateExpr(TemplateExprOp exprOp, const DenseMap<Attribute, Attribute> &paramN
 } // namespace
 
 namespace llzk::polymorphic::detail {
+
+Value materializeTemplateConstant(
+    OpBuilder &builder, Location loc, Type resultType, Attribute value
+) {
+  if (auto integer = dyn_cast<IntegerAttr>(value)) {
+    if (auto type = dyn_cast<FeltType>(resultType)) {
+      return FeltConstantOp::create(builder, loc, type, integerAttrToDynamicAPInt(integer));
+    }
+    if (isa<IndexType>(resultType)) {
+      return arith::ConstantIndexOp::create(builder, loc, fromAPInt(integer.getValue()));
+    }
+    if (resultType.isSignlessInteger(1)) {
+      return arith::ConstantIntOp::create(builder, loc, resultType, !integer.getValue().isZero());
+    }
+  } else if (auto felt = dyn_cast<FeltConstAttr>(value)) {
+    return FeltConstantOp::create(builder, loc, felt);
+  }
+  return nullptr;
+}
 
 void reportDelayedDiagnostics(Operation *site, SmallVector<Diagnostic> &&diagnostics) {
   DiagnosticEngine &engine = site->getContext()->getDiagEngine();
@@ -476,6 +544,8 @@ Attribute TemplateTypeConverter::convertIfPossible(Attribute attr) const {
 TemplateTypeConverter::TemplateTypeConverter(DenseMap<Attribute, Attribute> bindings)
     : paramNameToValue(std::move(bindings)) {
   addConversion([](Type t) { return t; });
+
+  addConversion([this](pod::PodType type) { return convertPodType(type, *this); });
 
   addConversion([this](TypeVarType inputTy) -> Type {
     if (TypeAttr tyAttr = llvm::dyn_cast<TypeAttr>(convertIfPossible(inputTy.getNameRef()))) {
@@ -577,11 +647,11 @@ void evaluateTemplateExprs(
   );
 }
 
-/// Return the callee-side unification-derived value for a template parameter, if any.
+/// Return an unambiguous callee-side binding; absent and unresolved entries have no value.
 std::optional<Attribute>
 inferUnifiedParam(const UnificationMap &unifyResult, SymbolRefAttr paramName) {
   auto it = unifyResult.find({paramName, Side::RHS});
-  return (it == unifyResult.end()) ? std::nullopt : std::make_optional(it->second);
+  return (it == unifyResult.end() || !it->second) ? std::nullopt : std::make_optional(it->second);
 }
 
 LogicalResult substituteStructBody(
@@ -599,6 +669,8 @@ LogicalResult substituteStructBody(
 
   RewritePatternSet patterns = newGeneralRewritePatternSet<EmitEqualityOp>(tyConv, ctx, target);
   patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, paramNameToConcrete, diagnostics);
+  patterns.add<ClonedBodyCreateArrayOpPattern>(tyConv, ctx);
+  patterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
   patterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   return applyFullConversion(newStruct, target, std::move(patterns));
 }
@@ -619,8 +691,24 @@ LogicalResult substituteFunctionBody(
       tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics
   );
   bodyPatterns.add<ClonedBodyArrayReadOpPattern, ClonedBodyArrayWriteOpPattern>(tyConv, ctx);
+  bodyPatterns.add<ClonedBodyCreateArrayOpPattern>(tyConv, ctx);
   bodyPatterns.add<ClonedMemberReadOpPattern>(tyConv, ctx, paramNameToConcrete);
   return applyFullConversion(newFunc, target, std::move(bodyPatterns));
+}
+
+LogicalResult substituteTemplateExprBody(
+    TemplateExprOp expr, const DenseMap<Attribute, Attribute> &paramNameToConcrete,
+    SmallVector<Diagnostic> &delayedDiagnostics
+) {
+  MLIRContext *ctx = expr.getContext();
+  TemplateTypeConverter tyConv(paramNameToConcrete);
+  ConversionTarget target = newConverterDefinedTarget<YieldOp>(tyConv, ctx);
+  target.addDynamicallyLegalOp<ConstReadOp>([&tyConv](ConstReadOp op) {
+    return !tyConv.containsParam(op.getConstNameAttr()) && defaultLegalityCheck(tyConv, op);
+  });
+  RewritePatternSet patterns = newGeneralRewritePatternSet<YieldOp>(tyConv, ctx, target);
+  patterns.add<ClonedBodyConstReadOpPattern>(tyConv, ctx, tyConv.getParamMap(), delayedDiagnostics);
+  return applyFullConversion(expr, target, std::move(patterns));
 }
 
 } // namespace llzk::polymorphic::detail

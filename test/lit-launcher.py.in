@@ -1,0 +1,6 @@
+"""Run lit through its executable so package-manager wrappers remain effective."""
+
+import os
+import sys
+
+os.execv(r"@LLZK_LIT_EXECUTABLE@", [r"@LLZK_LIT_EXECUTABLE@", *sys.argv[1:]])

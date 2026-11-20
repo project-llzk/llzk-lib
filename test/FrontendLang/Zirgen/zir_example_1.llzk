@@ -57,15 +57,15 @@ module attributes {llzk.lang = "zirgen"} {
 //CHECK-LABEL:   struct.def @C1 {
 //CHECK-NEXT:      struct.member @z : !struct.type<@std::@risc0::@Reg> {llzk.pub}
 //CHECK-NEXT:      function.def @compute(%arg0: !felt.type, %arg1: !felt.type) -> !struct.type<@C1> attributes {function.allow_witness} {
-//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C1>
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = felt.add %arg0, %arg1
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = function.call @std::@risc0::@Reg::@compute(%[[T0]]) : (!felt.type) -> !struct.type<@std::@risc0::@Reg>
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@C1>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_.-]+]] = felt.add %arg0, %arg1
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_.-]+]] = function.call @std::@risc0::@Reg::@compute(%[[T0]]) : (!felt.type) -> !struct.type<@std::@risc0::@Reg>
 //CHECK-NEXT:        struct.writem %[[SELF]][@z] = %[[T1]] : <@C1>, !struct.type<@std::@risc0::@Reg>
 //CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@C1>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@C1>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = felt.add %arg1, %arg2
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@C1>, %arg1: !felt.type, %arg2: !felt.type) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_.-]+]] = struct.readm %[[SELF]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_.-]+]] = felt.add %arg1, %arg2
 //CHECK-NEXT:        function.call @std::@risc0::@Reg::@constrain(%[[T0]], %[[T1]]) : (!struct.type<@std::@risc0::@Reg>, !felt.type) -> ()
 //CHECK-NEXT:        function.return
 //CHECK-NEXT:      }
@@ -73,20 +73,20 @@ module attributes {llzk.lang = "zirgen"} {
 //CHECK-LABEL:   struct.def @C2 {
 //CHECK-NEXT:      struct.member @fc1 : !struct.type<@C1>
 //CHECK-NEXT:      function.def @compute(%arg0: !struct.type<@std::@risc0::@ValU32>) -> !struct.type<@C2> attributes {function.allow_witness} {
-//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C2>
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %arg0[@low] : <@std::@risc0::@ValU32>, !felt.type
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = struct.readm %arg0[@high] : <@std::@risc0::@ValU32>, !felt.type
-//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = function.call @C1::@compute(%[[T0]], %[[T1]]) : (!felt.type, !felt.type) -> !struct.type<@C1>
+//CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@C2>
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_.-]+]] = struct.readm %arg0[@low] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_.-]+]] = struct.readm %arg0[@high] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_.-]+]] = function.call @C1::@compute(%[[T0]], %[[T1]]) : (!felt.type, !felt.type) -> !struct.type<@C1>
 //CHECK-NEXT:        struct.writem %[[SELF]][@fc1] = %[[T2]] : <@C2>, !struct.type<@C1>
 //CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@C2>
 //CHECK-NEXT:      }
-//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_\.]+]]: !struct.type<@C2>, %arg1: !struct.type<@std::@risc0::@ValU32>) attributes {function.allow_constraint} {
-//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELF]][@fc1] : <@C2>, !struct.type<@C1>
-//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_\.]+]] = struct.readm %arg1[@low] : <@std::@risc0::@ValU32>, !felt.type
-//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_\.]+]] = struct.readm %arg1[@high] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:      function.def @constrain(%[[SELF:[0-9a-zA-Z_.-]+]]: !struct.type<@C2>, %arg1: !struct.type<@std::@risc0::@ValU32>) attributes {function.allow_constraint} {
+//CHECK-NEXT:        %[[T0:[0-9a-zA-Z_.-]+]] = struct.readm %[[SELF]][@fc1] : <@C2>, !struct.type<@C1>
+//CHECK-NEXT:        %[[T1:[0-9a-zA-Z_.-]+]] = struct.readm %arg1[@low] : <@std::@risc0::@ValU32>, !felt.type
+//CHECK-NEXT:        %[[T2:[0-9a-zA-Z_.-]+]] = struct.readm %arg1[@high] : <@std::@risc0::@ValU32>, !felt.type
 //CHECK-NEXT:        function.call @C1::@constrain(%[[T0]], %[[T1]], %[[T2]]) : (!struct.type<@C1>, !felt.type, !felt.type) -> ()
-//CHECK-NEXT:        %[[T3:[0-9a-zA-Z_\.]+]] = struct.readm %[[T0]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
-//CHECK-NEXT:        %[[T4:[0-9a-zA-Z_\.]+]] = struct.readm %[[T3]][@reg] : <@std::@risc0::@Reg>, !felt.type
+//CHECK-NEXT:        %[[T3:[0-9a-zA-Z_.-]+]] = struct.readm %[[T0]][@z] : <@C1>, !struct.type<@std::@risc0::@Reg>
+//CHECK-NEXT:        %[[T4:[0-9a-zA-Z_.-]+]] = struct.readm %[[T3]][@reg] : <@std::@risc0::@Reg>, !felt.type
 //CHECK-NEXT:        %felt_const_0 = felt.const 0
 //CHECK-NEXT:        constrain.eq %[[T4]], %felt_const_0 : !felt.type, !felt.type
 //CHECK-NEXT:        function.return

@@ -15,6 +15,7 @@
 
 #include "CAPIGenRegistration.h"
 
+#include <llvm/ADT/SmallVectorExtras.h>
 #include <llvm/ADT/StringMap.h>
 
 #include <clang/Basic/FileManager.h>
@@ -512,7 +513,7 @@ static bool parseMethodParameters(
             if (paramTokens[k].is(tok::comma)) {
               // Add the current parameter if valid
               if (!currentParamType.empty() && !currentParamName.empty()) {
-                parameters.push_back(MethodParameter(currentParamType, currentParamName));
+                parameters.emplace_back(currentParamType, currentParamName);
               }
               currentParamType.clear();
               currentParamName.clear();
@@ -556,7 +557,7 @@ static bool parseMethodParameters(
 
           // Add the last parameter if valid
           if (!currentParamType.empty() && !currentParamName.empty()) {
-            parameters.push_back(MethodParameter(currentParamType, currentParamName));
+            parameters.emplace_back(currentParamType, currentParamName);
           }
         }
 
@@ -708,11 +709,9 @@ SmallVector<ExtraMethod> parseExtraMethods(StringRef extraDecl) {
   }
 
   // Return valid methods, skipping overloaded names (nullopt entries).
-  return llvm::to_vector(
-      llvm::map_range(
-          llvm::make_filter_range(methods, [](const auto &p) { return p.second.has_value(); }),
-          [](const auto &p) { return p.second.value(); }
-      )
+  return llvm::map_to_vector(
+      llvm::make_filter_range(methods, [](const auto &p) { return p.second.has_value(); }),
+      [](const auto &p) { return p.second.value(); }
   );
 }
 

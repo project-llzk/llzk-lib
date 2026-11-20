@@ -124,7 +124,11 @@ list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
 include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
-include(HandleLLVMOptions)
+
+# Preserve PIC for object/static libraries linked into the Python module.
+if(LLVM_ENABLE_PIC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})

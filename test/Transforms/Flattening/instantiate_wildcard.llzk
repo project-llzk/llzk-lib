@@ -32,22 +32,22 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @FRT_f_free_ret() -> !felt.type<"bn128"> {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"bn128">
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_0]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
 // CHECK-NEXT:      function.return %[[VAL_1]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @synth_f_synth() {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @FRT_f_free_ret() : () -> !felt.type<"bn128">
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @FRT_f_free_ret() : () -> !felt.type<"bn128">
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @ComponentC {
 // CHECK-NEXT:      struct.def @ComponentC {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@ComponentC::@ComponentC> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@ComponentC::@ComponentC>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@ComponentC::@ComponentC>
 // CHECK-NEXT:          function.call @synth_f_synth() : () -> ()
 // CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@ComponentC::@ComponentC>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@ComponentC::@ComponentC>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@ComponentC::@ComponentC>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -55,6 +55,213 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:  }
 // -----
 
+// A wildcard nested in an aggregate operand is resolved from a concrete explicit
+// binding for the corresponding nested template parameter.
+module attributes {llzk.lang} {
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterAggregateExplicit::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  poly.template @InnerAggregateExplicit {
+    poly.param @Arg : !poly.tvar<@Arg>
+
+    function.def @consume(%arg0: !poly.tvar<@Arg>) {
+      function.return
+    }
+  }
+
+  poly.template @OuterAggregateExplicit {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      function.call @InnerAggregateExplicit::@consume<[!array.type<2 x !felt.type<"bn128">>]>(%0) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterAggregateExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterAggregateExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterAggregateExplicit_f_wrap() {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @"InnerAggregateExplicit_!a<f:2>_consume"(%[[VAL_1]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// A wildcard with no call-site operand evidence can still be resolved when the
+// value it creates is passed to a nested template parameter with a concrete binding.
+module attributes {llzk.lang} {
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterExplicitInput::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  poly.template @InnerExplicitInput {
+    poly.param @Arg : !poly.tvar<@Arg>
+
+    function.def @consume(%arg0: !poly.tvar<@Arg>) {
+      function.return
+    }
+  }
+
+  poly.template @OuterExplicitInput {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !poly.tvar<@T>
+      function.call @InnerExplicitInput::@consume<[!felt.type<"bn128">]>(%0) : (!poly.tvar<@T>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterExplicitInput_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterExplicitInput_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerExplicitInput_f_consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterExplicitInput_f_wrap() {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type<"bn128">
+// CHECK-NEXT:      function.call @InnerExplicitInput_f_consume(%[[VAL_1]]) : (!felt.type<"bn128">) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// A concrete nested binding must be applied inside the nested callee's aggregate signature
+// before it is unified with the enclosing wildcard.
+module attributes {llzk.lang} {
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterAggregateElementExplicit::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterAggregateElementExplicit::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  poly.template @InnerAggregateElementExplicit {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @consume(%arg0: !array.type<2 x !poly.tvar<@U>>) {
+      function.return
+    }
+  }
+
+  poly.template @OuterAggregateElementExplicit {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      function.call @InnerAggregateElementExplicit::@consume<[!felt.type<"bn128">]>(%0) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterAggregateElementExplicit_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerAggregateElementExplicit_f_consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterAggregateElementExplicit_f_wrap() {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @InnerAggregateElementExplicit_f_consume(%[[VAL_1]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// A wildcard nested in a callee aggregate signature is resolved from evidence
+// in the nested callee body.
+module attributes {llzk.lang} {
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @OuterAggregateElementBody::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  poly.template @InnerAggregateElementBody {
+    poly.param @U : !poly.tvar<@U>
+
+    function.def @consume(%arg0: !array.type<2 x !poly.tvar<@U>>) {
+      %0 = felt.const 0 : <"bn128">
+      %1 = poly.unifiable_cast %0 : (!felt.type<"bn128">) -> !poly.tvar<@U>
+      function.return
+    }
+  }
+
+  poly.template @OuterAggregateElementBody {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      function.call @InnerAggregateElementBody::@consume<[?]>(%0) : (!array.type<2 x !poly.tvar<@T>>) -> ()
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @OuterAggregateElementBody_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @OuterAggregateElementBody_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @InnerAggregateElementBody_f_consume(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type<"bn128">>) {
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @OuterAggregateElementBody_f_wrap() {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
+// CHECK-NEXT:      function.call @InnerAggregateElementBody_f_consume(%[[VAL_1]]) : (!array.type<2 x !felt.type<"bn128">>) -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// Preserve discardable attributes when wildcard conversion changes array.read to array.extract.
 module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>} {
   poly.template @T {
     poly.param @T_arg0 : !poly.tvar<@T_arg0>
@@ -65,7 +272,7 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeT
       %felt_const_0_0 = felt.const  0 : <"bn128">
       %1 = cast.toindex %felt_const_0_0 : !felt.type<"bn128">
       %2 = poly.unifiable_cast %arg0 : (!poly.tvar<@T_arg0>) -> !array.type<?,? x !poly.tvar<@"$e">>
-      %3 = array.read %2[%0, %1] : <?,? x !poly.tvar<@"$e">>, !poly.tvar<@"$e">
+      %3 = array.read %2[%0, %1] : <?,? x !poly.tvar<@"$e">>, !poly.tvar<@"$e"> {product_source = "read"}
       %4 = poly.unifiable_cast %3 : (!poly.tvar<@"$e">) -> !poly.tvar<@T_return>
       function.return %4 : !poly.tvar<@T_return>
     }
@@ -104,38 +311,38 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeT
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang = "circom", llzk.main = !struct.type<@CallDiffTypeTest::@CallDiffTypeTest<[]>>} {
-// CHECK-NEXT:    function.def @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type<"bn128">> {function.arg_name = "a"}) -> !array.type<5 x !felt.type<"bn128">> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<?,?,5 x !felt.type<"bn128">>
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_2]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <?,?,5 x !felt.type<"bn128">>
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_3]] : (!array.type<5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:    function.def @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<10,5,5 x !felt.type<"bn128">> {function.arg_name = "a"}) -> !array.type<5 x !felt.type<"bn128">> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_0]] : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<?,?,5 x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_2]]{{\[}}%[[VAL_1]], %[[VAL_1]]] : <?,?,5 x !felt.type<"bn128">> {product_source = "read"}
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_3]] : (!array.type<5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.return %[[VAL_4]] : !array.type<5 x !felt.type<"bn128">>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type<"bn128">> {function.arg_name = "a"}) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_5]] : (!array.type<10,5 x !felt.type<"bn128">>) -> !array.type<?,? x !felt.type<"bn128">>
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_6]], %[[VAL_6]]] : <?,? x !felt.type<"bn128">>, !felt.type<"bn128">
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_8]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:    function.def @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !array.type<10,5 x !felt.type<"bn128">> {function.arg_name = "a"}) -> !felt.type<"bn128"> attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_5]] : (!array.type<10,5 x !felt.type<"bn128">>) -> !array.type<?,? x !felt.type<"bn128">>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_7]]{{\[}}%[[VAL_6]], %[[VAL_6]]] : <?,? x !felt.type<"bn128">>, !felt.type<"bn128"> {product_source = "read"}
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_8]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
 // CHECK-NEXT:      function.return %[[VAL_9]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @CallDiffTypeTest {
 // CHECK-NEXT:      struct.def @CallDiffTypeTest {
 // CHECK-NEXT:        struct.member @outA : !array.type<5 x !felt.type<"bn128">> {llzk.pub}
 // CHECK-NEXT:        struct.member @outB : !felt.type<"bn128"> {llzk.pub}
-// CHECK-NEXT:        function.def @compute(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type<"bn128">>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type<"bn128">>) -> !struct.type<@CallDiffTypeTest::@CallDiffTypeTest> attributes {function.allow_non_native_field_ops, function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.new : <@CallDiffTypeTest::@CallDiffTypeTest>
-// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_10]]) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:        function.def @compute(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !array.type<10,5,5 x !felt.type<"bn128">>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: !array.type<10,5 x !felt.type<"bn128">>) -> !struct.type<@CallDiffTypeTest::@CallDiffTypeTest> attributes {function.allow_non_native_field_ops, function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.new : <@CallDiffTypeTest::@CallDiffTypeTest>
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] = function.call @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_10]]) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
 // CHECK-NEXT:          struct.writem %[[VAL_12]][@outA] = %[[VAL_13]] : <@CallDiffTypeTest::@CallDiffTypeTest>, !array.type<5 x !felt.type<"bn128">>
-// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_11]]) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] = function.call @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_11]]) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
 // CHECK-NEXT:          struct.writem %[[VAL_12]][@outB] = %[[VAL_14]] : <@CallDiffTypeTest::@CallDiffTypeTest>, !felt.type<"bn128">
 // CHECK-NEXT:          function.return %[[VAL_12]] : !struct.type<@CallDiffTypeTest::@CallDiffTypeTest>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@CallDiffTypeTest::@CallDiffTypeTest>, %[[VAL_16:[0-9a-zA-Z_\.]+]]: !array.type<10,5,5 x !felt.type<"bn128">>, %[[VAL_17:[0-9a-zA-Z_\.]+]]: !array.type<10,5 x !felt.type<"bn128">>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@outA] : <@CallDiffTypeTest::@CallDiffTypeTest>, !array.type<5 x !felt.type<"bn128">>
-// CHECK-NEXT:          %[[VAL_19:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_15]][@outB] : <@CallDiffTypeTest::@CallDiffTypeTest>, !felt.type<"bn128">
-// CHECK-NEXT:          %[[VAL_20:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_16]]) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:        function.def @constrain(%[[VAL_15:[0-9a-zA-Z_.-]+]]: !struct.type<@CallDiffTypeTest::@CallDiffTypeTest>, %[[VAL_16:[0-9a-zA-Z_.-]+]]: !array.type<10,5,5 x !felt.type<"bn128">>, %[[VAL_17:[0-9a-zA-Z_.-]+]]: !array.type<10,5 x !felt.type<"bn128">>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:          %[[VAL_18:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_15]][@outA] : <@CallDiffTypeTest::@CallDiffTypeTest>, !array.type<5 x !felt.type<"bn128">>
+// CHECK-NEXT:          %[[VAL_19:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_15]][@outB] : <@CallDiffTypeTest::@CallDiffTypeTest>, !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_20:[0-9a-zA-Z_.-]+]] = function.call @"T_!a<f:10_5_5>_!a<f:5>_!a<f:5>_peel2ranks"(%[[VAL_16]]) : (!array.type<10,5,5 x !felt.type<"bn128">>) -> !array.type<5 x !felt.type<"bn128">>
 // CHECK-NEXT:          constrain.eq %[[VAL_18]], %[[VAL_20]] : !array.type<5 x !felt.type<"bn128">>, !array.type<5 x !felt.type<"bn128">>
-// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = function.call @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_17]]) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
+// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_.-]+]] = function.call @"T_!a<f:10_5>_f_f_peel2ranks"(%[[VAL_17]]) : (!array.type<10,5 x !felt.type<"bn128">>) -> !felt.type<"bn128">
 // CHECK-NEXT:          constrain.eq %[[VAL_19]], %[[VAL_21]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
@@ -173,17 +380,17 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @LaterConcrete_f_f_bridge(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:    function.def @LaterConcrete_f_f_bridge(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    module @UseLaterConcrete {
 // CHECK-NEXT:      struct.def @UseLaterConcrete {
-// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@UseLaterConcrete::@UseLaterConcrete> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@UseLaterConcrete::@UseLaterConcrete>
+// CHECK-NEXT:        function.def @compute(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) -> !struct.type<@UseLaterConcrete::@UseLaterConcrete> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@UseLaterConcrete::@UseLaterConcrete>
 // CHECK-NEXT:          function.call @LaterConcrete_f_f_bridge(%[[VAL_1]]) : (!felt.type<"bn128">) -> ()
 // CHECK-NEXT:          function.return %[[VAL_2]] : !struct.type<@UseLaterConcrete::@UseLaterConcrete>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@UseLaterConcrete::@UseLaterConcrete>, %[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@UseLaterConcrete::@UseLaterConcrete>, %[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.call @LaterConcrete_f_f_bridge(%[[VAL_4]]) : (!felt.type<"bn128">) -> ()
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
@@ -227,22 +434,60 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @CallOuterExplicitReturn {
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@CallOuterExplicitReturn> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@CallOuterExplicitReturn>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) -> !struct.type<@CallOuterExplicitReturn> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@CallOuterExplicitReturn>
 // CHECK-NEXT:        function.call @OuterExplicitReturn_f_wrap(%[[VAL_0]]) : (!felt.type<"bn128">) -> ()
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@CallOuterExplicitReturn>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@CallOuterExplicitReturn>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@CallOuterExplicitReturn>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.call @OuterExplicitReturn_f_wrap(%[[VAL_3]]) : (!felt.type<"bn128">) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @InnerExplicitReturn_f_f_ret(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> {
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = poly.unifiable_cast %[[VAL_4]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:    function.def @InnerExplicitReturn_f_f_ret(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) -> !felt.type<"bn128"> {
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.unifiable_cast %[[VAL_4]] : (!felt.type<"bn128">) -> !felt.type<"bn128">
 // CHECK-NEXT:      function.return %[[VAL_5]] : !felt.type<"bn128">
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @OuterExplicitReturn_f_wrap(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) {
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @InnerExplicitReturn_f_f_ret(%[[VAL_6]]) : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:    function.def @OuterExplicitReturn_f_wrap(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) {
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @InnerExplicitReturn_f_f_ret(%[[VAL_6]]) : (!felt.type<"bn128">) -> !felt.type<"bn128">
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }
+// -----
+
+// A wildcard nested in a local unifiable cast is resolved from the concrete aggregate side.
+module attributes {llzk.lang} {
+  function.def @compute() attributes {function.allow_witness} {
+    function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  function.def @constrain() attributes {function.allow_constraint} {
+    function.call @LocalCastAggregate::@wrap<[?]>() : () -> ()
+    function.return
+  }
+
+  poly.template @LocalCastAggregate {
+    poly.param @T : !poly.tvar<@T>
+
+    function.def @wrap() {
+      %0 = llzk.nondet : !array.type<2 x !poly.tvar<@T>>
+      %1 = poly.unifiable_cast %0 : (!array.type<2 x !poly.tvar<@T>>) -> !array.type<2 x !felt.type<"bn128">>
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @compute() attributes {function.allow_witness} {
+// CHECK-NEXT:      function.call @LocalCastAggregate_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @constrain() attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.call @LocalCastAggregate_f_wrap() : () -> ()
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @LocalCastAggregate_f_wrap() {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !array.type<2 x !felt.type<"bn128">>
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

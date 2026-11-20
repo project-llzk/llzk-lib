@@ -4,9 +4,9 @@ function.def @no_args() -> index {
   %x = poly.applymap() affine_map<() -> (12)>
   function.return %x : index
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<() -> (12)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<() -> (12)>
 // CHECK-LABEL: function.def @no_args() -> index {
-// CHECK-NEXT:    %[[V_0:[0-9a-zA-Z_\.]+]] = poly.applymap () #[[$M0]]
+// CHECK-NEXT:    %[[V_0:[0-9a-zA-Z_.-]+]] = poly.applymap () #[[$M0]]
 // CHECK-NEXT:    function.return %[[V_0]] : index
 // CHECK-NEXT:  }
 // -----
@@ -15,11 +15,11 @@ function.def @dims_only_no_brackets(%a: index, %b: index) -> index {
   %x = poly.applymap(%a, %b) #mapA
   function.return %x : index
 }
-// CHECK: #[[$ATTR_1:.+]] = affine_map<(d0, d1) -> (d0 floordiv 8 + d1 floordiv 128)>
+// CHECK: #[[$ATTR_1:[0-9a-zA-Z_.-]+]] = affine_map<(d0, d1) -> (d0 floordiv 8 + d1 floordiv 128)>
 // CHECK-LABEL: function.def @dims_only_no_brackets(
-// CHECK-SAME:                                   %[[V_0:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:                                   %[[V_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[V_0]], %[[V_1]]) #[[$ATTR_1]]
+// CHECK-SAME:                                   %[[V_0:[0-9a-zA-Z_.-]+]]: index,
+// CHECK-SAME:                                   %[[V_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_.-]+]] = poly.applymap (%[[V_0]], %[[V_1]]) #[[$ATTR_1]]
 // CHECK-NEXT:    function.return %[[V_2]] : index
 // CHECK-NEXT:  }
 // -----
@@ -27,11 +27,11 @@ function.def @dims_only_empty_brackets(%a: index, %b: index) -> index {
   %x = poly.applymap(%a, %b)[] affine_map<(d0, d1) -> (d0 floordiv 8 + d1 floordiv 128)>
   function.return %x : index
 }
-// CHECK: #[[$ATTR_2:.+]] = affine_map<(d0, d1) -> (d0 floordiv 8 + d1 floordiv 128)>
+// CHECK: #[[$ATTR_2:[0-9a-zA-Z_.-]+]] = affine_map<(d0, d1) -> (d0 floordiv 8 + d1 floordiv 128)>
 // CHECK-LABEL: function.def @dims_only_empty_brackets(
-// CHECK-SAME:                                      %[[V_0:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:                                      %[[V_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[V_0]], %[[V_1]]) #[[$ATTR_2]]
+// CHECK-SAME:                                      %[[V_0:[0-9a-zA-Z_.-]+]]: index,
+// CHECK-SAME:                                      %[[V_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_.-]+]] = poly.applymap (%[[V_0]], %[[V_1]]) #[[$ATTR_2]]
 // CHECK-NEXT:    function.return %[[V_2]] : index
 // CHECK-NEXT:  }
 // -----
@@ -40,11 +40,11 @@ function.def @syms_only(%a: index, %b: index) -> index {
   %x = poly.applymap()[%b, %a] #mapB
   function.return %x : index
 }
-// CHECK: #[[$ATTR_3:.+]] = affine_map<()[s0, s1] -> (s0 + s1)>
+// CHECK: #[[$ATTR_3:[0-9a-zA-Z_.-]+]] = affine_map<()[s0, s1] -> (s0 + s1)>
 // CHECK-LABEL: function.def @syms_only(
-// CHECK-SAME:                       %[[V_0:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:                       %[[V_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_\.]+]] = poly.applymap (){{\[}}%[[V_1]], %[[V_0]]] #[[$ATTR_3]]
+// CHECK-SAME:                       %[[V_0:[0-9a-zA-Z_.-]+]]: index,
+// CHECK-SAME:                       %[[V_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:    %[[V_2:[0-9a-zA-Z_.-]+]] = poly.applymap (){{\[}}%[[V_1]], %[[V_0]]] #[[$ATTR_3]]
 // CHECK-NEXT:    function.return %[[V_2]] : index
 // CHECK-NEXT:  }
 // -----
@@ -53,11 +53,11 @@ function.def @dims_and_syms(%a: index, %b: index, %c: index) -> index {
   %x = poly.applymap(%a)[%b,%c] #mapC
   function.return %x : index
 }
-// CHECK: #[[$ATTR_4:.+]] = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
+// CHECK: #[[$ATTR_4:[0-9a-zA-Z_.-]+]] = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
 // CHECK-LABEL: function.def @dims_and_syms(
-// CHECK-SAME:                           %[[V_0:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:                           %[[V_1:[0-9a-zA-Z_\.]+]]: index,
-// CHECK-SAME:                           %[[V_2:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:    %[[V_3:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[V_0]]){{\[}}%[[V_1]], %[[V_2]]] #[[$ATTR_4]]
+// CHECK-SAME:                           %[[V_0:[0-9a-zA-Z_.-]+]]: index,
+// CHECK-SAME:                           %[[V_1:[0-9a-zA-Z_.-]+]]: index,
+// CHECK-SAME:                           %[[V_2:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:    %[[V_3:[0-9a-zA-Z_.-]+]] = poly.applymap (%[[V_0]]){{\[}}%[[V_1]], %[[V_2]]] #[[$ATTR_4]]
 // CHECK-NEXT:    function.return %[[V_3]] : index
 // CHECK-NEXT:  }

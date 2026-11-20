@@ -209,7 +209,7 @@ template <typename GTestBaseClass> struct TestAnyBuildFuncHelper {
 
     MlirOperation op = callBuild(testClass, builder, location);
 
-    EXPECT_NE(op.ptr, (void *)NULL);
+    EXPECT_NE(op.ptr, (void *)nullptr);
     EXPECT_TRUE(mlirOperationVerify(op));
     EXPECT_TRUE(callIsA(op));
 

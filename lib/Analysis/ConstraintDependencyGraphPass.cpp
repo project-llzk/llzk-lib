@@ -35,12 +35,6 @@ class PassImpl : public llzk::impl::ConstraintDependencyGraphPrinterPassBase<Pas
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    if (!llvm::isa<ModuleOp>(getOperation())) {
-      const char *msg = "ConstraintDependencyGraphPrinterPass error: should be run on ModuleOp!";
-      getOperation()->emitError(msg).report();
-      llvm::report_fatal_error(msg);
-    }
-
     auto &cs = getAnalysis<llzk::ConstraintDependencyGraphModuleAnalysis>();
     cs.setIntraprocedural(runIntraprocedural);
     auto am = getAnalysisManager();

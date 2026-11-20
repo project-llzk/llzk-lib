@@ -42,6 +42,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
       %child = array.read %children[%zero] : !array.type<2 x !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>>, !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>
       // expected-error @+1 {{member read type does not match the concrete specialization}}
       %wrong = struct.readm %child[@intermediate] : !struct.type<@Child::@Child<[affine_map<(i) -> (i + 1)>]>>, !array.type<3 x !felt.type>
+      %value = array.read %wrong[%zero] : !array.type<3 x !felt.type>, !felt.type
+      constrain.eq %value, %x : !felt.type, !felt.type
       function.return
     }
   }

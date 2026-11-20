@@ -138,13 +138,9 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     structs, because the declaration would otherwise have a mismatched type.
     Includes must be inlined before running this pass.
   }];
-  let options =
-      [Option<
-           "specializationLimit", "max-specializations", "unsigned", "1000",
-           "Maximum number of concrete struct and free-function definitions">,
-       Option<"evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
-              "Maximum steps shared by template expressions and methods in one "
-              "discovery run">];
+  let options = [Option<
+      "specializationLimit", "max-specializations", "unsigned", "1000",
+      "Maximum number of concrete struct and free-function definitions">];
 }
 
 def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
@@ -185,9 +181,8 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     felt add/subtract/multiply/negate expressions, felt equalities, original
     storage reads, index/i1 constants, and conversions of constant integers to
     felt are permitted. Validated integer-to-felt assertions are retained even
-    when their results are unused. Expansion work is bounded across calls,
-    iterations, and aggregate traversal. Any failed expansion or validation
-    fails the entire pass.
+    when their results are unused. Any failed expansion or validation fails the
+    entire pass.
 
     Equality constraints currently require scalar felt operands; array equality
     and constrain.in are unsupported. Symbolic if/select conditions are rejected.
@@ -198,21 +193,36 @@ def ConstraintFlatteningPass : LLZKPass<"llzk-flatten-constraints"> {
     with the exposed rolled declarations. Specialization selection and concrete
     path validation stay inside the pass; no new handle operations are emitted.
   }];
-  let options = [Option<
-      "evaluationLimit", "max-evaluation-steps", "uint64_t", "1000000",
-      "Maximum expansion work across operations and aggregate paths">];
 }
 
 def FlatteningPass : LLZKPass<"llzk-flatten"> {
   let summary = "Flatten structs and unroll loops";
   let description = [{
     Performs the following transformations:
-    - Instantiate `affine_map` parameters of StructType and ArrayType
-      to constant values using the arguments at the instantiation site
-    - Replace parameterized structs with flattened (i.e., no parameter)
-      versions of those structs based on requested return type at calls
-      to `compute()` functions and unroll loops
-    - Unroll loops
+    - Instantiate the main struct, when one is specified.
+    - Instantiate parameterized structs and free functions when concrete
+      template arguments are available at use sites.
+    - Replace instantiated `poly.read_const` uses, symbolic member table
+      offsets, wildcard array reads/writes, and callees rooted at concrete
+      template parameters inside cloned bodies.
+    - Unroll loops with statically-known trip counts. When present, trusted
+      `llzk.loopbounds` annotations determine the trip count. A warning is
+      emitted if this differs from a statically computed count, but the
+      annotation still takes precedence. Loops exceeding `max-unroll` remain
+      rolled. Array type instantiation and propagation still run inside their
+      bodies.
+    - Fold `affine_map` parameters of StructType and ArrayType to constant
+      values using the operands at the instantiation site.
+    - Scalarize pseudo-homogeneous arrays whose static elements refine to
+      different concrete types after instantiation.
+    - Propagate refined types through arrays, members, calls, returns, inferred
+      result types, and unifiable casts until a fixpoint is reached.
+    - Clean up unused parameterized definitions according to the selected
+      cleanup mode, remove empty templates, and remove unused discardable
+      array allocations.
+
+    Note: Adding IR after this pass and rerunning it is not a supported
+    instantiation workflow.
   }];
   // Implementation note: These options should be kept in sync with
   // `StructInliningFlatteningOptions` in `LLZKTransformationPassPipelines.h`.
@@ -225,6 +235,12 @@ def FlatteningPass : LLZKPass<"llzk-flatten"> {
               "is true as well. Thus, the pass will run multiple times "
               "until no further changes can be made or the upper limit "
               "provided in this option is reached.">,
+       Option<
+           "unrollIterationLimit", "max-unroll", "uint64_t",
+           /* default */ "100000",
+           "Maximum trip count for each loop unrolled, including annotated "
+           "loops. Exceeding this limit warns and leaves the loop unchanged. "
+           "A value of zero only permits removal of zero-trip loops.">,
        Option<"cleanupMode", "cleanup",
               "::llzk::polymorphic::FlatteningCleanupMode",
               /* default */

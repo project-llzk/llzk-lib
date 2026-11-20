@@ -199,7 +199,7 @@ module attributes {llzk.lang = "circom"} {
   }
 }
 
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 * 5 + 1)>
 //
 // CHECK-LABEL: module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    poly.template @TGetSum {
@@ -207,24 +207,24 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:      struct.def @GetSum {
 // CHECK-NEXT:        struct.member @out : !felt.type {llzk.pub}
 // CHECK-NEXT:        struct.member @sum : !felt.type
-// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x !felt.type>) -> !struct.type<@TGetSum::@GetSum<[@A]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@TGetSum::@GetSum<[@A]>>
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = felt.const  0
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_\.]+]] = poly.read_const @A : index
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = scf.for %[[VAL_7:[0-9a-zA-Z_\.]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_5]] iter_args(%[[VAL_8:[0-9a-zA-Z_\.]+]] = %[[VAL_2]]) -> (!felt.type) {
-// CHECK-NEXT:            %[[VAL_9:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_7]]] : <@A x !felt.type>, !felt.type
-// CHECK-NEXT:            %[[VAL_10:[0-9a-zA-Z_\.]+]] = felt.add %[[VAL_8]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<@A x !felt.type>) -> !struct.type<@TGetSum::@GetSum<[@A]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@TGetSum::@GetSum<[@A]>>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = felt.const  0
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.read_const @A : index
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = scf.for %[[VAL_7:[0-9a-zA-Z_.-]+]] = %[[VAL_3]] to %[[VAL_4]] step %[[VAL_5]] iter_args(%[[VAL_8:[0-9a-zA-Z_.-]+]] = %[[VAL_2]]) -> (!felt.type) {
+// CHECK-NEXT:            %[[VAL_9:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_0]]{{\[}}%[[VAL_7]]] : <@A x !felt.type>, !felt.type
+// CHECK-NEXT:            %[[VAL_10:[0-9a-zA-Z_.-]+]] = felt.add %[[VAL_8]], %[[VAL_9]] : !felt.type, !felt.type
 // CHECK-NEXT:            scf.yield %[[VAL_10]] : !felt.type
 // CHECK-NEXT:          }
 // CHECK-NEXT:          struct.writem %[[VAL_1]][@sum] = %[[VAL_6]] : <@TGetSum::@GetSum<[@A]>>, !felt.type
 // CHECK-NEXT:          struct.writem %[[VAL_1]][@out] = %[[VAL_6]] : <@TGetSum::@GetSum<[@A]>>, !felt.type
 // CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TGetSum::@GetSum<[@A]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@TGetSum::@GetSum<[@A]>>, %[[VAL_12:[0-9a-zA-Z_\.]+]]: !array.type<@A x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_11]][@sum] : <@TGetSum::@GetSum<[@A]>>, !felt.type
-// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_11]][@out] : <@TGetSum::@GetSum<[@A]>>, !felt.type
+// CHECK-NEXT:        function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@TGetSum::@GetSum<[@A]>>, %[[VAL_12:[0-9a-zA-Z_.-]+]]: !array.type<@A x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_11]][@sum] : <@TGetSum::@GetSum<[@A]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_11]][@out] : <@TGetSum::@GetSum<[@A]>>, !felt.type
 // CHECK-NEXT:          constrain.eq %[[VAL_14]], %[[VAL_13]] : !felt.type, !felt.type
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
@@ -235,12 +235,12 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:      poly.param @T
 // CHECK-NEXT:      struct.def @VarArray {
 // CHECK-NEXT:        struct.member @val : !array.type<@N x !poly.tvar<@T>> {llzk.pub}
-// CHECK-NEXT:        function.def @compute(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_15:[0-9a-zA-Z_.-]+]]: !array.type<@N x !poly.tvar<@T>>) -> !struct.type<@TVarArray::@VarArray<[@N, @T]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.new : <@TVarArray::@VarArray<[@N, @T]>>
 // CHECK-NEXT:          struct.writem %[[VAL_16]][@val] = %[[VAL_15]] : <@TVarArray::@VarArray<[@N, @T]>>, !array.type<@N x !poly.tvar<@T>>
 // CHECK-NEXT:          function.return %[[VAL_16]] : !struct.type<@TVarArray::@VarArray<[@N, @T]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_18:[0-9a-zA-Z_\.]+]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@TVarArray::@VarArray<[@N, @T]>>, %[[VAL_18:[0-9a-zA-Z_.-]+]]: !array.type<@N x !poly.tvar<@T>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -251,56 +251,56 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:        struct.member @ret : !array.type<@P x !felt.type> {llzk.pub}
 // CHECK-NEXT:        struct.member @ws : !array.type<@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>
 // CHECK-NEXT:        struct.member @arrs : !array.type<@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>
-// CHECK-NEXT:        function.def @compute(%[[VAL_19:[0-9a-zA-Z_\.]+]]: !array.type<@P x !felt.type>) -> !struct.type<@TComputeValue::@ComputeValue<[@P]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_20:[0-9a-zA-Z_\.]+]] = struct.new : <@TComputeValue::@ComputeValue<[@P]>>
-// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_\.]+]] = poly.read_const @P : index
-// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:          %[[VAL_24:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>
-// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>
-// CHECK-NEXT:          scf.for %[[VAL_26:[0-9a-zA-Z_\.]+]] = %[[VAL_21]] to %[[VAL_22]] step %[[VAL_23]] {
-// CHECK-NEXT:            %[[VAL_27:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_26]]] : <@P x !felt.type>, !felt.type
-// CHECK-NEXT:            %[[VAL_28:[0-9a-zA-Z_\.]+]] = array.new{(%[[VAL_26]])} : <#[[$M0]] x !felt.type>
-// CHECK-NEXT:            %[[VAL_29:[0-9a-zA-Z_\.]+]] = poly.applymap (%[[VAL_26]]) #[[$M0]]
-// CHECK-NEXT:            scf.for %[[VAL_30:[0-9a-zA-Z_\.]+]] = %[[VAL_21]] to %[[VAL_29]] step %[[VAL_23]] {
-// CHECK-NEXT:              %[[VAL_31:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_30]] : index, !felt.type
-// CHECK-NEXT:              %[[VAL_32:[0-9a-zA-Z_\.]+]] = felt.mul %[[VAL_27]], %[[VAL_31]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.def @compute(%[[VAL_19:[0-9a-zA-Z_.-]+]]: !array.type<@P x !felt.type>) -> !struct.type<@TComputeValue::@ComputeValue<[@P]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_20:[0-9a-zA-Z_.-]+]] = struct.new : <@TComputeValue::@ComputeValue<[@P]>>
+// CHECK-NEXT:          %[[VAL_21:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_22:[0-9a-zA-Z_.-]+]] = poly.read_const @P : index
+// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_24:[0-9a-zA-Z_.-]+]] = array.new  : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:          %[[VAL_25:[0-9a-zA-Z_.-]+]] = array.new  : <@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>
+// CHECK-NEXT:          scf.for %[[VAL_26:[0-9a-zA-Z_.-]+]] = %[[VAL_21]] to %[[VAL_22]] step %[[VAL_23]] {
+// CHECK-NEXT:            %[[VAL_27:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_19]]{{\[}}%[[VAL_26]]] : <@P x !felt.type>, !felt.type
+// CHECK-NEXT:            %[[VAL_28:[0-9a-zA-Z_.-]+]] = array.new{(%[[VAL_26]])} : <#[[$M0]] x !felt.type>
+// CHECK-NEXT:            %[[VAL_29:[0-9a-zA-Z_.-]+]] = poly.applymap (%[[VAL_26]]) #[[$M0]]
+// CHECK-NEXT:            scf.for %[[VAL_30:[0-9a-zA-Z_.-]+]] = %[[VAL_21]] to %[[VAL_29]] step %[[VAL_23]] {
+// CHECK-NEXT:              %[[VAL_31:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[VAL_30]] : index, !felt.type
+// CHECK-NEXT:              %[[VAL_32:[0-9a-zA-Z_.-]+]] = felt.mul %[[VAL_27]], %[[VAL_31]] : !felt.type, !felt.type
 // CHECK-NEXT:              array.write %[[VAL_28]]{{\[}}%[[VAL_30]]] = %[[VAL_32]] : <#[[$M0]] x !felt.type>, !felt.type
 // CHECK-NEXT:            }
-// CHECK-NEXT:            %[[VAL_33:[0-9a-zA-Z_\.]+]] = function.call @TGetSum::@GetSum::@compute(%[[VAL_28]]) {(%[[VAL_26]])} : (!array.type<#[[$M0]] x !felt.type>) -> !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:            %[[VAL_33:[0-9a-zA-Z_.-]+]] = function.call @TGetSum::@GetSum::@compute(%[[VAL_28]]) {(%[[VAL_26]])} : (!array.type<#[[$M0]] x !felt.type>) -> !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
 // CHECK-NEXT:            array.write %[[VAL_24]]{{\[}}%[[VAL_26]]] = %[[VAL_33]] : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>, !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
-// CHECK-NEXT:            %[[VAL_34:[0-9a-zA-Z_\.]+]] = function.call @TVarArray::@VarArray::@compute(%[[VAL_28]]) {(%[[VAL_26]])} : (!array.type<#[[$M0]] x !felt.type>) -> !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>
+// CHECK-NEXT:            %[[VAL_34:[0-9a-zA-Z_.-]+]] = function.call @TVarArray::@VarArray::@compute(%[[VAL_28]]) {(%[[VAL_26]])} : (!array.type<#[[$M0]] x !felt.type>) -> !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>
 // CHECK-NEXT:            array.write %[[VAL_25]]{{\[}}%[[VAL_26]]] = %[[VAL_34]] : <@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>, !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>
 // CHECK-NEXT:          }
 // CHECK-NEXT:          struct.writem %[[VAL_20]][@ws] = %[[VAL_24]] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>
 // CHECK-NEXT:          struct.writem %[[VAL_20]][@arrs] = %[[VAL_25]] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>
-// CHECK-NEXT:          %[[VAL_35:[0-9a-zA-Z_\.]+]] = array.new  : <@P x !felt.type>
-// CHECK-NEXT:          scf.for %[[VAL_36:[0-9a-zA-Z_\.]+]] = %[[VAL_21]] to %[[VAL_22]] step %[[VAL_23]] {
-// CHECK-NEXT:            %[[VAL_37:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_24]]{{\[}}%[[VAL_36]]] : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>, !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
-// CHECK-NEXT:            %[[VAL_38:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_37]][@out] : <@TGetSum::@GetSum<[#[[$M0]]]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_35:[0-9a-zA-Z_.-]+]] = array.new  : <@P x !felt.type>
+// CHECK-NEXT:          scf.for %[[VAL_36:[0-9a-zA-Z_.-]+]] = %[[VAL_21]] to %[[VAL_22]] step %[[VAL_23]] {
+// CHECK-NEXT:            %[[VAL_37:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_24]]{{\[}}%[[VAL_36]]] : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>, !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:            %[[VAL_38:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_37]][@out] : <@TGetSum::@GetSum<[#[[$M0]]]>>, !felt.type
 // CHECK-NEXT:            array.write %[[VAL_35]]{{\[}}%[[VAL_36]]] = %[[VAL_38]] : <@P x !felt.type>, !felt.type
 // CHECK-NEXT:          }
 // CHECK-NEXT:          struct.writem %[[VAL_20]][@ret] = %[[VAL_35]] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !felt.type>
 // CHECK-NEXT:          function.return %[[VAL_20]] : !struct.type<@TComputeValue::@ComputeValue<[@P]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !struct.type<@TComputeValue::@ComputeValue<[@P]>>, %[[VAL_40:[0-9a-zA-Z_\.]+]]: !array.type<@P x !felt.type>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_41:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:          %[[VAL_42:[0-9a-zA-Z_\.]+]] = poly.read_const @P : index
-// CHECK-NEXT:          %[[VAL_43:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:          %[[VAL_44:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_39]][@ws] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>
-// CHECK-NEXT:          %[[VAL_45:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_39]][@arrs] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>
-// CHECK-NEXT:          scf.for %[[VAL_46:[0-9a-zA-Z_\.]+]] = %[[VAL_41]] to %[[VAL_42]] step %[[VAL_43]] {
-// CHECK-NEXT:            %[[VAL_47:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_44]]{{\[}}%[[VAL_46]]] : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>, !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
-// CHECK-NEXT:            %[[VAL_48:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_40]]{{\[}}%[[VAL_46]]] : <@P x !felt.type>, !felt.type
-// CHECK-NEXT:            %[[VAL_49:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_45]]{{\[}}%[[VAL_46]]] : <@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>, !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>
-// CHECK-NEXT:            %[[VAL_50:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_49]][@val] : <@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>, !array.type<#[[$M0]] x !felt.type>
+// CHECK-NEXT:        function.def @constrain(%[[VAL_39:[0-9a-zA-Z_.-]+]]: !struct.type<@TComputeValue::@ComputeValue<[@P]>>, %[[VAL_40:[0-9a-zA-Z_.-]+]]: !array.type<@P x !felt.type>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_41:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_42:[0-9a-zA-Z_.-]+]] = poly.read_const @P : index
+// CHECK-NEXT:          %[[VAL_43:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_44:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_39]][@ws] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>
+// CHECK-NEXT:          %[[VAL_45:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_39]][@arrs] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>
+// CHECK-NEXT:          scf.for %[[VAL_46:[0-9a-zA-Z_.-]+]] = %[[VAL_41]] to %[[VAL_42]] step %[[VAL_43]] {
+// CHECK-NEXT:            %[[VAL_47:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_44]]{{\[}}%[[VAL_46]]] : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>, !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:            %[[VAL_48:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_40]]{{\[}}%[[VAL_46]]] : <@P x !felt.type>, !felt.type
+// CHECK-NEXT:            %[[VAL_49:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_45]]{{\[}}%[[VAL_46]]] : <@P x !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>>, !struct.type<@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>
+// CHECK-NEXT:            %[[VAL_50:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_49]][@val] : <@TVarArray::@VarArray<[#[[$M0]], !felt.type]>>, !array.type<#[[$M0]] x !felt.type>
 // CHECK-NEXT:            function.call @TGetSum::@GetSum::@constrain(%[[VAL_47]], %[[VAL_50]]) : (!struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>, !array.type<#[[$M0]] x !felt.type>) -> ()
 // CHECK-NEXT:          }
-// CHECK-NEXT:          %[[VAL_51:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_39]][@ret] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !felt.type>
-// CHECK-NEXT:          scf.for %[[VAL_52:[0-9a-zA-Z_\.]+]] = %[[VAL_41]] to %[[VAL_42]] step %[[VAL_43]] {
-// CHECK-NEXT:            %[[VAL_53:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_51]]{{\[}}%[[VAL_52]]] : <@P x !felt.type>, !felt.type
-// CHECK-NEXT:            %[[VAL_54:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_44]]{{\[}}%[[VAL_52]]] : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>, !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
-// CHECK-NEXT:            %[[VAL_55:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_54]][@out] : <@TGetSum::@GetSum<[#[[$M0]]]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_51:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_39]][@ret] : <@TComputeValue::@ComputeValue<[@P]>>, !array.type<@P x !felt.type>
+// CHECK-NEXT:          scf.for %[[VAL_52:[0-9a-zA-Z_.-]+]] = %[[VAL_41]] to %[[VAL_42]] step %[[VAL_43]] {
+// CHECK-NEXT:            %[[VAL_53:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_51]]{{\[}}%[[VAL_52]]] : <@P x !felt.type>, !felt.type
+// CHECK-NEXT:            %[[VAL_54:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_44]]{{\[}}%[[VAL_52]]] : <@P x !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>>, !struct.type<@TGetSum::@GetSum<[#[[$M0]]]>>
+// CHECK-NEXT:            %[[VAL_55:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_54]][@out] : <@TGetSum::@GetSum<[#[[$M0]]]>>, !felt.type
 // CHECK-NEXT:            constrain.eq %[[VAL_53]], %[[VAL_55]] : !felt.type, !felt.type
 // CHECK-NEXT:          }
 // CHECK-NEXT:          function.return
@@ -309,14 +309,14 @@ module attributes {llzk.lang = "circom"} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      struct.member @sub : !struct.type<@TComputeValue::@ComputeValue<[3]>>
-// CHECK-NEXT:      function.def @compute(%[[VAL_56:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type> {llzk.pub}) -> !struct.type<@Main> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_\.]+]] = function.call @TComputeValue::@ComputeValue::@compute(%[[VAL_56]]) : (!array.type<3 x !felt.type>) -> !struct.type<@TComputeValue::@ComputeValue<[3]>>
+// CHECK-NEXT:      function.def @compute(%[[VAL_56:[0-9a-zA-Z_.-]+]]: !array.type<3 x !felt.type> {llzk.pub}) -> !struct.type<@Main> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_57:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_58:[0-9a-zA-Z_.-]+]] = function.call @TComputeValue::@ComputeValue::@compute(%[[VAL_56]]) : (!array.type<3 x !felt.type>) -> !struct.type<@TComputeValue::@ComputeValue<[3]>>
 // CHECK-NEXT:        struct.writem %[[VAL_57]][@sub] = %[[VAL_58]] : <@Main>, !struct.type<@TComputeValue::@ComputeValue<[3]>>
 // CHECK-NEXT:        function.return %[[VAL_57]] : !struct.type<@Main>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_59:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_60:[0-9a-zA-Z_\.]+]]: !array.type<3 x !felt.type> {llzk.pub}) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_61:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_59]][@sub] : <@Main>, !struct.type<@TComputeValue::@ComputeValue<[3]>>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_59:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_60:[0-9a-zA-Z_.-]+]]: !array.type<3 x !felt.type> {llzk.pub}) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_61:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_59]][@sub] : <@Main>, !struct.type<@TComputeValue::@ComputeValue<[3]>>
 // CHECK-NEXT:        function.call @TComputeValue::@ComputeValue::@constrain(%[[VAL_61]], %[[VAL_60]]) : (!struct.type<@TComputeValue::@ComputeValue<[3]>>, !array.type<3 x !felt.type>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

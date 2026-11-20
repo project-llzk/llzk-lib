@@ -19,6 +19,7 @@
 #include "llzk/Dialect/Felt/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/Global/IR/Ops.h"
+#include "llzk/Dialect/LLZK/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/Transforms/TransformationPasses.h"
 #include "llzk/Dialect/Polymorphic/Util/StaticLoop.h"
@@ -46,6 +47,38 @@ using namespace llzk::polymorphic;
 using namespace llzk::polymorphic::detail;
 
 namespace {
+/// Combine compatible array/POD shapes recursively, retaining read-side leaf identities.
+/// Call only after storage description has verified that the two types unify.
+Type refineMemberShape(Type readType, Type declaredType) {
+  if (auto readArray = dyn_cast<array::ArrayType>(readType)) {
+    auto declaredArray = llvm::cast<array::ArrayType>(declaredType);
+    SmallVector<Attribute> dimensions(readArray.getDimensionSizes());
+    for (size_t i = 0; i < dimensions.size(); ++i) {
+      if (readArray.getShape()[i] == ShapedType::kDynamic && declaredArray.getShape()[i] >= 0) {
+        dimensions[i] = declaredArray.getDimensionSizes()[i];
+      }
+    }
+    return readArray.cloneWith(
+        refineMemberShape(readArray.getElementType(), declaredArray.getElementType()), dimensions
+    );
+  }
+  if (auto readPod = dyn_cast<pod::PodType>(readType)) {
+    auto declaredPod = llvm::cast<pod::PodType>(declaredType);
+    SmallVector<pod::RecordAttr> records;
+    for (auto [readRecord, declaredRecord] :
+         llvm::zip(readPod.getRecords(), declaredPod.getRecords())) {
+      records.push_back(
+          pod::RecordAttr::get(
+              readType.getContext(), readRecord.getName(),
+              refineMemberShape(readRecord.getType(), declaredRecord.getType())
+          )
+      );
+    }
+    return pod::PodType::get(readType.getContext(), records);
+  }
+  return readType;
+}
+
 /// Expand structural control flow while leaving ordinary expressions as SSA.
 class ConstraintElaborator {
   ModuleOp module;
@@ -57,8 +90,6 @@ class ConstraintElaborator {
   /// Scalar facts requested by structural control, paths, and assertions.
   ConstraintScalarFacts facts;
   std::optional<ConstraintStorage> storage;
-  uint64_t steps = 0;
-  uint64_t limit;
   ConstraintBindings bindings;
   /// Live unresolved scalar storage reads are rejected after dead SSA removal.
   llvm::DenseSet<Operation *> nonSignalReads;
@@ -254,7 +285,8 @@ class ConstraintElaborator {
       return failure();
     }
     if (aggregate(op.getType())) {
-      frame[op.getResult()] = bindings.create(op.getType(), {}, emitted.getResult());
+      Type bindingType = refineMemberShape(op.getType(), info->memberType);
+      frame[op.getResult()] = bindings.create(bindingType, {}, emitted.getResult());
     } else {
       frame[op.getResult()] = emitted.getResult();
       if (!isa<StructType>(op.getType()) && !info->signal) {
@@ -335,7 +367,7 @@ class ConstraintElaborator {
   /// Recognize integer computations by shape, independently of their dialect.
   /// These may be evaluated temporarily, but are never approved output operations.
   static bool isIntegerExpression(Operation &op) {
-    return !op.getNumRegions() && op.getNumResults() && isMemoryEffectFree(&op) &&
+    return op.getNumRegions() == 0u && op.getNumResults() != 0u && isMemoryEffectFree(&op) &&
            llvm::all_of(op.getResultTypes(), [](Type type) {
       return isa<IndexType, IntegerType>(type);
     });
@@ -364,13 +396,34 @@ class ConstraintElaborator {
   /// Evaluate non-native field arithmetic under the given environment.
   /// Require every result to fold to a field constant.
   LogicalResult evaluateNonNative(Operation &op, Environment &frame) {
-    if (op.getNumRegions() || !op.getNumResults() || !isMemoryEffectFree(&op) ||
+    if (op.getNumRegions() != 0u || op.getNumResults() == 0u || !isMemoryEffectFree(&op) ||
         !llvm::all_of(op.getResultTypes(), [](Type type) { return isa<felt::FeltType>(type); })) {
       return constraintError(&op, "lower non-native operations before constraint flattening");
     }
     auto mapping = scalarMapping(op, frame);
     if (failed(mapping)) {
       return failure();
+    }
+    // A field left shift with a known amount is multiplication by 2^amount.
+    // Fold that factor using the shift's own modular semantics, including large
+    // unsigned shift representatives. Right shifts retain integer semantics.
+    if (auto shift = dyn_cast<felt::ShlFeltOp>(op); shift &&
+                                                    !facts.known(mapping->lookup(shift.getLhs())) &&
+                                                    facts.known(mapping->lookup(shift.getRhs()))) {
+      Value lhs = mapping->lookup(shift.getLhs());
+      auto one = felt::FeltConstAttr::get(
+          op.getContext(), llvm::DynamicAPInt(1), llvm::cast<felt::FeltType>(shift.getType())
+      );
+      mapping->map(shift.getLhs(), felt::FeltConstantOp::create(builder, op.getLoc(), one));
+      Operation *factor = builder.clone(op, *mapping);
+      auto constant = dyn_cast_or_null<felt::FeltConstAttr>(facts.known(factor->getResult(0)));
+      if (!constant) {
+        return constraintError(&op, "lower non-native operations before constraint flattening");
+      }
+      Value multiplier = felt::FeltConstantOp::create(builder, op.getLoc(), constant);
+      frame[shift.getResult()] =
+          Value(felt::MulFeltOp::create(builder, op.getLoc(), lhs, multiplier));
+      return success();
     }
     Operation *emitted = builder.clone(op, *mapping);
     for (auto [source, result] : llvm::zip_equal(op.getResults(), emitted->getResults())) {
@@ -555,6 +608,9 @@ class ConstraintElaborator {
 
   /// Recheck the scalar condition and carry SSA yields between iterations.
   LogicalResult whileLoop(scf::WhileOp op, Environment &frame) {
+    if (isInvariantTrueCondition(op.getConditionOp().getCondition())) {
+      return constraintError(op, "cannot execute an always-true while loop");
+    }
     SmallVector<BoundValue> carried;
     for (Value value : op.getInits()) {
       carried.push_back(frame.lookup(value));
@@ -668,6 +724,14 @@ class ConstraintElaborator {
         .Case<array::CreateArrayOp>([this, &frame](auto allocation) {
       return arrayNew(allocation, frame);
     })
+        .Case<NonDetOp>([this, &frame](auto allocation) {
+      if (!aggregate(allocation.getType())) {
+        return emit(*allocation, frame);
+      }
+      // Uninitialized aggregate leaves may be overwritten but never read.
+      frame[allocation.getResult()] = bindings.create(allocation.getType());
+      return success();
+    })
         .Case<pod::NewPodOp>([this, &frame](auto allocation) { return podNew(allocation, frame); })
         .Case<array::ReadArrayOp, array::ExtractArrayOp>([this, &frame](auto read) {
       return arrayRead(read, frame);
@@ -685,9 +749,6 @@ class ConstraintElaborator {
   /// Visit source operations once per execution; all ordinary values remain SSA.
   LogicalResult expand(Block &block, Environment &frame, SmallVectorImpl<BoundValue> &results) {
     for (Operation &op : block) {
-      if (++steps > limit) {
-        return constraintError(&op, "evaluation step limit exceeded");
-      }
       if (isa<ReturnOp, scf::YieldOp, scf::ConditionOp>(op)) {
         for (Value value : op.getOperands()) {
           results.push_back(frame.lookup(value));
@@ -704,7 +765,7 @@ class ConstraintElaborator {
   /// Check every surviving operation against the flattened-output contract.
   /// This check does not depend on how an operation reached the output region.
   LogicalResult validateOperation(Operation &op) {
-    if (op.getNumRegions()) {
+    if (op.getNumRegions() != 0u) {
       return constraintError(&op, "regions are unsupported in flattened constraints");
     }
     if (isFieldExpression(op) || isa<constrain::EmitEqualityOp>(op)) {
@@ -798,9 +859,8 @@ class ConstraintElaborator {
   }
 
 public:
-  ConstraintElaborator(ModuleOp root, uint64_t maximum)
-      : module(root), builder(root.getContext()), limit(maximum),
-        bindings(root.getContext(), steps, maximum) {}
+  explicit ConstraintElaborator(ModuleOp root)
+      : module(root), builder(root.getContext()), bindings(root.getContext()) {}
 
   /// Preserve main's signature and commit only the complete validated body.
   LogicalResult run() {
@@ -819,7 +879,7 @@ public:
     }
     output.push_back(new Block());
     SmallVector<BoundValue> arguments;
-    for (auto [i, argument] : llvm::enumerate(source.getArguments())) {
+    for (BlockArgument argument : source.getArguments()) {
       Value emitted = output.front().addArgument(argument.getType(), argument.getLoc());
       if (aggregate(argument.getType())) {
         arguments.push_back(bindings.create(argument.getType(), argument, emitted));
@@ -842,7 +902,7 @@ class PassImpl : public llzk::polymorphic::impl::ConstraintFlatteningPassBase<Pa
   using Base::Base;
 
   void runOnOperation() override {
-    if (failed(ConstraintElaborator(getOperation(), evaluationLimit).run())) {
+    if (failed(ConstraintElaborator(getOperation()).run())) {
       signalPassFailure();
     }
   }

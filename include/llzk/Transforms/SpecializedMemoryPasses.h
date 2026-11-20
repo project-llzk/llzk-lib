@@ -154,7 +154,12 @@ class RemoveDeadValuesWorkaroundPass
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(RemoveDeadValuesWorkaroundPass)
 
-  llvm::StringRef getArgument() const override { return "remove-dead-values"; }
+  // MLIR Python already registers the upstream `remove-dead-values` pass, so this
+  // wrapper needs a distinct name. llzk::registerPasses() keeps the historical
+  // name as a pipeline alias that adds this wrapper. Pipeline aliases take
+  // precedence over pass names in textual pipelines, and llzk-opt also accepts
+  // the alias as --remove-dead-values.
+  llvm::StringRef getArgument() const override { return "llzk-remove-dead-values"; }
   llvm::StringRef getDescription() const override { return "Remove dead values"; }
 
   void getDependentDialects(mlir::DialectRegistry &registry) const override {

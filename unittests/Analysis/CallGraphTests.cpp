@@ -27,7 +27,7 @@ protected:
   mlir::OwningOpRef<mlir::ModuleOp> mod;
   ModuleBuilder builder;
 
-  CallGraphTests() : LLZKTest(), mod(createLLZKModule(&ctx)), builder(mod.get()) {}
+  CallGraphTests() : mod(createLLZKModule(&ctx)), builder(mod.get()) {}
 
   void SetUp() override {
     // Create a new module and builder for each test.

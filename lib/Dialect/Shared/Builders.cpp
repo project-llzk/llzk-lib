@@ -42,70 +42,70 @@ void addLangAttrForLLZKDialect(ModuleOp mod) {
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchFreeFunc(std::string_view funcName) {
-  if (freeFuncMap.find(funcName) != freeFuncMap.end()) {
+  if (freeFuncMap.contains(funcName)) {
     llvm::report_fatal_error("global function " + Twine(funcName) + " already exists!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureFreeFnExists(std::string_view funcName) {
-  if (freeFuncMap.find(funcName) == freeFuncMap.end()) {
+  if (!freeFuncMap.contains(funcName)) {
     llvm::report_fatal_error("global function " + Twine(funcName) + " does not exist!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchStruct(std::string_view structName) {
-  if (structMap.find(structName) != structMap.end()) {
+  if (structMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already exists!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureStructExists(std::string_view structName) {
-  if (structMap.find(structName) == structMap.end()) {
+  if (!structMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " does not exist!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchComputeFn(std::string_view structName) {
-  if (computeFnMap.find(structName) != computeFnMap.end()) {
+  if (computeFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already has a compute function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureComputeFnExists(std::string_view structName) {
-  if (computeFnMap.find(structName) == computeFnMap.end()) {
+  if (!computeFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " has no compute function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchConstrainFn(std::string_view structName) {
-  if (constrainFnMap.find(structName) != constrainFnMap.end()) {
+  if (constrainFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already has a constrain function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureConstrainFnExists(std::string_view structName) {
-  if (constrainFnMap.find(structName) == constrainFnMap.end()) {
+  if (!constrainFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " has no constrain function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureNoSuchProductFn(std::string_view structName) {
-  if (productFnMap.find(structName) != productFnMap.end()) {
+  if (productFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " already has a product function!");
   }
 }
 
 template <typename Derived>
 void ModuleLikeBuilder<Derived>::ensureProductFnExists(std::string_view structName) {
-  if (productFnMap.find(structName) == productFnMap.end()) {
+  if (!productFnMap.contains(structName)) {
     llvm::report_fatal_error("struct " + Twine(structName) + " has no product function!");
   }
 }
@@ -304,13 +304,13 @@ Derived &ModuleLikeBuilder<Derived>::insertFreeCall(
 /* ModuleBuilder */
 
 void ModuleBuilder::ensureNoSuchTemplate(std::string_view templateName) {
-  if (templateMap.find(templateName) != templateMap.end()) {
+  if (templateMap.contains(templateName)) {
     llvm::report_fatal_error("template " + Twine(templateName) + " already exists!");
   }
 }
 
 void ModuleBuilder::ensureTemplateExists(std::string_view templateName) {
-  if (templateMap.find(templateName) == templateMap.end()) {
+  if (!templateMap.contains(templateName)) {
     llvm::report_fatal_error("template " + Twine(templateName) + " does not exist!");
   }
 }
@@ -335,13 +335,13 @@ ModuleBuilder::insertTemplate(std::string_view templateName, Location loc, unsig
 }
 
 void ModuleBuilder::ensureNoSuchNestedModule(std::string_view moduleName) {
-  if (nestedModuleMap.find(moduleName) != nestedModuleMap.end()) {
+  if (nestedModuleMap.contains(moduleName)) {
     llvm::report_fatal_error("nested module " + Twine(moduleName) + " already exists!");
   }
 }
 
 void ModuleBuilder::ensureNestedModuleExists(std::string_view moduleName) {
-  if (nestedModuleMap.find(moduleName) == nestedModuleMap.end()) {
+  if (!nestedModuleMap.contains(moduleName)) {
     llvm::report_fatal_error("nested module " + Twine(moduleName) + " does not exist!");
   }
 }

@@ -1,0 +1,56 @@
+// RUN: llzk-opt -llzk-flatten %s | FileCheck %s
+
+#id = affine_map<(i) -> (i)>
+!Element = !pod.type<[@data: !array.type<#id x !felt.type>]>
+!Zero = !pod.type<[@data: !array.type<0 x !felt.type>]>
+module attributes {llzk.lang} {
+  // A generic read can appear on either side of an equality with a concrete POD.
+  function.def @concrete(%expected: !Zero) attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    %read = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    constrain.eq %read, %expected : !Element, !Zero
+    constrain.eq %expected, %read : !Zero, !Element
+    constrain.eq %read, %read : !Element, !Element
+    function.return
+  }
+
+  // Both operands are reads whose planned index-specific types must agree.
+  function.def @planned() attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    %otherFirst = llzk.nondet : !Element
+    %otherSecond = llzk.nondet : !Element
+    %otherArray = array.new %otherFirst, %otherSecond : !array.type<2 x !Element>
+    %lhs = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    %rhs = array.read %otherArray[%c0] : !array.type<2 x !Element>, !Element
+    constrain.eq %lhs, %rhs : !Element, !Element
+    function.return
+  }
+}
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
+// CHECK-LABEL: module attributes {llzk.lang} {
+// CHECK-NEXT:    function.def @concrete(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !pod.type<[@data: !array.type<0 x !felt.type>]>) attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      constrain.eq %[[VAL_2]], %[[VAL_0]] : !pod.type<[@data: !array.type<0 x !felt.type>]>, !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      constrain.eq %[[VAL_0]], %[[VAL_2]] : !pod.type<[@data: !array.type<0 x !felt.type>]>, !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      constrain.eq %[[VAL_2]], %[[VAL_2]] : !pod.type<[@data: !array.type<0 x !felt.type>]>, !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:    function.def @planned() attributes {function.allow_constraint, function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@data: !array.type<#[[$ATTR_0]] x !felt.type>]>
+// CHECK-NEXT:      constrain.eq %[[VAL_5]], %[[VAL_8]] : !pod.type<[@data: !array.type<0 x !felt.type>]>, !pod.type<[@data: !array.type<0 x !felt.type>]>
+// CHECK-NEXT:      function.return
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -41,10 +41,10 @@ module attributes {llzk.lang, test.field = !felt.type<"babybear">} {
 
 // IR-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
 // IR-NEXT:    func.func @SignedLiterals() -> (!pcl.felt, !pcl.felt, !pcl.felt, !pcl.felt) {
-// IR-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const -1
-// IR-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const -42
-// IR-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.const -18446744073709551617
-// IR-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.const 18446744073709551615
+// IR-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = pcl.const -1
+// IR-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.const -42
+// IR-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = pcl.const -18446744073709551617
+// IR-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = pcl.const 18446744073709551615
 
 // LISP-LABEL: (prime-number 2013265921)
 // LISP-NEXT:  (begin-module SignedLiterals)

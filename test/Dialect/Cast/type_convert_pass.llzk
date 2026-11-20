@@ -5,8 +5,8 @@ function.def @felt_to_index(%a: !felt.type) -> index attributes {function.allow_
   function.return %b: index
 }
 //CHECK-LABEL: function.def @felt_to_index(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.type) -> index attributes {function.allow_non_native_field_ops} {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.toindex %[[A0]]
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_.-]+]]: !felt.type) -> index attributes {function.allow_non_native_field_ops} {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_.-]+]] = cast.toindex %[[A0]]
 //CHECK-NEXT:    function.return %[[T0]] : index
 //CHECK-NEXT:  }
 // -----
@@ -16,8 +16,8 @@ function.def @i1_to_felt(%a: i1) -> !felt.type {
   function.return %b: !felt.type
 }
 //CHECK-LABEL: function.def @i1_to_felt(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : i1
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_.-]+]]: i1) -> !felt.type {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[A0]] : i1
 //CHECK-NEXT:    function.return %[[T0]] : !felt.type
 //CHECK-NEXT:  }
 // -----
@@ -27,8 +27,8 @@ function.def @i1_to_felt_explicit_type(%a: i1) -> !felt.type {
   function.return %b: !felt.type
 }
 //CHECK-LABEL: function.def @i1_to_felt_explicit_type(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : i1, !felt.type
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_.-]+]]: i1) -> !felt.type {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[A0]] : i1, !felt.type
 //CHECK-NEXT:    function.return %[[T0]] : !felt.type
 //CHECK-NEXT:  }
 // -----
@@ -38,8 +38,8 @@ function.def @i1_to_felt_explicit_type_with_field(%a: i1) -> !felt.type<"bn128">
   function.return %b: !felt.type<"bn128">
 }
 //CHECK-LABEL: function.def @i1_to_felt_explicit_type_with_field(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: i1) -> !felt.type<"bn128"> {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : i1, !felt.type<"bn128">
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_.-]+]]: i1) -> !felt.type<"bn128"> {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[A0]] : i1, !felt.type<"bn128">
 //CHECK-NEXT:    function.return %[[T0]] : !felt.type<"bn128">
 //CHECK-NEXT:  }
 // -----
@@ -49,8 +49,8 @@ function.def @index_to_felt(%a: index) -> !felt.type {
   function.return %b: !felt.type
 }
 //CHECK-LABEL: function.def @index_to_felt(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: index) -> !felt.type {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[A0]] : index
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_.-]+]]: index) -> !felt.type {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[A0]] : index
 //CHECK-NEXT:    function.return %[[T0]] : !felt.type
 //CHECK-NEXT:  }
 // -----
@@ -61,9 +61,9 @@ function.def @lt_felt(%a: !felt.type, %b: !felt.type) -> !felt.type {
   function.return %1: !felt.type
 }
 //CHECK-LABEL: function.def @lt_felt(
-//CHECK-SAME:  %[[A0:[0-9a-zA-Z_\.]+]]: !felt.type, %[[A1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
-//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_\.]+]] = bool.cmp lt(%[[A0]], %[[A1]])
-//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[T0]] : i1
+//CHECK-SAME:  %[[A0:[0-9a-zA-Z_.-]+]]: !felt.type, %[[A1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type {
+//CHECK-NEXT:    %[[T0:[0-9a-zA-Z_.-]+]] = bool.cmp lt(%[[A0]], %[[A1]])
+//CHECK-NEXT:    %[[T1:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[T0]] : i1
 //CHECK-NEXT:    function.return %[[T1]] : !felt.type
 //CHECK-NEXT:  }
 // -----
@@ -85,13 +85,13 @@ module attributes {llzk.lang} {
 //CHECK-LABEL: struct.def @C3 {
 //CHECK-NEXT:    struct.member @f1 : !felt.type {signal}
 //CHECK-NEXT:    function.def @compute() -> !struct.type<@C3> attributes {function.allow_witness} {
-//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@C3>
+//CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@C3>
 //CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@C3>
 //CHECK-NEXT:    }
 //CHECK-NEXT:    function.def @constrain(
-//CHECK-SAME:    %[[A0:[0-9a-zA-Z_\.]+]]: !struct.type<@C3>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_\.]+]] = struct.readm %[[A0]][@f1] : <@C3>, !felt.type
-//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_\.]+]] = cast.toindex %[[T0]]
+//CHECK-SAME:    %[[A0:[0-9a-zA-Z_.-]+]]: !struct.type<@C3>) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+//CHECK-NEXT:      %[[T0:[0-9a-zA-Z_.-]+]] = struct.readm %[[A0]][@f1] : <@C3>, !felt.type
+//CHECK-NEXT:      %[[T1:[0-9a-zA-Z_.-]+]] = cast.toindex %[[T0]]
 //CHECK-NEXT:      function.return
 //CHECK-NEXT:    }
 //CHECK-NEXT:  }

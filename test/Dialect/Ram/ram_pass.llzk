@@ -15,14 +15,14 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: struct.def @TestRoundTrip {
 // CHECK-NEXT:    function.def @compute() -> !struct.type<@TestRoundTrip> attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[V:[0-9a-zA-Z_\.]+]] = felt.const  42
+// CHECK-NEXT:      %[[C0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[V:[0-9a-zA-Z_.-]+]] = felt.const  42
 // CHECK-NEXT:      ram.store %[[C0]], %[[V]] : !felt.type
-// CHECK-NEXT:      %[[LOADED:[0-9a-zA-Z_\.]+]] = ram.load %[[C0]] : !felt.type
-// CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@TestRoundTrip>
+// CHECK-NEXT:      %[[LOADED:[0-9a-zA-Z_.-]+]] = ram.load %[[C0]] : !felt.type
+// CHECK-NEXT:      %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@TestRoundTrip>
 // CHECK-NEXT:      function.return %[[SELF]] : !struct.type<@TestRoundTrip>
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @constrain(%[[ARG0:[0-9a-zA-Z_\.]+]]: !struct.type<@TestRoundTrip>) attributes {function.allow_constraint} {
+// CHECK-NEXT:    function.def @constrain(%[[ARG0:[0-9a-zA-Z_.-]+]]: !struct.type<@TestRoundTrip>) attributes {function.allow_constraint} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -38,9 +38,9 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @TestRoundTrip() -> !felt.type attributes {function.allow_witness} {
-// CHECK-NEXT:    %[[C0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:    %[[V:[0-9a-zA-Z_\.]+]] = felt.const  42
+// CHECK-NEXT:    %[[C0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:    %[[V:[0-9a-zA-Z_.-]+]] = felt.const  42
 // CHECK-NEXT:    ram.store %[[C0]], %[[V]] : !felt.type
-// CHECK-NEXT:    %[[LOADED:[0-9a-zA-Z_\.]+]] = ram.load %[[C0]] : !felt.type
+// CHECK-NEXT:    %[[LOADED:[0-9a-zA-Z_.-]+]] = ram.load %[[C0]] : !felt.type
 // CHECK-NEXT:    function.return %[[LOADED]] : !felt.type
 // CHECK-NEXT:  }

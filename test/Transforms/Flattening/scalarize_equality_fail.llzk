@@ -1,0 +1,65 @@
+// RUN: llzk-opt -llzk-flatten -split-input-file -verify-diagnostics %s
+
+// The concrete other operand cannot accept the index-zero replacement.
+#id = affine_map<(i) -> (i)>
+!Element = !pod.type<[@data: !array.type<#id x !felt.type>]>
+!One = !pod.type<[@data: !array.type<1 x !felt.type>]>
+module attributes {llzk.lang} {
+  function.def @concrete_lhs(%expected: !One) attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with an equality constraint}}
+    %read = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    // expected-note@+1 {{other equality operand requires '!pod.type<[@data: !array.type<1 x !felt.type>]>', but this read is replaced with '!pod.type<[@data: !array.type<0 x !felt.type>]>'}}
+    constrain.eq %read, %expected : !Element, !One
+    function.return
+  }
+}
+
+// -----
+
+// The concrete other operand cannot accept the index-zero replacement.
+#id = affine_map<(i) -> (i)>
+!Element = !pod.type<[@data: !array.type<#id x !felt.type>]>
+!One = !pod.type<[@data: !array.type<1 x !felt.type>]>
+module attributes {llzk.lang} {
+  function.def @concrete_rhs(%expected: !One) attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with an equality constraint}}
+    %read = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    // expected-note@+1 {{other equality operand requires '!pod.type<[@data: !array.type<1 x !felt.type>]>', but this read is replaced with '!pod.type<[@data: !array.type<0 x !felt.type>]>'}}
+    constrain.eq %expected, %read : !One, !Element
+    function.return
+  }
+}
+
+// -----
+
+// Both reads are currently generic, but their planned types disagree. The
+// rejection must happen in scalarization preflight, before either read changes.
+#id = affine_map<(i) -> (i)>
+!Element = !pod.type<[@data: !array.type<#id x !felt.type>]>
+!One = !pod.type<[@data: !array.type<1 x !felt.type>]>
+module attributes {llzk.lang} {
+  function.def @planned_conflict() attributes {function.allow_constraint, function.allow_witness} {
+    %c0 = arith.constant 0 : index
+    %first = llzk.nondet : !Element
+    %second = llzk.nondet : !Element
+    %array = array.new %first, %second : !array.type<2 x !Element>
+    %c1 = arith.constant 1 : index
+    %otherFirst = llzk.nondet : !Element
+    %otherSecond = llzk.nondet : !Element
+    %otherArray = array.new %otherFirst, %otherSecond : !array.type<2 x !Element>
+    // expected-error@+1 {{cannot scalarize heterogeneous array read because its index-specific value type is incompatible with an equality constraint}}
+    %lhs = array.read %array[%c0] : !array.type<2 x !Element>, !Element
+    %rhs = array.read %otherArray[%c1] : !array.type<2 x !Element>, !Element
+    // expected-note@+1 {{other equality operand requires '!pod.type<[@data: !array.type<1 x !felt.type>]>', but this read is replaced with '!pod.type<[@data: !array.type<0 x !felt.type>]>'}}
+    constrain.eq %lhs, %rhs : !Element, !Element
+    function.return
+  }
+}

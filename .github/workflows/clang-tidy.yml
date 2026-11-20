@@ -54,6 +54,16 @@ jobs:
         with:
           version: ${{ steps.clang.outputs.bin }}
           database: build
+          # Standalone headers can inherit a compile command from another backend.
+          # Use absolute paths because compile commands run from the build directory.
+          # Match CMake's SYSTEM treatment of generated headers.
+          extra-args: >-
+            -I${{ github.workspace }}/backends/pcl/include
+            -isystem${{ github.workspace }}/build/backends/pcl/include
+            -I${{ github.workspace }}/backends/r1cs/include
+            -isystem${{ github.workspace }}/build/backends/r1cs/include
+            -I${{ github.workspace }}/backends/zklean/include
+            -isystem${{ github.workspace }}/build/backends/zklean/include
           style: '' # Disable clang-format; it has a separate workflow.
           tidy-checks: '' # Use .clang-tidy.
           files-changed-only: true

@@ -180,7 +180,7 @@ mlir::ConversionTarget newConverterDefinedTarget(
 ) {
   static EmptyLegalityCheckCallback empty;
   return newConverterDefinedTargetWithCallback<AdditionalOpClasses...>(
-      tyConv, ctx, empty, (std::forward<AdditionalChecks>(checks))...
+      tyConv, ctx, empty, std::forward<AdditionalChecks>(checks)...
   );
 }
 

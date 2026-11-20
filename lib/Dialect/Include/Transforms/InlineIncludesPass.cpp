@@ -19,6 +19,7 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/LogicalResult.h>
 
 // Include the generated base pass class definitions.
@@ -35,7 +36,7 @@ using IncludeStack = std::vector<std::pair<StringRef, Location>>;
 
 inline bool contains(IncludeStack &stack, StringRef &&loc) {
   auto path_match = [loc](std::pair<StringRef, Location> &p) { return p.first == loc; };
-  return std::find_if(stack.begin(), stack.end(), path_match) != stack.end();
+  return llvm::find_if(stack, path_match) != stack.end();
 }
 
 class PassImpl : public llzk::include::impl::InlineIncludesPassBase<PassImpl> {
@@ -60,12 +61,12 @@ class PassImpl : public llzk::include::impl::InlineIncludesPassBase<PassImpl> {
             }
             err.report();
           } else {
-            includeStack.push_back(std::make_pair(incOp.getPath(), incOp.getLoc()));
+            includeStack.emplace_back(incOp.getPath(), incOp.getLoc());
             FailureOr<ModuleOp> result = incOp.inlineAndErase();
             if (succeeded(result)) {
               ModuleOp newMod = result.value();
               assert(succeeded(newMod.verify()) && "newMod must pass verification");
-              nextLevel.push_back(make_pair(newMod, includeStack));
+              nextLevel.emplace_back(newMod, includeStack);
             }
           }
           // Advance in either case so as many errors as possible are found in a single run.

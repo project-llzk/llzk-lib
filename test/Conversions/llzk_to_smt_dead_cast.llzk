@@ -20,11 +20,11 @@ module attributes {llzk.lang} {
 }
 
 // OPT-LABEL: module attributes {llzk.lang} {
-// OPT-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.int) {
-// OPT-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
-// OPT-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495616
-// OPT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_1]], %[[VAL_2]]
-// OPT-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_1]], %[[VAL_3]]
+// OPT-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !smt.int) {
+// OPT-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = smt.int.constant 0
+// OPT-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = smt.int.constant 21888242871839275222246405745257275088548364400416034343698204186575808495616
+// OPT-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = smt.int.cmp ge %[[VAL_1]], %[[VAL_2]]
+// OPT-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = smt.int.cmp le %[[VAL_1]], %[[VAL_3]]
 // OPT-NEXT:      smt.assert %[[VAL_4]]
 // OPT-NEXT:      smt.assert %[[VAL_5]]
 // OPT-NEXT:      return
@@ -32,7 +32,7 @@ module attributes {llzk.lang} {
 // OPT-NEXT:  }
 
 // NAIVE-LABEL: module attributes {llzk.lang} {
-// NAIVE-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.int) {
+// NAIVE-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !smt.int) {
 // NAIVE-NEXT:      return
 // NAIVE-NEXT:    }
 // NAIVE-NEXT:  }
@@ -55,11 +55,11 @@ module attributes {llzk.lang} {
 }
 
 // OPT-LABEL: module attributes {llzk.lang} {
-// OPT-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.bool) {
-// OPT-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = smt.int.constant 0
-// OPT-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = smt.int.constant 2013265920
-// OPT-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = smt.int.cmp ge %[[VAL_0]], %[[VAL_2]]
-// OPT-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = smt.int.cmp le %[[VAL_0]], %[[VAL_3]]
+// OPT-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !smt.bool) {
+// OPT-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = smt.int.constant 0
+// OPT-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = smt.int.constant 2013265920
+// OPT-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = smt.int.cmp ge %[[VAL_0]], %[[VAL_2]]
+// OPT-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = smt.int.cmp le %[[VAL_0]], %[[VAL_3]]
 // OPT-NEXT:      smt.assert %[[VAL_4]]
 // OPT-NEXT:      smt.assert %[[VAL_5]]
 // OPT-NEXT:      return
@@ -67,7 +67,7 @@ module attributes {llzk.lang} {
 // OPT-NEXT:  }
 
 // NAIVE-LABEL: module attributes {llzk.lang} {
-// NAIVE-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !smt.bool) {
+// NAIVE-NEXT:    func.func @smt_Main(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !smt.int, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !smt.bool) {
 // NAIVE-NEXT:      return
 // NAIVE-NEXT:    }
 // NAIVE-NEXT:  }

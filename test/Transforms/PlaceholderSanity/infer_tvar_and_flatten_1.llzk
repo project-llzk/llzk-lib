@@ -22,11 +22,11 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @A_89_i_compute() -> index {
-// CHECK-NEXT:    %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 89 : index
+// CHECK-NEXT:    %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 89 : index
 // CHECK-NEXT:    function.return %[[VAL_0]] : index
 // CHECK-NEXT:  }
 // CHECK-LABEL: function.def @main() -> index {
-// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @A_89_i_compute() : () -> index
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @A_89_i_compute() : () -> index
 // CHECK-NEXT:    function.return %[[VAL_2]] : index
 // CHECK-NEXT:  }
 // -----
@@ -49,11 +49,11 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @B_f_7_with_const(
-// CHECK-SAME: %[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
+// CHECK-SAME: %[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type {
 // CHECK-NEXT:    function.return %[[VAL_0]] : !felt.type
 // CHECK-NEXT:  }
 // CHECK-LABEL: function.def @call_with_const(
-// CHECK-SAME: %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type {
-// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @B_f_7_with_const(%[[VAL_1]]) : (!felt.type) -> !felt.type
+// CHECK-SAME: %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type {
+// CHECK-NEXT:    %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @B_f_7_with_const(%[[VAL_1]]) : (!felt.type) -> !felt.type
 // CHECK-NEXT:    function.return %[[VAL_2]] : !felt.type
 // CHECK-NEXT:  }

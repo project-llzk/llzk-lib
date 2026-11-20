@@ -14,11 +14,11 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @unknown_effect_keeps_array_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @unknown_effect_keeps_array_read(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !felt.type) -> !felt.type attributes {function.allow_witness} {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = array.new %[[VAL_0]] : <1 x !felt.type>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      "test.mutate"(%[[VAL_1]]) : (!array.type<1 x !felt.type>) -> ()
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_2]]] : <1 x !felt.type>, !felt.type
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = array.read %[[VAL_1]]{{\[}}%[[VAL_2]]] : <1 x !felt.type>, !felt.type
 // CHECK-NEXT:      function.return %[[VAL_3]] : !felt.type
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

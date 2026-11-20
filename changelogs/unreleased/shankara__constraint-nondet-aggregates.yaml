@@ -1,0 +1,2 @@
+fixed:
+  - Allow local nondeterministic aggregate buffers during constraint flattening when every read leaf has been initialized, while rejecting uninitialized reads.
