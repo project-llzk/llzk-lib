@@ -347,6 +347,10 @@ private:
   /// Cached SMT symbols keyed by SSA value identity, independent of printed value names.
   mlir::DenseMap<mlir::Value, llvm::SMTExprRef> valueSymbols;
 
+  /// Representatives of concrete reads connected by storage-preserving paths.
+  /// A location may have several independent values across intervening writes.
+  llvm::DenseMap<SourceRef, llvm::SmallVector<mlir::Value, 1>> concreteReadRepresentatives;
+
   /// Cached inverse symbols keyed by operation identity, separate from value and ref symbols.
   mlir::DenseMap<mlir::Operation *, llvm::SMTExprRef> inverseSymbols;
 
@@ -431,6 +435,9 @@ private:
 
   /// Return a stable, analysis-scoped inverse symbol for a felt.inv or felt.div operation.
   llvm::SMTExprRef getOrCreateInverseSymbol(mlir::Operation *op);
+
+  /// Share an unknown concrete read's symbol only with a proven equal read.
+  llvm::SMTExprRef getOrCreateConcreteReadSymbol(mlir::Value value, const SourceRef &ref);
 
   ExpressionValue createUnknownValue(mlir::Value val) {
     return ExpressionValue(

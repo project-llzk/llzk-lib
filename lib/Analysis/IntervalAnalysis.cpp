@@ -142,7 +142,12 @@ bool preservesReadStorage(Operation *op, Operation *read) {
     return !memberRead || memberWrite.getMemberNameAttr() != memberRead.getMemberNameAttr() ||
            haveDisjointStorage(memberWrite.getComponent(), memberRead.getComponent());
   }
-  if (llvm::isa<CreateArrayOp, CreateStructOp, pod::NewPodOp, pod::WritePodOp>(op)) {
+  if (auto podWrite = llvm::dyn_cast<pod::WritePodOp>(op)) {
+    auto podRead = llvm::dyn_cast<pod::ReadPodOp>(read);
+    return !podRead || podWrite.getRecordNameAttr() != podRead.getRecordNameAttr() ||
+           haveDisjointStorage(podWrite.getPodRef(), podRead.getPodRef());
+  }
+  if (llvm::isa<CreateArrayOp, CreateStructOp, pod::NewPodOp>(op)) {
     return true;
   }
   // These checks may terminate execution, but their direct effects cannot change read values.
@@ -225,8 +230,8 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     return true;
   }
   Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
-  if (!llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(left) ||
-      !llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(right)) {
+  if (!llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp, pod::ReadPodOp>(left) ||
+      !llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp, pod::ReadPodOp>(right)) {
     return false;
   }
   bool equivalentArrayIndices = false;
@@ -256,7 +261,7 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     if (a == b || (equivalentArrayIndices && a.getType().isIndex() && b.getType().isIndex())) {
       return success();
     }
-    if (!llvm::isa<ArrayType, StructType>(a.getType()) || !haveSameReadValue(a, b)) {
+    if (!llvm::isa<ArrayType, StructType, pod::PodType>(a.getType()) || !haveSameReadValue(a, b)) {
       return failure();
     }
     // Equal array copies can diverge before either scalar read. Protect each copy from
@@ -1451,7 +1456,15 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       return LatticeValue(anyVal);
     }
 
-    return LatticeValue(getRefValue(refSet.getSingleValue(), value));
+    const SourceRef &ref = refSet.getSingleValue();
+    auto stored = getRefValue(ref, value);
+    if (isReadOp(value.getDefiningOp()) && !ref.getPath().empty() && !hasRangedSelection(ref) &&
+        stored.getExpr() == getOrCreateSymbol(ref)) {
+      // Storage summaries are flow-insensitive. Their unknown/merged location symbol
+      // must not equate reads separated by a write, including after worklist revisits.
+      stored = stored.withExpression(getOrCreateConcreteReadSymbol(value, ref));
+    }
+    return LatticeValue(stored);
   };
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
@@ -1913,6 +1926,18 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(Value val) {
   return sym;
 }
 
+llvm::SMTExprRef
+IntervalDataFlowAnalysis::getOrCreateConcreteReadSymbol(Value value, const SourceRef &ref) {
+  auto &representatives = concreteReadRepresentatives[ref];
+  for (Value representative : representatives) {
+    if (haveSameReadValue(value, representative)) {
+      return getOrCreateSymbol(representative);
+    }
+  }
+  representatives.push_back(value);
+  return getOrCreateSymbol(value);
+}
+
 llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateInverseSymbol(Operation *op) {
   auto it = inverseSymbols.find(op);
   if (it != inverseSymbols.end()) {
@@ -2286,8 +2311,8 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     }
   };
 
-  auto propagateRangedRead = [&](const SourceRef &ref) {
-    auto &readers = rangedReadResults[ref];
+  auto propagateRead = [&](const SourceRef &ref) {
+    auto &readers = hasRangedSelection(ref) ? rangedReadResults[ref] : readResults[ref];
     readers.insert(valLattice);
     SmallVector<Lattice *> aliases;
     Interval shared = newLatticeVal.getInterval();
@@ -2322,54 +2347,22 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   auto readmCase = [&](MemberReadOp) {
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
-      propagateRangedRead(sourceRefVal.getSingleValue());
-    }
-    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
-      const SourceRef &ref = sourceRefVal.getSingleValue();
-      readResults[ref].insert(valLattice);
-
-      // Also propagate to all other member read results for this member
-      for (Lattice *l : readResults[ref]) {
-        if (l != valLattice) {
-          propagateIfChanged(l, setRefinedValue(l, newLatticeVal));
-        }
-      }
+    if (sourceRefVal.isSingleValue()) {
+      propagateRead(sourceRefVal.getSingleValue());
     }
   };
 
   auto readArrCase = [&](ReadArrayOp) {
     auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
-    if (succeeded(arrayRef) && hasRangedSelection(*arrayRef)) {
-      propagateRangedRead(*arrayRef);
-    }
-    // A constraint on one selection cannot refine other reads of the same possible range.
-    if (succeeded(arrayRef) && !hasRangedSelection(*arrayRef)) {
-      readResults[*arrayRef].insert(valLattice);
-
-      for (Lattice *l : readResults[*arrayRef]) {
-        if (l != valLattice) {
-          propagateIfChanged(l, setRefinedValue(l, newLatticeVal));
-        }
-      }
+    if (succeeded(arrayRef)) {
+      propagateRead(*arrayRef);
     }
 
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
     // Equivalent aggregate copies have different SSA roots but the same resolved selection.
-    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
-      propagateRangedRead(sourceRefVal.getSingleValue());
-    }
-    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
-      const SourceRef &ref = sourceRefVal.getSingleValue();
-      readResults[ref].insert(valLattice);
-
-      // Also propagate to all other member read results for this member
-      for (Lattice *l : readResults[ref]) {
-        if (l != valLattice) {
-          propagateIfChanged(l, setRefinedValue(l, newLatticeVal));
-        }
-      }
+    if (sourceRefVal.isSingleValue()) {
+      propagateRead(sourceRefVal.getSingleValue());
     }
   };
 
