@@ -1189,17 +1189,32 @@ bool IntervalDataFlowAnalysis::recordRefWrite(
   return changed;
 }
 
-bool IntervalDataFlowAnalysis::markAggregateInitialized(OpResult result) {
-  if (!initializedAggregates.insert(result).second) {
-    return false;
-  }
-  if (auto readers = aggregateReaders.find(SourceRef(result));
-      readers != aggregateReaders.end()) {
-    for (Operation *yield : readers->second) {
-      _dataflowSolver.enqueue({getProgramPointAfter(yield), this});
+bool IntervalDataFlowAnalysis::subscribeToAggregate(const SourceRef &source, Operation *consumer) {
+  aggregateReaders[source].insert(consumer);
+  if (auto root = source.getRoot(); succeeded(root)) {
+    if (auto result = llvm::dyn_cast<OpResult>(*root);
+        result &&
+        llvm::isa<pod::NewPodOp, CreateArrayOp, CreateStructOp, scf::IfOp, scf::IndexSwitchOp>(
+            result.getOwner()
+        ) &&
+        !initializedAggregates.contains(result)) {
+      // An empty producer must also wake readers of its descendant prefixes on initialization.
+      aggregateReaders[SourceRef(result)].insert(consumer);
+      return false;
     }
   }
   return true;
+}
+
+void IntervalDataFlowAnalysis::markAggregateInitialized(OpResult result) {
+  if (!initializedAggregates.insert(result).second) {
+    return;
+  }
+  if (auto readers = aggregateReaders.find(SourceRef(result)); readers != aggregateReaders.end()) {
+    for (Operation *consumer : readers->second) {
+      _dataflowSolver.enqueue({getProgramPointAfter(consumer), this});
+    }
+  }
 }
 
 void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield) {
@@ -1249,19 +1264,7 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
     SourceRefSet destinations;
     bool pendingSource = false;
     for (const SourceRef &source : sources) {
-      aggregateReaders[source].insert(yield);
-      if (auto root = source.getRoot(); succeeded(root)) {
-        if (auto sourceResult = llvm::dyn_cast<OpResult>(*root);
-            sourceResult &&
-            llvm::isa<pod::NewPodOp, CreateArrayOp, CreateStructOp, scf::IfOp, scf::IndexSwitchOp>(
-                sourceResult.getOwner()
-            ) &&
-            !initializedAggregates.contains(sourceResult)) {
-          // Wait for the producer instead of treating its not-yet-published fields as unknown.
-          aggregateReaders[SourceRef(sourceResult)].insert(yield);
-          pendingSource = true;
-        }
-      }
+      pendingSource |= !subscribeToAggregate(source, yield);
       for (const auto &[writtenRef, writtenVal] : writeResults) {
         if (writtenRef.isValidPrefix(source)) {
           auto translated = writtenRef.translate(source, resultRef);
@@ -1284,7 +1287,6 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
       }
     }
 
-    bool changed = false;
     for (const SourceRef &destination : destinations) {
       std::optional<ExpressionValue> merged;
       auto mergeAlternative = [&](const ExpressionValue &next) {
@@ -1316,16 +1318,9 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
         mergeAlternative(getRefValue(*selected, getOrCreateSymbol(destination)));
       }
       ensure(merged.has_value(), "conditional aggregate result must have an alternative");
-      changed |= recordRefWrite(destination, *merged, /*mayBeSkipped=*/false, /*publisher=*/parent);
+      recordRefWrite(destination, *merged, /*mayBeSkipped=*/false, /*publisher=*/parent);
     }
-    changed |= markAggregateInitialized(result);
-    if (changed) {
-      // Aggregate SSA lattices do not encode their stored fields. Explicitly revisit users
-      // so copies made before the merged storage state was available are recomputed.
-      for (Operation *user : result.getUsers()) {
-        _dataflowSolver.enqueue({getProgramPointAfter(user), this});
-      }
-    }
+    markAggregateInitialized(result);
   }
 }
 
@@ -1346,6 +1341,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   // Get the values or defaults from the operand lattices
   llvm::SmallVector<LatticeValue> operandVals;
   llvm::SmallVector<std::optional<SourceRef>> operandRefs;
+  bool pendingAggregateOperand = false;
   auto resolveRefStateValue =
       [&](Value value, const SourceRefLatticeValue &refSet) -> std::optional<LatticeValue> {
     ensure(refSet.isScalar(), "should have ruled out array values already");
@@ -1390,10 +1386,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     Value val = op->getOperand(opNum);
     SourceRefLatticeValue refSet = getSourceRefState(val);
     if (llvm::isa<ArrayType, StructType, pod::PodType>(val.getType())) {
-      // Aggregate storage changes independently of its SSA lattice. Observe prefixes even
-      // when their descendants have not been written yet.
+      // Stored fields are outside the SSA lattice. Subscribe even if there are no writes yet,
+      // so each copy in a chain is revisited when its source fields appear or change.
       for (const SourceRef &source : refSet.foldToScalar()) {
-        aggregateReaders[source].insert(op);
+        pendingAggregateOperand |= !subscribeToAggregate(source, op);
       }
     }
     if (refSet.isSingleValue()) {
@@ -1456,6 +1452,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // need to propagate the changes, since we already have what we need.
     Lattice *operandLattice = getLatticeElement(val);
     (void)operandLattice->setValue(operandVals[opNum]);
+  }
+
+  if (pendingAggregateOperand) {
+    return success();
   }
 
   if (isReadOp(op) && op->getNumResults() == 1) {
