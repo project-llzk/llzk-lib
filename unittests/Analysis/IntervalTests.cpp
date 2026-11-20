@@ -950,6 +950,129 @@ module attributes {llzk.lang} {
   }
 }
 
+// A ranged write must widen concrete copies and yields regardless of visitation order.
+TEST_F(IntervalAnalysisAPITests, RangedWritesUpdateConcreteAggregateSubscribers) {
+  for (bool delayedWrite : {false, true}) {
+    for (bool aggregateWrite : {false, true}) {
+      SCOPED_TRACE(delayedWrite ? "write after copies" : "write before copies");
+      SCOPED_TRACE(aggregateWrite ? "aggregate write" : "scalar write");
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%index: index, %condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %payload = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+    %replacement = pod.new { @value = %nine } : !pod.type<[@value: !felt.type]>
+    %element = pod.new { @payload = %payload, @other = %seven } : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %array = array.new %element, %element, %element, %element : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
+    %dynamic = array.read %array[%zero, %index] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %dynamicPayload = pod.read %dynamic[@payload] : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>, !pod.type<[@value: !felt.type]>
+    %concrete = array.read %array[%zero, %one] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %podCopy = pod.new { @selected = %concrete } : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
+    %arrayCopy = array.new %concrete : !array.type<1 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
+    %assigned = pod.new : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
+    pod.write %assigned[@selected] = %concrete : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %selected = scf.if %condition -> (!pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>) {
+      scf.yield %concrete : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    } else {
+      scf.yield %concrete : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    }
+    %out = array.new %selected : !array.type<1 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
+    %disjoint = array.read %array[%one, %one] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %unrelated = pod.new { @selected = %disjoint } : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
+    // LATE_WRITE
+    function.return
+  }
+}
+)mlir";
+      source.replace(
+          source.find("// LATE_WRITE"), std::string("// LATE_WRITE").size(),
+          aggregateWrite
+              ? "pod.write %dynamic[@payload] = %replacement : !pod.type<[@payload: "
+                "!pod.type<[@value: !felt.type]>, @other: !felt.type]>, !pod.type<[@value: "
+                "!felt.type]>"
+              : "pod.write %dynamicPayload[@value] = %nine : !pod.type<[@value: !felt.type]>, "
+                "!felt.type"
+      );
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+      auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
+      auto conditional = *fn.getOps<scf::IfOp>().begin();
+      auto write = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+      const Field &field = Field::getField("babybear");
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      auto *analysis = solver.load<CountingIntervalAnalysis>(smt, field, false, true);
+      auto visit = [&](Operation *op) {
+        SmallVector<const IntervalAnalysisLattice *> operands;
+        SmallVector<IntervalAnalysisLattice *> results;
+        for (Value value : op->getOperands()) {
+          operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        for (Value value : op->getResults()) {
+          results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        return analysis->visitOperation(op, operands, results);
+      };
+      SourceRefIndex selected(StringAttr::get(&ctx, "selected"));
+      SourceRefIndex payload(StringAttr::get(&ctx, "payload"));
+      SourceRefIndex value(StringAttr::get(&ctx, "value"));
+      SourceRefIndex other(StringAttr::get(&ctx, "other"));
+      SmallVector<SourceRef> copies {
+          SourceRef(pods[3]->getResult(0), {selected}),
+          SourceRef(arrays[1]->getResult(0), {SourceRefIndex(0)}),
+          SourceRef(pods[4]->getResult(0), {selected}), SourceRef(conditional->getResult(0)),
+          SourceRef(arrays[2]->getResult(0), {SourceRefIndex(0)})
+      };
+      auto check = [&](const SourceRef &ref, int64_t upper) {
+        auto it = analysis->getWriteResults().find(ref);
+        ASSERT_NE(it, analysis->getWriteResults().end());
+        EXPECT_EQ(it->second.getInterval(), UnreducedInterval(7, upper).reduce(field));
+        EXPECT_EQ(it->second.getOptionalUnreducedInterval(), UnreducedInterval(7, upper));
+      };
+      auto checkCopies = [&](int64_t upper) {
+        for (const SourceRef &copy : copies) {
+          check(*copy.createChild(payload)->createChild(value), upper);
+          check(*copy.createChild(other), 7);
+        }
+      };
+      auto *driver = solver.load<IntervalTestInitialization>([&] {
+        for (Operation &op : fn.getBody().front()) {
+          if (&op == pods[3].getOperation() && !delayedWrite) {
+            ASSERT_TRUE(succeeded(visit(write)));
+          }
+          if (&op == write.getOperation()) {
+            continue;
+          }
+          if (&op == conditional.getOperation()) {
+            ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+            ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+          } else {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        checkCopies(delayedWrite ? 7 : 9);
+        if (delayedWrite) {
+          ASSERT_TRUE(succeeded(visit(write)));
+        }
+      });
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+        return &candidate == driver;
+      })));
+      checkCopies(9);
+      check(SourceRef(pods[5]->getResult(0), {selected, payload, value}), 7);
+      EXPECT_EQ(analysis->getVisits(pods[5]), 1U);
+    }
+  }
+}
+
 // A join can run before aggregate initializers when the worklist discovers new live regions.
 TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsRevisitConditionalYield) {
   auto mod = parseModule(R"mlir(

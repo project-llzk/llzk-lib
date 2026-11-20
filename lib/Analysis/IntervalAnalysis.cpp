@@ -1275,12 +1275,8 @@ void IntervalDataFlowAnalysis::recordConditionalAggregateYields(Operation *yield
     bool pendingSource = false;
     for (const SourceRef &source : sources) {
       pendingSource |= !subscribeToAggregate(source, yield);
-      for (const auto &[writtenRef, writtenVal] : writeResults) {
-        if (writtenRef.isValidPrefix(source)) {
-          auto translated = writtenRef.translate(source, resultRef);
-          ensure(succeeded(translated), "could not translate conditional aggregate yield");
-          destinations.insert(*translated);
-        }
+      for (const auto &[destination, value] : getAggregateWrites(source, resultRef)) {
+        destinations.insert(destination);
       }
     }
     if (pendingSource) {
