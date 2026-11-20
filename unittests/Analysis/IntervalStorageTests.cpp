@@ -633,6 +633,70 @@ module attributes {llzk.lang} {
   }
 }
 
+// A write through a merged POD can miss either candidate, including aggregate-valued fields.
+TEST_F(IntervalStorageTests, AmbiguousPodWritesKeepNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+!Inner = !pod.type<[@value: !felt.type]>
+!P = !pod.type<[@value: !felt.type, @nested: !Inner]>
+module attributes {llzk.lang} {
+  function.def @test(%left: !P, %right: !P, %condition: i1, %chooseLeft: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %sevenPod = pod.new { @value = %seven } : !Inner
+    %ninePod = pod.new { @value = %nine } : !Inner
+    %choice = scf.if %chooseLeft -> (!P) {
+      scf.yield %left : !P
+    } else {
+      scf.yield %right : !P
+    }
+    scf.if %condition {
+      pod.write %left[@value] = %seven : !P, !felt.type
+      pod.write %right[@value] = %seven : !P, !felt.type
+      pod.write %left[@nested] = %sevenPod : !P, !Inner
+      pod.write %right[@nested] = %sevenPod : !P, !Inner
+    }
+    pod.write %choice[@value] = %nine : !P, !felt.type
+    pod.write %choice[@nested] = %ninePod : !P, !Inner
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (!isa<pod::WritePodOp, scf::IfOp>(op)) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      auto visitWrites = [&](Block &block) {
+        for (auto write : block.getOps<pod::WritePodOp>()) {
+          ASSERT_TRUE(succeeded(visit(write)));
+        }
+      };
+      if (optionalFirst) {
+        visitWrites(*conditional.thenBlock());
+        visitWrites(fn.getBody().front());
+      } else {
+        visitWrites(fn.getBody().front());
+        visitWrites(*conditional.thenBlock());
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      SourceRefIndex value(StringAttr::get(&ctx, "value"));
+      SourceRefIndex nested(StringAttr::get(&ctx, "nested"));
+      for (unsigned arg : {0U, 1U}) {
+        expectStored(analysis, SourceRef(fn.getArgument(arg), {value}), Interval::Entire(field));
+        expectStored(
+            analysis, SourceRef(fn.getArgument(arg), {nested, value}), Interval::Entire(field)
+        );
+      }
+    });
+  }
+}
+
 // An unconditional write must remove the no-write alternative in either visitation order.
 TEST_F(IntervalStorageTests, UnconditionalWritesRemoveNoWriteDefaults) {
   for (bool optionalFirst : {false, true}) {
