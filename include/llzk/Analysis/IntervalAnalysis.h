@@ -390,8 +390,14 @@ private:
     ExpressionValue value;
     bool mayBeSkipped;
   };
-  /// Keep the no-write alternative separate so a guaranteed write can remove it later.
-  llvm::DenseMap<SourceRef, WriteContribution> writeContributions;
+  /// Keep recomputed publications separate from actual writes to the same location.
+  /// The null key accumulates ordinary writes; operation keys hold replaceable publications.
+  llvm::DenseMap<SourceRef, llvm::DenseMap<mlir::Operation *, WriteContribution>>
+      writeContributions;
+
+  /// Revisit consumers when overlapping storage descendants appear or change, including
+  /// fields that were not stored when an aggregate was first copied.
+  llvm::DenseMap<SourceRef, llvm::DenseSet<mlir::Operation *>> aggregateReaders;
 
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
@@ -532,11 +538,14 @@ private:
   /// When `mayBeSkipped` is true, handle the write as control-dependent instead
   /// of unconditional, so the stored value also keeps the prior/no-write state.
   /// Retain that default only until a guaranteed write to this location is analyzed.
+  /// A non-null publisher replaces its previous contribution when a copy is recomputed.
   void recordRefWrite(
-      const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false
+      const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false,
+      mlir::Operation *publisher = nullptr
   );
 
-  /// @brief Get the SourceRef state that defines `val`.
+  /// @brief Resolve storage used by reads and copies, retaining original component handle
+  /// identities and addressing materialized value arrays at their result roots.
   SourceRefLatticeValue getSourceRefState(mlir::Value val);
 };
 
