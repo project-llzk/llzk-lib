@@ -1107,7 +1107,129 @@ module attributes {llzk.lang} {
   );
   SourceRefSet dependencies = graph.getConstrainingValues(output);
   EXPECT_TRUE(llvm::any_of(dependencies, [&](const SourceRef &dependency) {
-    return dependency == logicalChild;
+    return dependency.withoutComponentCapture() == logicalChild;
   })) << buildStringViaInsertionOp(dependencies);
   EXPECT_TRUE(dependencies.contains(SourceRef(constrainFn.getArgument(1))));
+}
+
+TEST_F(SourceRefTests, CallContextsPreserveIdentityAndPathOperations) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @make() -> !pod.type<[@left: !felt.type, @right: !felt.type]> {
+    %pod = pod.new : !pod.type<[@left: !felt.type, @right: !felt.type]>
+    function.return %pod : !pod.type<[@left: !felt.type, @right: !felt.type]>
+  }
+  function.def @use() {
+    %first = function.call @make() : () -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+    %second = function.call @make() : () -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+    %zero = felt.const 0
+    function.return
+  }
+}
+)mlir";
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto functions = llvm::to_vector(mod->getOps<function::FuncDefOp>());
+  auto allocation = *functions[0].getOps<pod::NewPodOp>().begin();
+  auto calls = llvm::to_vector(functions[1].getOps<function::CallOp>());
+  auto zero = *functions[1].getOps<felt::FeltConstantOp>().begin();
+  SourceRef root(llvm::cast<OpResult>(allocation.getResult()));
+  SourceRefIndex leftIndex(StringAttr::get(&ctx, "left"));
+  SourceRefIndex rightIndex(StringAttr::get(&ctx, "right"));
+  SourceRef left = *root.createChild(leftIndex);
+  SourceRef firstRoot = root.inCallContext(calls[0]);
+  SourceRef secondRoot = root.inCallContext(calls[1]);
+  SourceRef firstLeft = left.inCallContext(calls[0]);
+  SourceRef secondLeft = left.inCallContext(calls[1]);
+  SourceRef firstRight = *firstRoot.createChild(rightIndex);
+
+  EXPECT_EQ(firstLeft, *firstRoot.createChild(leftIndex));
+  EXPECT_NE(firstLeft, secondLeft);
+  EXPECT_EQ(*firstLeft.getParentPrefix(), firstRoot);
+  EXPECT_EQ(firstLeft.getType(), left.getType());
+  EXPECT_EQ(*firstLeft.getRoot(), *left.getRoot());
+  EXPECT_TRUE(firstLeft.isValidPrefix(firstRoot));
+  EXPECT_FALSE(firstLeft.isValidPrefix(secondRoot));
+  EXPECT_FALSE(firstLeft.isValidPrefix(root));
+  EXPECT_TRUE(firstLeft.overlaps(firstLeft));
+  EXPECT_FALSE(firstLeft.overlaps(secondLeft));
+  EXPECT_FALSE(firstLeft.overlaps(firstRight));
+  EXPECT_EQ(*firstLeft.translate(firstRoot, secondRoot), secondLeft);
+  EXPECT_EQ(SourceRef(zero).inCallContext(calls[0]), SourceRef(zero));
+
+  SourceRefSet hashed {left, firstLeft, secondLeft, firstRight, left.inCallContext(calls[0])};
+  std::set<SourceRef> ordered(hashed.begin(), hashed.end());
+  EXPECT_EQ(hashed.size(), 4U);
+  EXPECT_EQ(ordered.size(), hashed.size());
+  EXPECT_EQ(SourceRef::Hash {}(firstLeft), SourceRef::Hash {}(left.inCallContext(calls[0])));
+  // A recursive revisit reaches the same finite identity instead of growing a call string.
+  EXPECT_EQ(firstLeft.inCallContext(calls[1]).inCallContext(calls[0]), firstLeft);
+}
+
+TEST_F(SourceRefTests, CapturedComponentsHaveStableValueIdentities) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  Type cellType = structDef.getConstrainFuncOp().getArgument(0).getType();
+  Block block;
+  SourceRef root(block.addArgument(array::ArrayType::get(cellType, {1}), UnknownLoc::get(&ctx)));
+  auto slot = root.createChild(SourceRefIndex(0));
+  ASSERT_TRUE(succeeded(slot));
+  SourceRef captured = slot->captureComponent();
+  EXPECT_NE(captured, *slot);
+  EXPECT_EQ(captured.captureComponent(), captured);
+  EXPECT_EQ(captured.withoutComponentCapture(), *slot);
+  EXPECT_EQ((llvm::DenseSet<SourceRef> {*slot, captured, captured.captureComponent()}).size(), 2);
+  EXPECT_EQ((std::set<SourceRef> {*slot, captured, captured.captureComponent()}).size(), 2);
+
+  auto member = captured.createChild(SourceRefIndex(*structDef.getOps<MemberDefOp>().begin()));
+  ASSERT_TRUE(succeeded(member));
+  EXPECT_TRUE(member->protectsCapturedComponent(*slot));
+  EXPECT_TRUE(member->protectsCapturedComponent(root));
+  auto rangedSlot = root.createChild(SourceRefIndex(llvm::DynamicAPInt(0), llvm::DynamicAPInt(2)));
+  auto otherSlot = root.createChild(SourceRefIndex(1));
+  ASSERT_TRUE(succeeded(rangedSlot));
+  ASSERT_TRUE(succeeded(otherSlot));
+  EXPECT_TRUE(member->protectsCapturedComponent(*rangedSlot));
+  EXPECT_FALSE(member->protectsCapturedComponent(*otherSlot));
+  EXPECT_FALSE(member->protectsCapturedComponent(*member));
+  EXPECT_EQ(*member->getParentPrefix(), captured);
+  EXPECT_EQ(*captured.getParentPrefix(), root);
+}
+
+TEST_F(SourceRefTests, CapturedComponentBoundariesSurviveTranslation) {
+  auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto self = structDef.getConstrainFuncOp().getArgument(0);
+  Block block;
+  SourceRef root(
+      block.addArgument(array::ArrayType::get(self.getType(), {1}), UnknownLoc::get(&ctx))
+  );
+  SourceRef matrix(
+      block.addArgument(array::ArrayType::get(self.getType(), {2, 1}), UnknownLoc::get(&ctx))
+  );
+  auto slot = root.createChild(SourceRefIndex(0));
+  auto row = matrix.createChild(SourceRefIndex(1));
+  ASSERT_TRUE(succeeded(slot));
+  ASSERT_TRUE(succeeded(row));
+  SourceRefIndex memberIndex(*structDef.getOps<MemberDefOp>().begin());
+  auto member = slot->captureComponent().createChild(memberIndex);
+  ASSERT_TRUE(succeeded(member));
+  auto translated = member->translate(root, *row);
+  ASSERT_TRUE(succeeded(translated));
+  auto translatedSlot = row->createChild(SourceRefIndex(0));
+  ASSERT_TRUE(succeeded(translatedSlot));
+  EXPECT_TRUE(translated->protectsCapturedComponent(*translatedSlot));
+  EXPECT_EQ(*translated->getParentPrefix(), translatedSlot->captureComponent());
+  EXPECT_EQ(*translated->getParentPrefix()->getParentPrefix(), *row);
+
+  TranslationMap aliases {{*slot, SourceRefLatticeValue(SourceRef(self))}};
+  auto [preserved, unchanged] =
+      SourceRefLatticeValue(*member).replacePrefixes(aliases, /*preserveCaptures=*/true);
+  EXPECT_EQ(unchanged, ChangeResult::NoChange);
+  EXPECT_EQ(preserved.getSingleValue(), *member);
+  auto [rebound, changed] = SourceRefLatticeValue(*member).replacePrefixes(aliases);
+  EXPECT_EQ(changed, ChangeResult::Change);
+  EXPECT_EQ(rebound.getSingleValue(), *SourceRef(self).createChild(memberIndex));
 }
