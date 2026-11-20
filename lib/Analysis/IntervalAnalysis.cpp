@@ -1261,6 +1261,16 @@ IntervalDataFlowAnalysis::setRefinedValue(Lattice *lattice, const ExpressionValu
 bool IntervalDataFlowAnalysis::subscribeToAggregate(const SourceRef &source, Operation *consumer) {
   aggregateReaders[source].insert(consumer);
   if (auto root = source.getRoot(); succeeded(root)) {
+    if (llvm::any_of(source.getPath(), [](const SourceRefIndex &index) {
+      return index.isIndexRange();
+    })) {
+      // A concrete write can overlap a ranged prefix without having that prefix as a
+      // syntactic parent. Conservatively observe all writes to the same storage root.
+      SourceRef rootRef = llvm::isa<BlockArgument>(*root)
+                              ? SourceRef(llvm::cast<BlockArgument>(*root))
+                              : SourceRef(llvm::cast<OpResult>(*root));
+      aggregateReaders[rootRef].insert(consumer);
+    }
     if (auto result = llvm::dyn_cast<OpResult>(*root);
         result &&
         llvm::isa<pod::NewPodOp, CreateArrayOp, CreateStructOp, scf::IfOp, scf::IndexSwitchOp>(

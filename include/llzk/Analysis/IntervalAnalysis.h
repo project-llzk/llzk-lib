@@ -554,6 +554,7 @@ private:
   void recordConditionalAggregateYields(mlir::Operation *yield);
 
   /// Subscribe a consumer to a storage prefix and its producer's initial publication.
+  /// Ranged prefixes also subscribe at their root to observe overlapping concrete writes.
   /// Returns false while the source producer has not yet published its initial state.
   bool subscribeToAggregate(const SourceRef &source, mlir::Operation *consumer);
 
