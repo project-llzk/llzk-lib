@@ -874,7 +874,11 @@ IntervalDataFlowAnalysis::IntervalDataFlowAnalysis(
 SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
   // Components copy handles, so constraints must retain their original storage identity.
   if (llvm::isa<StructType>(val.getType())) {
-    return SourceRefAnalysis::getValueState(_dataflowSolver, val);
+    auto aliases = SourceRefAnalysis::getValueState(_dataflowSolver, val);
+    if (aliases.isSingleValue()) {
+      return aliases;
+    }
+    // An ambiguous read still needs its materialized selection, rather than a dependency set.
   }
   Operation *definition = val.getDefiningOp();
   if (llvm::isa_and_present<CreateArrayOp>(definition)) {
