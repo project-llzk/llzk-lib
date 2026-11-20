@@ -21,6 +21,7 @@
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/OperationSupport.h>
+#include <mlir/Interfaces/LoopLikeInterface.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
@@ -86,37 +87,86 @@ bool hasRangedSelection(const SourceRef &ref) {
   });
 }
 
-/// Exclude storage mutations between two ordered operations in the same block.
-bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
-  if (first->getBlock() != second->getBlock() || !first->isBeforeInBlock(second)) {
+/// Recognize operations that preserve storage, including nested reads and assertion checks.
+bool hasNoStorageWrites(Operation *op) {
+  if (auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
+    return arrayAccess.isRead();
+  }
+  // Assertions and constraint emissions are observable, but cannot change read values.
+  if (llvm::isa<boolean::AssertOp, EmitEqualityOp, EmitContainmentOp>(op)) {
+    return true;
+  }
+  const bool recursive = op->hasTrait<OpTrait::HasRecursiveMemoryEffects>();
+  if (auto effectInterface = llvm::dyn_cast<MemoryEffectOpInterface>(op)) {
+    SmallVector<MemoryEffects::EffectInstance> effects;
+    effectInterface.getEffects(effects);
+    if (llvm::any_of(effects, [](const auto &effect) {
+      return !llvm::isa<MemoryEffects::Read>(effect.getEffect());
+    })) {
+      return false;
+    }
+  } else if (!recursive) {
     return false;
   }
-  for (Operation *between = first->getNextNode(); between != second;
-       between = between->getNextNode()) {
-    auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(between);
-    if (arrayAccess && arrayAccess.isRead()) {
-      continue;
-    }
-    // Emitting constraints is observable, but cannot mutate array or component storage.
-    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(between)) {
-      continue;
-    }
-    if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
-      return false;
+  if (recursive) {
+    for (Region &region : op->getRegions()) {
+      for (Block &block : region) {
+        if (!llvm::all_of(block, [](Operation &nested) { return hasNoStorageWrites(&nested); })) {
+          return false;
+        }
+      }
     }
   }
   return true;
 }
 
-/// Prove same-block reads equivalent using equal or singleton indices and write-free paths.
+/// Check an ordered outer-to-inner SCF path, including backedges of crossed loops.
+bool hasReadOnlyPath(Operation *first, Operation *second) {
+  Operation *enclosing = first->getBlock()->findAncestorOpInBlock(*second);
+  // Preceding the enclosing operation establishes dominance of the nested read.
+  if (!enclosing || first == enclosing || !first->isBeforeInBlock(enclosing)) {
+    return false;
+  }
+  for (Operation *between = first->getNextNode(); between != enclosing;
+       between = between->getNextNode()) {
+    if (!hasNoStorageWrites(between)) {
+      return false;
+    }
+  }
+  for (Operation *cursor = second; cursor != enclosing; cursor = cursor->getParentOp()) {
+    Region *region = cursor->getParentRegion();
+    if (!llvm::hasSingleElement(*region)) {
+      return false;
+    }
+    Operation *parent = region->getParentOp();
+    if (llvm::isa<LoopLikeOpInterface>(parent)) {
+      // Writes after this read, including in another while region, can affect a later iteration.
+      if (!hasNoStorageWrites(parent)) {
+        return false;
+      }
+      continue;
+    }
+    if (!llvm::isa<scf::IfOp, scf::IndexSwitchOp, scf::ExecuteRegionOp>(parent)) {
+      return false;
+    }
+    // Only this branch's prefix executes between the reads; sibling regions do not.
+    for (Operation &before : llvm::make_range(region->front().begin(), cursor->getIterator())) {
+      if (!hasNoStorageWrites(&before)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/// Prove reads equivalent using equal or singleton indices and storage-preserving SCF paths.
 bool haveSameReadValue(Value lhs, Value rhs) {
   if (lhs == rhs) {
     return true;
   }
   Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
   if (!llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(left) ||
-      !llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(right) ||
-      left->getBlock() != right->getBlock()) {
+      !llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(right)) {
     return false;
   }
   bool equivalentArrayIndices = false;
@@ -153,8 +203,8 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     // its creation through its use, in addition to the interval between the scalar reads.
     return success(
         !llvm::isa<ArrayType>(a.getType()) ||
-        (hasReadPreservingSameBlockPath(a.getDefiningOp(), left) &&
-         hasReadPreservingSameBlockPath(b.getDefiningOp(), right))
+        (hasReadOnlyPath(a.getDefiningOp(), left) &&
+         hasReadOnlyPath(b.getDefiningOp(), right))
     );
   };
   if (!OperationEquivalence::isEquivalentTo(
@@ -162,7 +212,7 @@ bool haveSameReadValue(Value lhs, Value rhs) {
       )) {
     return false;
   }
-  return hasReadPreservingSameBlockPath(left, right) || hasReadPreservingSameBlockPath(right, left);
+  return hasReadOnlyPath(left, right) || hasReadOnlyPath(right, left);
 }
 
 template <typename Fn>
