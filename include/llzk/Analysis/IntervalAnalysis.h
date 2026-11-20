@@ -491,12 +491,15 @@ private:
   /// or an already-initialized root lattice value.
   Interval getRefInterval(const SourceRef &ref);
 
-  /// @brief Return the best known ExpressionValue for a SourceRef, reusing an exact
-  /// written value when available and otherwise pairing a fresh SSA symbol with the
-  /// SourceRef's current interval.
-  /// Ranged selections always retain the read's SSA symbol because matching ranges
-  /// do not establish equality between independently selected values.
-  ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
+  /// @brief Resolve a selection from all overlapping stored values, retaining a default
+  /// when concrete writes do not cover the selection. Ranged selections use the caller's
+  /// symbol because matching ranges do not establish equality of independent reads.
+  ExpressionValue getRefValue(const SourceRef &ref, llvm::SMTExprRef selectionSymbol);
+
+  /// @brief Resolve and translate stored descendants of an aggregate selection, including
+  /// overlapping concrete and ranged writes, once per destination leaf.
+  llvm::SmallVector<std::pair<SourceRef, ExpressionValue>>
+  getAggregateWrites(const SourceRef &source, const SourceRef &destination);
 
   /// @brief Record a write to the given SourceRef and eagerly refine any reads that
   /// are currently tracking the same storage location.
