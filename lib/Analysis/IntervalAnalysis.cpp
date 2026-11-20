@@ -1797,7 +1797,12 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
       }
     }
     for (Lattice *reader : aliases) {
-      // Share restrictions, preserving each read's expression and independent range selections.
+      // Keep per-read symbols, but equate proven aliases for relational solver constraints.
+      if (reader != valLattice) {
+        smtSolver->addConstraint(smtSolver->mkEqual(
+            newLatticeVal.getExpr(), reader->getValue().getScalarValue().getExpr()
+        ));
+      }
       ExpressionValue refined = refineReducedInterval(reader->getValue().getScalarValue(), shared);
       propagateIfChanged(reader, reader->setValue(refined));
     }
