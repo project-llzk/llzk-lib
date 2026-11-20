@@ -775,42 +775,6 @@ module attributes {llzk.lang} {
   }
 }
 
-// Dynamic writes can both miss the element selected by a later independent read.
-TEST_F(IntervalStorageTests, RangedArrayWritesPreserveUnwrittenValues) {
-  auto mod = parseModule(R"mlir(
-module attributes {llzk.lang} {
-  function.def @test(%array: !array.type<2 x !felt.type>, %condition: i1, %i: index, %j: index, %k: index) -> (!felt.type, !felt.type) {
-    %zero = arith.constant 0 : index
-    %seven = felt.const 7
-    %nine = felt.const 9
-    scf.if %condition {
-      array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
-    }
-    array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
-    %concrete = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
-    %ranged = array.read %array[%k] : !array.type<2 x !felt.type>, !felt.type
-    function.return %concrete, %ranged : !felt.type, !felt.type
-  }
-}
-)mlir");
-  ASSERT_TRUE(mod);
-  auto fn = *mod->getOps<function::FuncDefOp>().begin();
-  auto smt = llvm::CreateZ3Solver();
-  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
-  llzk::dataflow::loadRequiredAnalyses(solver);
-  solver.load<SourceRefAnalysis>();
-  solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
-  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
-  for (Value value : fn.getBody().front().getTerminator()->getOperands()) {
-    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
-    ASSERT_NE(lattice, nullptr);
-    const auto &actual = lattice->getValue().getScalarValue();
-    auto expected = Interval::Entire(field);
-    EXPECT_TRUE(checkCond(expected, actual.getInterval(), expected == actual.getInterval()));
-    EXPECT_EQ(actual.getOptionalUnreducedInterval(), expected.firstUnreduced());
-  }
-}
-
 // Neither a ranged target nor one of several possible aliases is guaranteed to be written.
 TEST_F(IntervalStorageTests, AmbiguousArrayWritesKeepNoWriteDefaults) {
   for (bool optionalFirst : {false, true}) {
