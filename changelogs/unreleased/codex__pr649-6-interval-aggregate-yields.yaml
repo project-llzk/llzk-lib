@@ -1,5 +1,4 @@
 fixed:
-  - Fix aggregate interval propagation through conditional yields, copies, and scalar reads, including overlapping array selections, preserving unknown alternatives and type defaults.
-  - Keep symbolic values and constraints independent for ambiguous array reads, including aggregate copies and conditional results.
-  - Reject independent ranged selections as proof of a shared value in decomposition constraints.
-  - Preserve visible member constraints through unambiguous conditional component aliases.
+  - Preserve every live alternative, including unwritten defaults, when merging conditional aggregate intervals.
+  - Recompute conditional aggregate publications and dependent copies when storage changes, including overlapping array selections.
+  - Resolve scalar reads through materialized aggregate storage while preserving known component identities for constraint attribution.

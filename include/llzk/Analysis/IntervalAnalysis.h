@@ -547,8 +547,7 @@ private:
   /// of unconditional, so the stored value also keeps the prior/no-write state.
   /// Retain that default only until a guaranteed write to this location is analyzed.
   /// A non-null publisher replaces its previous contribution when a copy is recomputed.
-  /// @return Whether the stored expression or interval changed.
-  bool recordRefWrite(
+  void recordRefWrite(
       const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false,
       mlir::Operation *publisher = nullptr
   );
@@ -557,7 +556,6 @@ private:
   void recordConditionalAggregateYields(mlir::Operation *yield);
 
   /// Subscribe a consumer to a storage prefix and its producer's initial publication.
-  /// Ranged prefixes also subscribe at their root to observe overlapping concrete writes.
   /// Returns false while the source producer has not yet published its initial state.
   bool subscribeToAggregate(const SourceRef &source, mlir::Operation *consumer);
 

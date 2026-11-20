@@ -1166,7 +1166,7 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
   return writes;
 }
 
-bool IntervalDataFlowAnalysis::recordRefWrite(
+void IntervalDataFlowAnalysis::recordRefWrite(
     const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped,
     Operation *publisher
 ) {
@@ -1212,7 +1212,7 @@ bool IntervalDataFlowAnalysis::recordRefWrite(
     combined = combined ? joinStoredWrite(*combined, contribution.value) : contribution.value;
   }
   if (previous && *previous == *combined) {
-    return false;
+    return;
   }
   writeResults[writtenRef] = *combined;
   // Recompute from every possible source instead of intersecting with stale read bounds.
@@ -1232,7 +1232,6 @@ bool IntervalDataFlowAnalysis::recordRefWrite(
       }
     }
   }
-  return true;
 }
 
 void IntervalDataFlowAnalysis::updateComputedValue(
@@ -1268,16 +1267,6 @@ IntervalDataFlowAnalysis::setRefinedValue(Lattice *lattice, const ExpressionValu
 bool IntervalDataFlowAnalysis::subscribeToAggregate(const SourceRef &source, Operation *consumer) {
   aggregateReaders[source].insert(consumer);
   if (auto root = source.getRoot(); succeeded(root)) {
-    if (llvm::any_of(source.getPath(), [](const SourceRefIndex &index) {
-      return index.isIndexRange();
-    })) {
-      // A concrete write can overlap a ranged prefix without having that prefix as a
-      // syntactic parent. Conservatively observe all writes to the same storage root.
-      SourceRef rootRef = llvm::isa<BlockArgument>(*root)
-                              ? SourceRef(llvm::cast<BlockArgument>(*root))
-                              : SourceRef(llvm::cast<OpResult>(*root));
-      aggregateReaders[rootRef].insert(consumer);
-    }
     if (auto result = llvm::dyn_cast<OpResult>(*root);
         result &&
         llvm::isa<pod::NewPodOp, CreateArrayOp, CreateStructOp, scf::IfOp, scf::IndexSwitchOp>(
