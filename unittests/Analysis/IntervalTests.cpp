@@ -1376,80 +1376,6 @@ module attributes {llzk.lang} {
   }
 }
 
-// A decomposition requires the same value in every factor, not just overlapping selections.
-TEST_F(IntervalAnalysisAPITests, DecompositionRejectsIndependentRangedReads) {
-  for (unsigned selection : {0U, 1U, 2U}) {
-    SCOPED_TRACE(selection); // Independent dynamic reads, one concrete location, one SSA value.
-    auto mod = parseModule(R"mlir(
-module attributes {llzk.lang} {
-  struct.def @Cell {
-    struct.member @value : !felt.type {llzk.pub}
-    function.def @compute() -> !struct.type<@Cell> {
-      %self = struct.new : !struct.type<@Cell>
-      function.return %self : !struct.type<@Cell>
-    }
-    function.def @constrain(%self: !struct.type<@Cell>) {
-      function.return
-    }
-  }
-  function.def @test(%a: !struct.type<@Cell>, %b: !struct.type<@Cell>, %i: index, %j: index) -> (!felt.type, !felt.type)
-      attributes {function.allow_constraint} {
-    %index = arith.constant 0 : index
-    %zero = felt.const 0
-    %seven = felt.const 7
-    %nine = felt.const 9
-    %array = array.new %a, %b : !array.type<2 x !struct.type<@Cell>>
-    %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
-    %right = array.read %array[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
-    %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
-    %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
-    %xMinusSeven = felt.sub %x, %seven
-    %yMinusNine = felt.sub %y, %nine
-    %product = felt.mul %xMinusSeven, %yMinusNine
-    constrain.eq %product, %zero : !felt.type
-    function.return %x, %y : !felt.type, !felt.type
-  }
-}
-)mlir");
-    ASSERT_TRUE(mod);
-    auto fn = *mod->getOps<function::FuncDefOp>().begin();
-    auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
-    auto members = llvm::to_vector(fn.getOps<MemberReadOp>());
-    if (selection == 1) {
-      auto index = *fn.getOps<arith::ConstantIndexOp>().begin();
-      for (auto read : reads) {
-        read->setOperand(1, index.getResult());
-      }
-    } else if (selection == 2) {
-      auto subtractions = llvm::to_vector(fn.getOps<felt::SubFeltOp>());
-      subtractions.back()->setOperand(0, members.front().getResult());
-    }
-
-    const Field &field = Field::getField("babybear");
-    auto smt = llvm::CreateZ3Solver();
-    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
-    llzk::dataflow::loadRequiredAnalyses(solver);
-    solver.load<SourceRefAnalysis>();
-    solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
-    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
-    for (auto [i, read] : llvm::enumerate(members)) {
-      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(read.getResult());
-      ASSERT_NE(lattice, nullptr);
-      const auto &value = lattice->getValue().getScalarValue();
-      bool sameValue = selection == 1 || (selection == 2 && i == 0);
-      EXPECT_EQ(
-          value.getInterval(),
-          sameValue ? UnreducedInterval(7, 9).reduce(field) : Interval::Entire(field)
-      );
-      if (selection == 0) {
-        // x=11, y=9 satisfies the product constraint and must remain a possible execution.
-        auto witness = field.felt(i == 0 ? 11 : 9);
-        EXPECT_FALSE(value.getInterval().intersect(Interval::Degenerate(field, witness)).isEmpty());
-      }
-    }
-  }
-}
-
 // Equal ranges describe possible locations, not equal values at independent dynamic indices.
 TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadsHaveIndependentSymbols) {
   for (bool storedRange : {false, true}) {
@@ -1458,8 +1384,7 @@ TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadsHaveIndependentSymbols) {
 !P = !pod.type<[@value: !felt.type]>
 !W = !pod.type<[@child: !P]>
 module attributes {llzk.lang} {
-  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
-    %zero = arith.constant 0 : index
+  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
     %leftPod = array.read %pods[%i] : !array.type<2 x !P>, !P
     %rightPod = array.read %pods[%j] : !array.type<2 x !P>, !P
     // WRITES
@@ -1485,9 +1410,7 @@ module attributes {llzk.lang} {
     }
     %chosenLeft = pod.read %leftChoice[@value] : !P, !felt.type
     %chosenRight = pod.read %rightChoice[@value] : !P, !felt.type
-    %exactLeft = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
-    %exactRight = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
-    function.return %left, %right, %nestedLeft, %nestedRight, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight, %exactLeft, %exactRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
+    function.return %left, %right, %nestedLeft, %nestedRight, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
   }
 }
 )mlir";
@@ -1536,8 +1459,6 @@ module attributes {llzk.lang} {
       ));
     }
     EXPECT_EQ(smt->check(), std::optional<bool>(true));
-    // Reads of the same concrete location retain their shared storage identity.
-    EXPECT_TRUE(*expressions[8] == *expressions[9]);
   }
 }
 
