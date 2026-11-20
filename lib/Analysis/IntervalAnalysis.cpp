@@ -67,6 +67,18 @@ std::optional<UnreducedInterval> mergeUnreducedIntervals(
   return lhs->doUnion(*rhs);
 }
 
+/// Match a storage prefix using overlapping array selections in either direction.
+bool hasOverlappingPrefix(const SourceRef &ref, const SourceRef &prefix) {
+  if (!ref.isRooted() || !prefix.isRooted() || *ref.getRoot() != *prefix.getRoot() ||
+      ref.getPath().size() < prefix.getPath().size()) {
+    return false;
+  }
+  return llvm::all_of(
+      llvm::zip(ref.getPath().take_front(prefix.getPath().size()), prefix.getPath()),
+      [](const auto &indices) { return std::get<0>(indices).overlaps(std::get<1>(indices)); }
+  );
+}
+
 /// Ranges describe possible locations rather than one concrete storage identity.
 bool hasRangedSelection(const SourceRef &ref) {
   return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
@@ -850,14 +862,96 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
   return getRefInterval(ref).firstUnreduced();
 }
 
-ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Value val) {
-  if (auto it = writeResults.find(ref); it != writeResults.end()) {
-    // Independent indices can select different elements of the same range.
-    return hasRangedSelection(ref) ? it->second.withExpression(getOrCreateSymbol(val)) : it->second;
+ExpressionValue
+IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, llvm::SMTExprRef selectionSymbol) {
+  const bool rangedSelection = hasRangedSelection(ref);
+  std::optional<ExpressionValue> result;
+  // Exact ranged entries also need coverage checks before discarding their no-write default.
+  if (auto it = writeResults.find(ref); it != writeResults.end() && !rangedSelection) {
+    result = it->second;
+  } else {
+    // A bounded selection needs no default if every concrete element has a stored value.
+    // Count existing entries instead of enumerating potentially huge array dimensions.
+    llvm::DynamicAPInt required(1);
+    for (const SourceRefIndex &index : ref.getPath()) {
+      if (index.isIndexRange()) {
+        if (index.hasUnboundedUpperBound()) {
+          required = -1;
+          break;
+        }
+        auto [low, high] = index.getIndexRange();
+        required *= high - low;
+      }
+    }
+    auto concreteWrites = llvm::count_if(writeResults, [&](const auto &entry) {
+      const SourceRef &written = entry.first;
+      return written.getPath().size() == ref.getPath().size() &&
+             hasOverlappingPrefix(written, ref) &&
+             llvm::none_of(written.getPath(), [](const SourceRefIndex &index) {
+        return index.isIndexRange();
+      });
+    });
+    if (concreteWrites == 0 || required != llvm::DynamicAPInt(concreteWrites)) {
+      result = ExpressionValue(selectionSymbol, getRefInterval(ref), getRefUnreducedInterval(ref));
+    }
   }
-  return createUnknownValue(val)
-      .withInterval(getRefInterval(ref))
-      .withOptionalUnreducedInterval(getRefUnreducedInterval(ref));
+  auto joinWrite = [&](const ExpressionValue &writtenVal) {
+    if (!result) {
+      result = writtenVal;
+      return;
+    }
+    const auto *expr = result->getExpr();
+    if (!expr || !writtenVal.getExpr() || *expr != *writtenVal.getExpr()) {
+      expr = getOrCreateSymbol(ref);
+    }
+    result = ExpressionValue(
+        expr, result->getInterval().join(writtenVal.getInterval()),
+        mergeUnreducedIntervals(
+            result->getOptionalUnreducedInterval(), writtenVal.getOptionalUnreducedInterval()
+        )
+    );
+  };
+  for (const auto &[writtenRef, writtenVal] : writeResults) {
+    if ((writtenRef == ref && !rangedSelection) ||
+        writtenRef.getPath().size() != ref.getPath().size() ||
+        !hasOverlappingPrefix(writtenRef, ref)) {
+      continue;
+    }
+    // Concrete entries retain their own no-write alternatives. Ranged entries contribute
+    // only actual writes; uncovered selections already received a fallback above.
+    joinWrite(
+        hasRangedSelection(writtenRef) ? writeContributions.at(writtenRef).value : writtenVal
+    );
+  }
+  ensure(result.has_value(), "covered storage selection must have a value");
+  // Equal ranges describe possible locations, not equality of independently selected values.
+  return rangedSelection ? result->withExpression(selectionSymbol) : *result;
+}
+
+SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::getAggregateWrites(
+    const SourceRef &source, const SourceRef &destination
+) {
+  SourceRefSet selections;
+  for (const auto &[writtenRef, writtenVal] : writeResults) {
+    if (!hasOverlappingPrefix(writtenRef, source)) {
+      continue;
+    }
+    SourceRef selected = source;
+    for (const SourceRefIndex &index : writtenRef.getPath().drop_front(source.getPath().size())) {
+      auto child = selected.createChild(index);
+      ensure(succeeded(child), "could not select aggregate descendant");
+      selected = *child;
+    }
+    selections.insert(selected);
+  }
+  SmallVector<std::pair<SourceRef, ExpressionValue>> writes;
+  for (const SourceRef &selected : selections) {
+    auto translated = selected.translate(source, destination);
+    ensure(succeeded(translated), "could not translate aggregate descendant");
+    // Resolve the complete selection once for each destination leaf.
+    writes.emplace_back(*translated, getRefValue(selected, getOrCreateSymbol(*translated)));
+  }
+  return writes;
 }
 
 void IntervalDataFlowAnalysis::recordRefWrite(
@@ -945,8 +1039,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       std::optional<UnreducedInterval> joinedUnreduced = std::nullopt;
       bool sawFirst = false;
       for (const SourceRef &ref : refSet.getScalarValue()) {
-        joinedInterval = joinedInterval.join(getRefInterval(ref));
-        auto refUnreduced = getRefUnreducedInterval(ref);
+        auto refValue = getRefValue(ref, getOrCreateSymbol(value));
+        joinedInterval = joinedInterval.join(refValue.getInterval());
+        const auto &refUnreduced = refValue.getOptionalUnreducedInterval();
         if (!sawFirst) {
           joinedUnreduced = refUnreduced;
           sawFirst = true;
@@ -960,7 +1055,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       return LatticeValue(anyVal);
     }
 
-    return LatticeValue(getRefValue(refSet.getSingleValue(), value));
+    return LatticeValue(getRefValue(refSet.getSingleValue(), getOrCreateSymbol(value)));
   };
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
@@ -981,7 +1076,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto arrayRef = getArrayAccessRef(op, readArr);
       if (succeeded(arrayRef)) {
         if (auto it = writeResults.find(*arrayRef); it != writeResults.end()) {
-          auto stored = getRefValue(*arrayRef, val);
+          auto stored = getRefValue(*arrayRef, getOrCreateSymbol(val));
           operandVals.emplace_back(stored);
           Lattice *operandLattice = getLatticeElement(val);
           (void)operandLattice->setValue(stored);
@@ -1001,7 +1096,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     std::optional<LatticeValue> resolvedValue;
     if (auto argument = llvm::dyn_cast<BlockArgument>(val)) {
-      resolvedValue = LatticeValue(getRefValue(SourceRef(argument), val));
+      resolvedValue = LatticeValue(getRefValue(SourceRef(argument), getOrCreateSymbol(val)));
     } else {
       Operation *definition = val.getDefiningOp();
       if (isReadOp(definition) || isConstOp(definition)) {
@@ -1123,13 +1218,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       } else if (operandRefs[1].has_value()) {
         llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
         for (const SourceRef &recordRef : recordRefs.getScalarValue()) {
-          for (const auto &[writtenRef, writtenVal] : writeResults) {
-            if (writtenRef.isValidPrefix(*operandRefs[1])) {
-              auto translated = writtenRef.translate(*operandRefs[1], recordRef);
-              ensure(succeeded(translated), "could not translate aggregate pod write");
-              remappedWrites.emplace_back(*translated, writtenVal);
-            }
-          }
+          llvm::append_range(remappedWrites, getAggregateWrites(*operandRefs[1], recordRef));
         }
         for (const auto &[translatedRef, translatedVal] : remappedWrites) {
           recordRefWrite(translatedRef, translatedVal, maySkipWrite);
@@ -1166,18 +1255,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           }
 
           if (rhsPrefix.has_value()) {
-            llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
-            for (const auto &[writtenRef, writtenVal] : writeResults) {
-              if (!writtenRef.isValidPrefix(*rhsPrefix)) {
-                continue;
-              }
-
-              auto translatedRef = writtenRef.translate(*rhsPrefix, memberRef);
-              ensure(succeeded(translatedRef), "could not translate composite member write");
-              remappedWrites.emplace_back(*translatedRef, writtenVal);
-            }
-
-            for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+            for (const auto &[translatedRef, translatedVal] :
+                 getAggregateWrites(*rhsPrefix, memberRef)) {
               recordRefWrite(translatedRef, translatedVal, maySkipWrite);
             }
           }
@@ -1255,13 +1334,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           ensure(succeeded(child), "could not create aggregate array element SourceRef");
           elementTarget = *child;
         }
-        for (const auto &[writtenRef, writtenVal] : writeResults) {
-          if (writtenRef.isValidPrefix(elementRefs.getSingleValue())) {
-            auto translated = writtenRef.translate(elementRefs.getSingleValue(), elementTarget);
-            ensure(succeeded(translated), "could not translate aggregate array initializer");
-            remappedWrites.emplace_back(*translated, writtenVal);
-          }
-        }
+        llvm::append_range(
+            remappedWrites, getAggregateWrites(elementRefs.getSingleValue(), elementTarget)
+        );
       }
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
         recordRefWrite(translatedRef, translatedVal);
@@ -1282,15 +1357,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       if (!sourceRefs.isSingleValue()) {
         continue;
       }
-      llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
-      for (const auto &[writtenRef, writtenVal] : writeResults) {
-        if (writtenRef.isValidPrefix(sourceRefs.getSingleValue())) {
-          auto translated = writtenRef.translate(sourceRefs.getSingleValue(), *recordRef);
-          ensure(succeeded(translated), "could not translate aggregate pod initializer");
-          remappedWrites.emplace_back(*translated, writtenVal);
-        }
-      }
-      for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+      for (const auto &[translatedRef, translatedVal] :
+           getAggregateWrites(sourceRefs.getSingleValue(), *recordRef)) {
         recordRefWrite(translatedRef, translatedVal);
       }
     }
@@ -1366,14 +1434,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       SourceRef resultRef(llvm::cast<OpResult>(parentRes));
       llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
       for (const SourceRef &yieldedRef : yieldedRefs.getScalarValue()) {
-        for (const auto &[writtenRef, writtenVal] : writeResults) {
-          if (!writtenRef.isValidPrefix(yieldedRef)) {
-            continue;
-          }
-          auto translatedRef = writtenRef.translate(yieldedRef, resultRef);
-          ensure(succeeded(translatedRef), "could not translate aggregate loop yield");
-          remappedWrites.emplace_back(*translatedRef, writtenVal);
-        }
+        llvm::append_range(remappedWrites, getAggregateWrites(yieldedRef, resultRef));
       }
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
         recordRefWrite(translatedRef, translatedVal);
