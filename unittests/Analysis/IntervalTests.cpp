@@ -704,6 +704,127 @@ private:
 
 } // namespace
 
+// A published default must refine after an unconditional write, including through copies.
+TEST_F(IntervalAnalysisAPITests, ConditionalPublicationsReplaceStaleDefaults) {
+  for (bool delayedWrites : {false, true}) {
+    for (bool independentWrite : {false, true}) {
+      SCOPED_TRACE(delayedWrites ? "writes after publication" : "writes before publication");
+      SCOPED_TRACE(independentWrite ? "independent result write" : "only conditional publication");
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %index = arith.constant 0 : index
+    %pod = pod.new : !pod.type<[@value: !felt.type]>
+    %array = array.new : !array.type<1 x !felt.type>
+    pod.write %pod[@value] = %seven : !pod.type<[@value: !felt.type]>, !felt.type
+    array.write %array[%index] = %seven : !array.type<1 x !felt.type>, !felt.type
+    %selectedPod, %selectedArray = scf.if %condition -> (!pod.type<[@value: !felt.type]>, !array.type<1 x !felt.type>) {
+      scf.yield %pod, %array : !pod.type<[@value: !felt.type]>, !array.type<1 x !felt.type>
+    } else {
+      scf.yield %pod, %array : !pod.type<[@value: !felt.type]>, !array.type<1 x !felt.type>
+    }
+    // INDEPENDENT_WRITE
+    %copy = pod.new { @pod = %selectedPod, @array = %selectedArray } : !pod.type<[@pod: !pod.type<[@value: !felt.type]>, @array: !array.type<1 x !felt.type>]>
+    %out = array.new %copy : !array.type<1 x !pod.type<[@pod: !pod.type<[@value: !felt.type]>, @array: !array.type<1 x !felt.type>]>>
+    function.return
+  }
+}
+)mlir";
+      if (independentWrite) {
+        source.replace(
+            source.find("// INDEPENDENT_WRITE"), std::string("// INDEPENDENT_WRITE").size(),
+            "pod.write %selectedPod[@value] = %nine : !pod.type<[@value: !felt.type]>, !felt.type"
+        );
+      }
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      const Field &field = Field::getField("babybear");
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+      auto visit = [&](Operation *op) {
+        SmallVector<const IntervalAnalysisLattice *> operands;
+        SmallVector<IntervalAnalysisLattice *> results;
+        for (Value value : op->getOperands()) {
+          operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        for (Value value : op->getResults()) {
+          results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        return analysis->visitOperation(op, operands, results);
+      };
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto conditional = *fn.getOps<scf::IfOp>().begin();
+      auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
+      auto resultField = SourceRef(conditional->getResult(0))
+                             .createChild(SourceRefIndex(StringAttr::get(&ctx, "value")));
+      ASSERT_TRUE(succeeded(resultField));
+      SmallVector<Operation *> writes;
+      auto *driver = solver.load<IntervalTestInitialization>([&] {
+        for (Operation &op : fn.getBody().front()) {
+          if (&op == conditional.getOperation()) {
+            break;
+          }
+          if (isa<pod::WritePodOp, array::WriteArrayOp>(op)) {
+            writes.push_back(&op);
+            if (delayedWrites) {
+              continue;
+            }
+          }
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+        ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+        ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+        EXPECT_EQ(
+            analysis->getWriteResults().at(*resultField).getInterval(),
+            delayedWrites ? Interval::Entire(field) : Interval::Degenerate(field, field.felt(7))
+        );
+        // Publish the same initial state into both copies before refining the sources.
+        for (Operation *op = conditional->getNextNode(); op != nullptr; op = op->getNextNode()) {
+          ASSERT_TRUE(succeeded(visit(op)));
+        }
+        if (delayedWrites) {
+          for (Operation *write : writes) {
+            ASSERT_TRUE(succeeded(visit(write)));
+          }
+        }
+      });
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+        return &candidate == driver;
+      })));
+      auto check = [&](const SourceRef &ref, int64_t upper) {
+        const auto &stored = analysis->getWriteResults();
+        auto it = stored.find(ref);
+        ASSERT_NE(it, stored.end());
+        EXPECT_EQ(it->second.getInterval(), UnreducedInterval(7, upper).reduce(field));
+        EXPECT_EQ(it->second.getOptionalUnreducedInterval(), UnreducedInterval(7, upper));
+      };
+      check(*resultField, independentWrite ? 9 : 7);
+      check(SourceRef(conditional->getResult(1), {SourceRefIndex(0)}), 7);
+      check(
+          SourceRef(
+              arrays.back()->getResult(0),
+              {SourceRefIndex(0), SourceRefIndex(StringAttr::get(&ctx, "pod")),
+               SourceRefIndex(StringAttr::get(&ctx, "value"))}
+          ),
+          independentWrite ? 9 : 7
+      );
+      check(
+          SourceRef(
+              arrays.back()->getResult(0),
+              {SourceRefIndex(0), SourceRefIndex(StringAttr::get(&ctx, "array")), SourceRefIndex(0)}
+          ),
+          7
+      );
+    }
+  }
+}
+
 // A join can run before aggregate initializers when the worklist discovers new live regions.
 TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsRevisitConditionalYield) {
   auto mod = parseModule(R"mlir(
