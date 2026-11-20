@@ -380,9 +380,12 @@ module attributes {llzk.lang} {
 
 // A product decomposition requires one value in every factor, not matching index ranges.
 TEST_F(IntervalStorageTests, DecompositionRejectsIndependentRangedMembers) {
-  for (unsigned selection : {0U, 1U, 2U}) {
-    SCOPED_TRACE(selection); // Independent dynamic reads, one SSA value, one concrete location.
-    auto mod = parseModule(R"mlir(
+  const StringRef cases[] = {"independent indices",      "one SSA value",
+                             "one concrete location",    "same dynamic index",
+                             "same aggregate SSA value", "intervening array write"};
+  for (auto [selection, name] : llvm::enumerate(cases)) {
+    SCOPED_TRACE(name.str());
+    std::string source = R"mlir(
 module attributes {llzk.lang} {
   struct.def @Cell {
     struct.member @value : !felt.type {llzk.pub}
@@ -394,13 +397,14 @@ module attributes {llzk.lang} {
       function.return
     }
   }
-  function.def @test(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index) -> (!felt.type, !felt.type)
+  function.def @test(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> (!felt.type, !felt.type)
       attributes {function.allow_constraint} {
     %index = arith.constant 0 : index
     %zero = felt.const 0
     %seven = felt.const 7
     %nine = felt.const 9
     %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    // WRITE
     %right = array.read %array[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
     %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
     %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
@@ -411,18 +415,31 @@ module attributes {llzk.lang} {
     function.return %x, %y : !felt.type, !felt.type
   }
 }
-)mlir");
+)mlir";
+    if (selection == 5) {
+      source.replace(
+          source.find("// WRITE"), std::string("// WRITE").size(),
+          "array.write %array[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, "
+          "!struct.type<@Cell>"
+      );
+    }
+    auto mod = parseModule(source);
     ASSERT_TRUE(mod);
     auto fn = *mod->getOps<function::FuncDefOp>().begin();
     auto members = llvm::to_vector(fn.getOps<component::MemberReadOp>());
     if (selection == 1) {
       auto subtractions = llvm::to_vector(fn.getOps<felt::SubFeltOp>());
       subtractions.back()->setOperand(0, members.front().getResult());
-    } else if (selection == 2) {
-      Value index = fn.getBody().front().front().getResult(0);
+    } else if (selection == 2 || selection == 3 || selection == 5) {
+      Value index = fn.getArgument(1);
+      if (selection == 2) {
+        index = fn.getBody().front().front().getResult(0);
+      }
       for (auto read : fn.getOps<array::ReadArrayOp>()) {
         read->setOperand(1, index);
       }
+    } else if (selection == 4) {
+      members.back()->setOperand(0, members.front()->getOperand(0));
     }
     auto smt = llvm::CreateZ3Solver();
     DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
@@ -434,11 +451,12 @@ module attributes {llzk.lang} {
       const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(read.getResult());
       ASSERT_NE(lattice, nullptr);
       const auto &actual = lattice->getValue().getScalarValue().getInterval();
-      auto expected = selection == 2 || (selection == 1 && i == 0)
-                          ? UnreducedInterval(7, 9).reduce(field)
-                          : Interval::Entire(field);
+      auto expected =
+          selection == 2 || selection == 3 || selection == 4 || (selection == 1 && i == 0)
+              ? UnreducedInterval(7, 9).reduce(field)
+              : Interval::Entire(field);
       EXPECT_TRUE(checkCond(expected, actual, expected == actual));
-      if (selection == 0) {
+      if (selection == 0 || selection == 5) {
         auto witness = Interval::Degenerate(field, field.felt(i == 0 ? 11 : 9));
         EXPECT_FALSE(actual.intersect(witness).isEmpty());
       }
