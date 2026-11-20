@@ -1,2 +1,2 @@
 fixed:
-  - Fix aggregate interval propagation through conditional yields and copies, preserving unknown alternatives and type defaults.
+  - Fix aggregate interval propagation through conditional yields and copies, including overlapping array selections, preserving unknown alternatives and type defaults.
