@@ -1,0 +1,71 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Copies retain the exact stored expression. Having one dependency does not make
+// the copied expression equal to that dependency or transfer its bounds backward.
+module attributes {llzk.lang} {
+  struct.def @CopiedExpression {
+    struct.member @result : !felt.type
+    function.def @compute() -> !struct.type<@CopiedExpression> {
+      %self = struct.new : !struct.type<@CopiedExpression>
+      %two = felt.const 2
+      %sum = felt.add %two, %two
+      %source = pod.new { @value = %sum } : !pod.type<[@value: !felt.type]>
+      %holder = pod.new { @saved = %source }
+          : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>
+      %copy = pod.read %holder[@saved]
+          : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %read = pod.read %copy[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      struct.writem %self[@result] = %read : !struct.type<@CopiedExpression>, !felt.type
+      function.return %self : !struct.type<@CopiedExpression>
+    }
+    function.def @constrain(%self: !struct.type<@CopiedExpression>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CopiedExpression StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %self.result in Degenerate(4)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.result in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Bounding a copied input + input expression must not transfer that bound to input,
+// even though input is its only dependency. The input interval remains Entire.
+module attributes {llzk.lang} {
+  struct.def @CopiedExpressionIsNotItsDependency {
+    struct.member @input : !felt.type
+    function.def @compute() -> !struct.type<@CopiedExpressionIsNotItsDependency> {
+      %self = struct.new : !struct.type<@CopiedExpressionIsNotItsDependency>
+      function.return %self : !struct.type<@CopiedExpressionIsNotItsDependency>
+    }
+    function.def @constrain(%self: !struct.type<@CopiedExpressionIsNotItsDependency>) {
+      %input = struct.readm %self[@input] : !struct.type<@CopiedExpressionIsNotItsDependency>, !felt.type
+      %sum = felt.add %input, %input
+      %source = pod.new { @value = %sum } : !pod.type<[@value: !felt.type]>
+      %holder = pod.new { @saved = %source }
+          : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>
+      %copy = pod.read %holder[@saved]
+          : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %read = pod.read %copy[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %nine = felt.const 9
+      %bound = bool.cmp le(%read, %nine)
+      bool.assert %bound
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CopiedExpressionIsNotItsDependency StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %self.input in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.input in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

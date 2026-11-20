@@ -54,6 +54,15 @@ def FuncDefOp
     external references must use function arguments (which are passed by value)
     or reference external members or globals by symbol name.
 
+    Array and POD arguments have independent mutable storage, recursively copying
+    their array/POD contents. Writing an element or record in the callee does not
+    modify the caller's aggregate. Returned arrays and PODs likewise have
+    independent storage, even when returning an argument or an array slice.
+    `struct.type` values are identity-bearing component handles: copying a handle,
+    including one inside an array or POD, preserves the referenced component's
+    identity. Writes to that component's members remain visible through every
+    copy of the handle.
+
     Functions appearing within a `struct.def` have specific semantics and must
     be named `compute`, `constrain`, or `product`. Functions appearing at the
     module level (i.e. not within a `struct.def`) have no name restrictions and

@@ -1,0 +1,1446 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// A symbolic copy preserves the correspondence between individual elements.
+// Separate modules keep unrelated observations from hiding extra dependencies.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyUnwrittenElement {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type)
+          -> !struct.type<@Arrays::@SymbolicCopyUnwrittenElement<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyUnwrittenElement<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyUnwrittenElement<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyUnwrittenElement<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : <@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1] : <@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyUnwrittenElement ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A concrete read selects the written source element.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyWrittenZero {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type) -> !struct.type<@Arrays::@SymbolicCopyWrittenZero<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyWrittenZero<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyWrittenZero<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyWrittenZero<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c0] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyWrittenZero ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Writes to neighboring source elements remain distinct.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyWrittenOne {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type) -> !struct.type<@Arrays::@SymbolicCopyWrittenOne<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyWrittenOne<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyWrittenOne<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyWrittenOne<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyWrittenOne ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Later writes to the source do not change copied scalar contents.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopySnapshot {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicCopySnapshot<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopySnapshot<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopySnapshot<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopySnapshot<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        array.write %source[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopySnapshot ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// An unwritten source address is also observed at copy time.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyUnwrittenSnapshot {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicCopyUnwrittenSnapshot<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyUnwrittenSnapshot<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyUnwrittenSnapshot<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyUnwrittenSnapshot<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        array.write %source[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyUnwrittenSnapshot ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A point overwrite removes the copy dependency at that point.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyOverwrite {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicCopyOverwrite<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyOverwrite<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyOverwrite<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyOverwrite<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        array.write %copy[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyOverwrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { later, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Splitting a copied range preserves the remaining correspondence.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyOverwriteNeighbor {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicCopyOverwriteNeighbor<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyOverwriteNeighbor<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyOverwriteNeighbor<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyOverwriteNeighbor<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        array.write %copy[%c0] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyOverwriteNeighbor ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A whole-array copy replaces earlier point and ranged writes.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyWholeOverwrite {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %other: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicCopyWholeOverwrite<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyWholeOverwrite<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyWholeOverwrite<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyWholeOverwrite<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %other: !array.type<@N x !felt.type> {function.arg_name = "other"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        array.write %copy[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        array.insert %copy[] = %other : !array.type<@N x !felt.type>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyWholeOverwrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { other[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A conditional whole-array copy retains both initialized alternatives.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyConditional {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %other: !array.type<@N x !felt.type>, %b: !felt.type, %cond: i1) -> !struct.type<@Arrays::@SymbolicCopyConditional<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyConditional<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyConditional<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyConditional<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %other: !array.type<@N x !felt.type> {function.arg_name = "other"},
+          %b: !felt.type {function.arg_name = "b"},
+          %cond: i1 {function.arg_name = "cond"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        scf.if %cond {
+          array.insert %copy[] = %other : !array.type<@N x !felt.type>, !array.type<@N x !felt.type>
+        }
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyConditional ConstraintDependencyGraph {
+// CHECK-NEXT:      { other[1], b },
+// CHECK-NEXT:      { other[1], <felt.const: 0> },
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// An unknown-index source write can affect the selected copied element.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyUnknownSourceWrite {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %i: index) -> !struct.type<@Arrays::@SymbolicCopyUnknownSourceWrite<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyUnknownSourceWrite<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyUnknownSourceWrite<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyUnknownSourceWrite<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %i: index {function.arg_name = "i"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%i] = %a : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyUnknownSourceWrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1], a },
+// CHECK-NEXT:      { source[1], <felt.const: 0> },
+// CHECK-NEXT:      { a, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// An unknown-index destination write keeps the copied value possible.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyUnknownDestinationWrite {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %b: !felt.type, %later: !felt.type, %i: index) -> !struct.type<@Arrays::@SymbolicCopyUnknownDestinationWrite<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyUnknownDestinationWrite<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyUnknownDestinationWrite<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyUnknownDestinationWrite<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"},
+          %i: index {function.arg_name = "i"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        array.write %copy[%i] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyUnknownDestinationWrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, later },
+// CHECK-NEXT:      { b, <felt.const: 0> },
+// CHECK-NEXT:      { later, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// An unknown-index read joins source elements without inventing destination storage.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyUnknownRead {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %i: index) -> !struct.type<@Arrays::@SymbolicCopyUnknownRead<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyUnknownRead<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyUnknownRead<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyUnknownRead<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %i: index {function.arg_name = "i"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%i] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyUnknownRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[<dynamic>], a },
+// CHECK-NEXT:      { source[<dynamic>], <felt.const: 0> },
+// CHECK-NEXT:      { a, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A second copy preserves the first copy snapshot through later mutations.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyChain {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicCopyChain<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyChain<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyChain<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyChain<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %secondHolder = pod.new { @saved = %copy } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        array.write %copy[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %second = pod.read %secondHolder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %second[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyChain ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Both symbolic dimensions are projected before resolving source writes.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicMatrixCopy {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %a: !felt.type) -> !struct.type<@Arrays::@SymbolicMatrixCopy<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicMatrixCopy<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicMatrixCopy<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicMatrixCopy<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0, %c0] = %a : !array.type<@N,@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>, !array.type<@N,@N x !felt.type>
+        %observed = array.read %copy[%c1, %c1] : !array.type<@N,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicMatrixCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Removing one matrix point preserves all other slabs of the copied rectangle.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicMatrixPointResidual {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicMatrixPointResidual<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicMatrixPointResidual<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicMatrixPointResidual<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicMatrixPointResidual<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>, !array.type<@N,@N x !felt.type>
+        array.write %copy[%c0, %c0] = %later : !array.type<@N,@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1, %c1] : !array.type<@N,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicMatrixPointResidual ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A row copy supersedes exactly that row of an earlier matrix copy.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicMatrixRowOverwrite {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %other: !array.type<@N x !felt.type>) -> !struct.type<@Arrays::@SymbolicMatrixRowOverwrite<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicMatrixRowOverwrite<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicMatrixRowOverwrite<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicMatrixRowOverwrite<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %other: !array.type<@N x !felt.type> {function.arg_name = "other"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>, !array.type<@N,@N x !felt.type>
+        array.insert %copy[%c0] = %other : !array.type<@N,@N x !felt.type>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c0, %c1] : !array.type<@N,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicMatrixRowOverwrite ConstraintDependencyGraph {
+// CHECK-NEXT:      { other[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// The neighboring row keeps its original source coordinates after splitting.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicMatrixRowNeighbor {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %other: !array.type<@N x !felt.type>) -> !struct.type<@Arrays::@SymbolicMatrixRowNeighbor<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicMatrixRowNeighbor<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicMatrixRowNeighbor<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicMatrixRowNeighbor<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %other: !array.type<@N x !felt.type> {function.arg_name = "other"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>, !array.type<@N,@N x !felt.type>
+        array.insert %copy[%c0] = %other : !array.type<@N,@N x !felt.type>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1, %c1] : !array.type<@N,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicMatrixRowNeighbor ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// An unknown destination row remains a weak selection of the outer dimension.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicMatrixUnknownRow {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %other: !array.type<@N x !felt.type>, %i: index) -> !struct.type<@Arrays::@SymbolicMatrixUnknownRow<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicMatrixUnknownRow<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicMatrixUnknownRow<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicMatrixUnknownRow<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %other: !array.type<@N x !felt.type> {function.arg_name = "other"},
+          %i: index {function.arg_name = "i"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>, !array.type<@N,@N x !felt.type>
+        array.insert %copy[%i] = %other : !array.type<@N,@N x !felt.type>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1, %c1] : !array.type<@N,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicMatrixUnknownRow ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][1], other[1] },
+// CHECK-NEXT:      { source[1][1], <felt.const: 0> },
+// CHECK-NEXT:      { other[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// The fixed source row is outside the copied suffix and must not be narrowed.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicRowCopy {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>) -> !struct.type<@Arrays::@SymbolicRowCopy<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicRowCopy<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicRowCopy<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicRowCopy<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %row = array.extract %source[%c1] : !array.type<@N,@N x !felt.type>
+        %holder = pod.new { @saved = %row } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c0] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicRowCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][0], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// POD fields in the copied suffix preserve the array dimension correspondence.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicNestedPodCopy {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type) -> !struct.type<@Arrays::@SymbolicNestedPodCopy<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicNestedPodCopy<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicNestedPodCopy<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicNestedPodCopy<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        %record = pod.new { @items = %source } : !pod.type<[@items: !array.type<@N x !felt.type>]>
+        %holder = pod.new { @saved = %record } : !pod.type<[@saved: !pod.type<[@items: !array.type<@N x !felt.type>]>]>
+        %recordCopy = pod.read %holder[@saved] : !pod.type<[@saved: !pod.type<[@items: !array.type<@N x !felt.type>]>]>, !pod.type<[@items: !array.type<@N x !felt.type>]>
+        %copy = pod.read %recordCopy[@items] : !pod.type<[@items: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicNestedPodCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Returning a symbolic argument preserves selected contents at call entry.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicReturnedArgument {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicReturnedArgument<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicReturnedArgument<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicReturnedArgument<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicReturnedArgument<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %copy = function.call @Arrays::@identity(%source) : (!array.type<@N x !felt.type>) -> !array.type<@N x !felt.type>
+        array.write %source[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @identity(%input: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      function.return %input : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicReturnedArgument ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Separate symbolic returns have independent mutable storage.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicRepeatedCalls {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicRepeatedCalls<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicRepeatedCalls<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicRepeatedCalls<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicRepeatedCalls<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %copy = function.call @Arrays::@identity(%source) : (!array.type<@N x !felt.type>) -> !array.type<@N x !felt.type>
+        %second = function.call @Arrays::@identity(%source) : (!array.type<@N x !felt.type>) -> !array.type<@N x !felt.type>
+        array.write %copy[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %second[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @identity(%input: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      function.return %input : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicRepeatedCalls ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A callee-local point write does not contaminate the rest of its symbolic return.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicReturnedModifiedArgument {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type) -> !struct.type<@Arrays::@SymbolicReturnedModifiedArgument<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicReturnedModifiedArgument<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicReturnedModifiedArgument<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicReturnedModifiedArgument<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %copy = function.call @Arrays::@updated(%source, %a) : (!array.type<@N x !felt.type>, !felt.type) -> !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @updated(%input: !array.type<@N x !felt.type>, %value: !felt.type) -> !array.type<@N x !felt.type> {
+      %c0 = arith.constant 0 : index
+      array.write %input[%c0] = %value : !array.type<@N x !felt.type>, !felt.type
+      function.return %input : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicReturnedModifiedArgument ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Nested forward-defined return summaries preserve the captured element.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicForwardReturns {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicForwardReturns<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicForwardReturns<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicForwardReturns<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicForwardReturns<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %copy = function.call @Arrays::@forward(%source) : (!array.type<@N x !felt.type>) -> !array.type<@N x !felt.type>
+        array.write %source[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @forward(%input: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      %copy = function.call @Arrays::@identity(%input) : (!array.type<@N x !felt.type>) -> !array.type<@N x !felt.type>
+      function.return %copy : !array.type<@N x !felt.type>
+    }
+    function.def @identity(%input: !array.type<@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      function.return %input : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicForwardReturns ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Loop backedges retain prior contents and later writes while copy queries terminate.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicLoopCopy {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicLoopCopy<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicLoopCopy<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicLoopCopy<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicLoopCopy<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %c2 = arith.constant 2 : index
+        scf.for %j = %c0 to %c2 step %c1 {
+          %holder2 = pod.new { @saved = %copy } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+          %iterationCopy = pod.read %holder2[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+          %inside = array.read %iterationCopy[%c1] : !array.type<@N x !felt.type>, !felt.type
+          %insideZero = felt.const 0
+          constrain.eq %inside, %insideZero : !felt.type
+          array.write %copy[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        }
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicLoopCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, later },
+// CHECK-NEXT:      { b, <felt.const: 0> },
+// CHECK-NEXT:      { later, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A ranged query projects the known row before collecting source writes.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicMatrixRangedRead {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %a: !felt.type, %i: index) -> !struct.type<@Arrays::@SymbolicMatrixRangedRead<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicMatrixRangedRead<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicMatrixRangedRead<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicMatrixRangedRead<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %i: index {function.arg_name = "i"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0, %c0] = %a : !array.type<@N,@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N,@N x !felt.type>]>, !array.type<@N,@N x !felt.type>
+        %observed = array.read %copy[%c1, %i] : !array.type<@N,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicMatrixRangedRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][<dynamic>], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// An unknown source prefix stays independent of the copied element index.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicUnknownSourceRow {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %a: !felt.type, %i: index) -> !struct.type<@Arrays::@SymbolicUnknownSourceRow<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicUnknownSourceRow<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicUnknownSourceRow<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicUnknownSourceRow<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %i: index {function.arg_name = "i"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0, %c1] = %a : !array.type<@N,@N x !felt.type>, !felt.type
+        %row = array.extract %source[%i] : !array.type<@N,@N x !felt.type>
+        %holder = pod.new { @saved = %row } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c0] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicUnknownSourceRow ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[<dynamic>][0], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A conditional first copy retains the destination input on the skipped path.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicConditionalFirstCopy {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %other: !array.type<@N x !felt.type>, %cond: i1) -> !struct.type<@Arrays::@SymbolicConditionalFirstCopy<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicConditionalFirstCopy<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicConditionalFirstCopy<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicConditionalFirstCopy<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %other: !array.type<@N x !felt.type> {function.arg_name = "other"},
+          %cond: i1 {function.arg_name = "cond"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        scf.if %cond {
+          array.insert %source[] = %other : !array.type<@N x !felt.type>, !array.type<@N x !felt.type>
+        }
+        %observed = array.read %source[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicConditionalFirstCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1], other[1] },
+// CHECK-NEXT:      { source[1], <felt.const: 0> },
+// CHECK-NEXT:      { other[1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Static dimensions remain separated while the symbolic dimension is projected.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicPartiallyStaticMatrix {
+      function.def @compute(%source: !array.type<2,@N x !felt.type>, %a: !felt.type) -> !struct.type<@Arrays::@SymbolicPartiallyStaticMatrix<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicPartiallyStaticMatrix<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicPartiallyStaticMatrix<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicPartiallyStaticMatrix<[@N]>>,
+          %source: !array.type<2,@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0, %c0] = %a : !array.type<2,@N x !felt.type>, !felt.type
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<2,@N x !felt.type>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<2,@N x !felt.type>]>, !array.type<2,@N x !felt.type>
+        %observed = array.read %copy[%c1, %c1] : !array.type<2,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicPartiallyStaticMatrix ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][1], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A copied handle keeps its component despite a later source-slot overwrite.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyStructHandles {
+      function.def @compute(%source: !array.type<@N x !struct.type<@Cell>>, %first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@Arrays::@SymbolicCopyStructHandles<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyStructHandles<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyStructHandles<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyStructHandles<[@N]>>,
+          %source: !array.type<@N x !struct.type<@Cell>> {function.arg_name = "source"},
+          %first: !struct.type<@Cell> {function.arg_name = "first"},
+          %second: !struct.type<@Cell> {function.arg_name = "second"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0] = %first : !array.type<@N x !struct.type<@Cell>>, !struct.type<@Cell>
+        array.write %source[%c1] = %second : !array.type<@N x !struct.type<@Cell>>, !struct.type<@Cell>
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !struct.type<@Cell>>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !struct.type<@Cell>>]>, !array.type<@N x !struct.type<@Cell>>
+        array.write %source[%c1] = %first : !array.type<@N x !struct.type<@Cell>>, !struct.type<@Cell>
+        %selected = array.read %copy[%c1] : !array.type<@N x !struct.type<@Cell>>, !struct.type<@Cell>
+        %observed = struct.readm %selected[@value] : !struct.type<@Cell>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyStructHandles ConstraintDependencyGraph {
+// CHECK-NEXT:      { second.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Copying an unwritten handle captures the original slot identity.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCopyUnwrittenHandle {
+      function.def @compute(%source: !array.type<@N x !struct.type<@Cell>>, %second: !struct.type<@Cell>) -> !struct.type<@Arrays::@SymbolicCopyUnwrittenHandle<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCopyUnwrittenHandle<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCopyUnwrittenHandle<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCopyUnwrittenHandle<[@N]>>,
+          %source: !array.type<@N x !struct.type<@Cell>> {function.arg_name = "source"},
+          %second: !struct.type<@Cell> {function.arg_name = "second"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !struct.type<@Cell>>]>
+        %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !struct.type<@Cell>>]>, !array.type<@N x !struct.type<@Cell>>
+        array.write %source[%c1] = %second : !array.type<@N x !struct.type<@Cell>>, !struct.type<@Cell>
+        %selected = array.read %copy[%c1] : !array.type<@N x !struct.type<@Cell>>, !struct.type<@Cell>
+        %observed = struct.readm %selected[@value] : !struct.type<@Cell>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @Arrays::@SymbolicCopyUnwrittenHandle ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1].value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A forward-defined helper copies a locally modified array through POD storage.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCalleeStorageCopy {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicCalleeStorageCopy<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCalleeStorageCopy<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCalleeStorageCopy<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCalleeStorageCopy<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        %copy = function.call @Arrays::@saveForward(%source, %a) : (!array.type<@N x !felt.type>, !felt.type) -> !array.type<@N x !felt.type>
+        array.write %source[%c1] = %later : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @saveForward(%source: !array.type<@N x !felt.type>, %value: !felt.type) -> !array.type<@N x !felt.type> {
+      %result = function.call @Arrays::@save(%source, %value) : (!array.type<@N x !felt.type>, !felt.type) -> !array.type<@N x !felt.type>
+      function.return %result : !array.type<@N x !felt.type>
+    }
+    function.def @save(%source: !array.type<@N x !felt.type>, %value: !felt.type) -> !array.type<@N x !felt.type> {
+      %c0 = arith.constant 0 : index
+      array.write %source[%c0] = %value : !array.type<@N x !felt.type>, !felt.type
+      %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+      %result = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+      function.return %result : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCalleeStorageCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A deferred returned copy resolves local callee writes before translating arguments.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicCalleeWrittenElement {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type) -> !struct.type<@Arrays::@SymbolicCalleeWrittenElement<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicCalleeWrittenElement<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicCalleeWrittenElement<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicCalleeWrittenElement<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %copy = function.call @Arrays::@saveForward(%source, %a) : (!array.type<@N x !felt.type>, !felt.type) -> !array.type<@N x !felt.type>
+        %observed = array.read %copy[%c0] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @saveForward(%source: !array.type<@N x !felt.type>, %value: !felt.type) -> !array.type<@N x !felt.type> {
+      %result = function.call @Arrays::@save(%source, %value) : (!array.type<@N x !felt.type>, !felt.type) -> !array.type<@N x !felt.type>
+      function.return %result : !array.type<@N x !felt.type>
+    }
+    function.def @save(%source: !array.type<@N x !felt.type>, %value: !felt.type) -> !array.type<@N x !felt.type> {
+      %c0 = arith.constant 0 : index
+      array.write %source[%c0] = %value : !array.type<@N x !felt.type>, !felt.type
+      %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<@N x !felt.type>]>
+      %result = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<@N x !felt.type>]>, !array.type<@N x !felt.type>
+      function.return %result : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicCalleeWrittenElement ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// A returned symbolic row translates only the copied suffix across the call.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicReturnedSlice {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicReturnedSlice<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicReturnedSlice<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicReturnedSlice<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicReturnedSlice<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %copy = function.call @Arrays::@slice(%source) : (!array.type<@N,@N x !felt.type>) -> !array.type<@N x !felt.type>
+        array.write %source[%c1, %c0] = %later : !array.type<@N,@N x !felt.type>, !felt.type
+        %observed = array.read %copy[%c0] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @slice(%input: !array.type<@N,@N x !felt.type>) -> !array.type<@N x !felt.type> {
+      %c1 = arith.constant 1 : index
+      %row = array.extract %input[%c1] : !array.type<@N,@N x !felt.type>
+      function.return %row : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicReturnedSlice ConstraintDependencyGraph {
+// CHECK-NEXT:      { source[1][0], <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// An in-place whole-array copy observes storage before its own write.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicSelfCopy {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %a: !felt.type, %b: !felt.type) -> !struct.type<@Arrays::@SymbolicSelfCopy<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicSelfCopy<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicSelfCopy<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicSelfCopy<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %a: !felt.type {function.arg_name = "a"},
+          %b: !felt.type {function.arg_name = "b"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c1] = %b : !array.type<@N x !felt.type>, !felt.type
+        array.insert %source[] = %source : !array.type<@N x !felt.type>, !array.type<@N x !felt.type>
+        array.write %source[%c0] = %a : !array.type<@N x !felt.type>, !felt.type
+        %observed = array.read %source[%c1] : !array.type<@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicSelfCopy ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Overlapping source and destination allocations still use the pre-copy row.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicOverlappingRows {
+      function.def @compute(%source: !array.type<@N,@N x !felt.type>, %b: !felt.type, %later: !felt.type) -> !struct.type<@Arrays::@SymbolicOverlappingRows<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicOverlappingRows<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicOverlappingRows<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicOverlappingRows<[@N]>>,
+          %source: !array.type<@N,@N x !felt.type> {function.arg_name = "source"},
+          %b: !felt.type {function.arg_name = "b"},
+          %later: !felt.type {function.arg_name = "later"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        array.write %source[%c0, %c1] = %b : !array.type<@N,@N x !felt.type>, !felt.type
+        %row = array.extract %source[%c0] : !array.type<@N,@N x !felt.type>
+        array.insert %source[%c1] = %row : !array.type<@N,@N x !felt.type>, !array.type<@N x !felt.type>
+        array.write %source[%c0, %c1] = %later : !array.type<@N,@N x !felt.type>, !felt.type
+        %observed = array.read %source[%c1, %c1] : !array.type<@N,@N x !felt.type>, !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicOverlappingRows ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+
+// Scalar callers refresh when the source contents of an unchanged deferred return become known.
+module attributes {llzk.lang} {
+  poly.template @Arrays {
+    poly.param @N : index
+    struct.def @SymbolicForwardScalarObserver {
+      function.def @compute(%source: !array.type<@N x !felt.type>, %b: !felt.type) -> !struct.type<@Arrays::@SymbolicForwardScalarObserver<[@N]>> {
+        %self = struct.new : !struct.type<@Arrays::@SymbolicForwardScalarObserver<[@N]>>
+        function.return %self : !struct.type<@Arrays::@SymbolicForwardScalarObserver<[@N]>>
+      }
+      function.def @constrain(
+          %self: !struct.type<@Arrays::@SymbolicForwardScalarObserver<[@N]>>,
+          %source: !array.type<@N x !felt.type> {function.arg_name = "source"},
+          %b: !felt.type {function.arg_name = "b"}
+      ) {
+        %c0 = arith.constant 0 : index
+        %c1 = arith.constant 1 : index
+        %observed = function.call @Arrays::@observe(%source, %b) : (!array.type<@N x !felt.type>, !felt.type) -> !felt.type
+        %zero = felt.const 0
+        constrain.eq %observed, %zero : !felt.type
+        function.return
+      }
+    }
+    function.def @observe(%input: !array.type<@N x !felt.type>, %value: !felt.type) -> !felt.type {
+      %copy = function.call @Arrays::@make(%input, %value) : (!array.type<@N x !felt.type>, !felt.type) -> !array.type<@N x !felt.type>
+      %c1 = arith.constant 1 : index
+      %read = array.read %copy[%c1] : !array.type<@N x !felt.type>, !felt.type
+      function.return %read : !felt.type
+    }
+    function.def @make(%input: !array.type<@N x !felt.type>, %value: !felt.type) -> !array.type<@N x !felt.type> {
+      %c1 = arith.constant 1 : index
+      array.write %input[%c1] = %value : !array.type<@N x !felt.type>, !felt.type
+      function.return %input : !array.type<@N x !felt.type>
+    }
+  }
+}
+
+// CHECK-LABEL: @Arrays::@SymbolicForwardScalarObserver ConstraintDependencyGraph {
+// CHECK-NEXT:      { b, <felt.const: 0> }
+// CHECK-NEXT:  }

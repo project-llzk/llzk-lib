@@ -1,0 +1,329 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Mutable POD and array transfers copy their contents. Mutating a source or a
+// read result must not change another copy. Struct leaves preserve instance identity.
+module attributes {llzk.lang} {
+  struct.def @PodWriteCopiesContents {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@PodWriteCopiesContents> {
+      %self = struct.new : !struct.type<@PodWriteCopiesContents>
+      function.return %self : !struct.type<@PodWriteCopiesContents>
+    }
+    function.def @constrain(
+        %self: !struct.type<@PodWriteCopiesContents>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %holder = pod.new : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>
+      pod.write %holder[@saved] = %source : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %copy = pod.read %holder[@saved] : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %observed = pod.read %copy[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodWriteCopiesContents ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PodInitializerCopiesContents {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@PodInitializerCopiesContents> {
+      %self = struct.new : !struct.type<@PodInitializerCopiesContents>
+      function.return %self : !struct.type<@PodInitializerCopiesContents>
+    }
+    function.def @constrain(
+        %self: !struct.type<@PodInitializerCopiesContents>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %holder = pod.new { @saved = %source } : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %copy = pod.read %holder[@saved] : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %observed = pod.read %copy[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodInitializerCopiesContents ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @PodReadCopiesContents {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@PodReadCopiesContents> {
+      %self = struct.new : !struct.type<@PodReadCopiesContents>
+      function.return %self : !struct.type<@PodReadCopiesContents>
+    }
+    function.def @constrain(
+        %self: !struct.type<@PodReadCopiesContents>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %holder = pod.new { @saved = %source } : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>
+      %copy = pod.read %holder[@saved] : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      pod.write %copy[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %original = pod.read %holder[@saved] : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %observed = pod.read %original[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @PodReadCopiesContents ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayRecordCopiesContents {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ArrayRecordCopiesContents> {
+      %self = struct.new : !struct.type<@ArrayRecordCopiesContents>
+      function.return %self : !struct.type<@ArrayRecordCopiesContents>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ArrayRecordCopiesContents>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %source = array.new %initial, %bonus : !array.type<2 x !felt.type>
+      %holder = pod.new : !pod.type<[@saved: !array.type<2 x !felt.type>]>
+      pod.write %holder[@saved] = %source : !pod.type<[@saved: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      array.write %source[%c0] = %replacement : !array.type<2 x !felt.type>, !felt.type
+      %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      %observed = array.read %copy[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayRecordCopiesContents ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayRecordReadCopiesContents {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ArrayRecordReadCopiesContents> {
+      %self = struct.new : !struct.type<@ArrayRecordReadCopiesContents>
+      function.return %self : !struct.type<@ArrayRecordReadCopiesContents>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ArrayRecordReadCopiesContents>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %source = array.new %initial, %bonus : !array.type<2 x !felt.type>
+      %holder = pod.new { @saved = %source } : !pod.type<[@saved: !array.type<2 x !felt.type>]>
+      %copy = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      array.write %copy[%c0] = %replacement : !array.type<2 x !felt.type>, !felt.type
+      %original = pod.read %holder[@saved] : !pod.type<[@saved: !array.type<2 x !felt.type>]>, !array.type<2 x !felt.type>
+      %observed = array.read %original[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayRecordReadCopiesContents ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayWriteCopiesPod {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ArrayWriteCopiesPod> {
+      %self = struct.new : !struct.type<@ArrayWriteCopiesPod>
+      function.return %self : !struct.type<@ArrayWriteCopiesPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ArrayWriteCopiesPod>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %array = array.new : !array.type<1 x !pod.type<[@value: !felt.type]>>
+      array.write %array[%c0] = %source : !array.type<1 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %copy = array.read %array[%c0] : !array.type<1 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+      %observed = pod.read %copy[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayWriteCopiesPod ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ArrayReadCopiesPod {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ArrayReadCopiesPod> {
+      %self = struct.new : !struct.type<@ArrayReadCopiesPod>
+      function.return %self : !struct.type<@ArrayReadCopiesPod>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ArrayReadCopiesPod>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %c0 = arith.constant 0 : index
+      %source = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      %array = array.new %source : !array.type<1 x !pod.type<[@value: !felt.type]>>
+      %copy = array.read %array[%c0] : !array.type<1 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+      pod.write %copy[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %original = array.read %array[%c0] : !array.type<1 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+      %observed = pod.read %original[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ArrayReadCopiesPod ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NestedCopyPreservesUnwrittenSource {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@NestedCopyPreservesUnwrittenSource> {
+      %self = struct.new : !struct.type<@NestedCopyPreservesUnwrittenSource>
+      function.return %self : !struct.type<@NestedCopyPreservesUnwrittenSource>
+    }
+    function.def @constrain(
+        %self: !struct.type<@NestedCopyPreservesUnwrittenSource>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new : !pod.type<[@value: !felt.type]>
+      %holder = pod.new : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>
+      pod.write %holder[@saved] = %source : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %copy = pod.read %holder[@saved] : !pod.type<[@saved: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+      %observed = pod.read %copy[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NestedCopyPreservesUnwrittenSource ConstraintDependencyGraph {
+// CHECK-NEXT:      { %[[VAL_0:[0-9a-zA-Z_.-]+]].value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @UnwrittenScalarObservation {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@UnwrittenScalarObservation> {
+      %self = struct.new : !struct.type<@UnwrittenScalarObservation>
+      function.return %self : !struct.type<@UnwrittenScalarObservation>
+    }
+    function.def @constrain(
+        %self: !struct.type<@UnwrittenScalarObservation>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = pod.new : !pod.type<[@value: !felt.type]>
+      %old = pod.read %source[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      pod.write %source[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %target = pod.new : !pod.type<[@value: !felt.type]>
+      pod.write %target[@value] = %old : !pod.type<[@value: !felt.type]>, !felt.type
+      %observed = pod.read %target[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @UnwrittenScalarObservation ConstraintDependencyGraph {
+// CHECK-NEXT:      { %[[VAL_0:[0-9a-zA-Z_.-]+]].value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NestedCopyPreservesStructHandle {
+    struct.member @out : !felt.type {llzk.pub}
+    function.def @compute(%component: !struct.type<@NestedCopyPreservesStructHandle>)
+        -> !struct.type<@NestedCopyPreservesStructHandle> {
+      %self = struct.new : !struct.type<@NestedCopyPreservesStructHandle>
+      function.return %self : !struct.type<@NestedCopyPreservesStructHandle>
+    }
+    function.def @constrain(
+        %self: !struct.type<@NestedCopyPreservesStructHandle>,
+        %component: !struct.type<@NestedCopyPreservesStructHandle> {function.arg_name = "component"}
+    ) {
+      %source = pod.new { @child = %component }
+          : !pod.type<[@child: !struct.type<@NestedCopyPreservesStructHandle>]>
+      %holder = pod.new { @nested = %source }
+          : !pod.type<[@nested: !pod.type<[@child: !struct.type<@NestedCopyPreservesStructHandle>]>]>
+      %copy = pod.read %holder[@nested]
+          : !pod.type<[@nested: !pod.type<[@child: !struct.type<@NestedCopyPreservesStructHandle>]>]>,
+            !pod.type<[@child: !struct.type<@NestedCopyPreservesStructHandle>]>
+      %child = pod.read %copy[@child]
+          : !pod.type<[@child: !struct.type<@NestedCopyPreservesStructHandle>]>,
+            !struct.type<@NestedCopyPreservesStructHandle>
+      %observed = struct.readm %child[@out] : !struct.type<@NestedCopyPreservesStructHandle>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NestedCopyPreservesStructHandle ConstraintDependencyGraph {
+// CHECK-NEXT:      { component.out, <felt.const: 0> }
+// CHECK-NEXT:  }

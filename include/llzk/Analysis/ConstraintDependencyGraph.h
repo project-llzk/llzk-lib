@@ -19,6 +19,8 @@
 
 #include <llvm/ADT/EquivalenceClasses.h>
 
+#include <functional>
+
 namespace mlir {
 
 class DataFlowSolver;
@@ -34,11 +36,17 @@ using SourceRefRemappings = std::vector<std::pair<SourceRef, SourceRefLatticeVal
 /// simply output a union of its input references, regardless of what type of
 /// operation it performs, as the analysis is operator-insensitive.
 class SourceRefAnalysis : public dataflow::SparseForwardDataFlowAnalysis<SourceRefLattice> {
+  mlir::DataFlowSolver &dataflowSolver_;
+  mlir::SymbolTableCollection tables;
+
 public:
   using Lattice = SourceRefLattice;
   using OperandValues = mlir::DenseMap<mlir::Value, const Lattice *>;
   using Base = dataflow::SparseForwardDataFlowAnalysis<Lattice>;
-  using Base::SparseForwardDataFlowAnalysis;
+
+  /// Keep the solver available for observation-point-aware scalar dependency queries.
+  explicit SourceRefAnalysis(mlir::DataFlowSolver &dataflowSolver)
+      : Base(dataflowSolver), dataflowSolver_(dataflowSolver) {}
 
   /// Diagnose opaque calls whose arguments contain shared component handles. Their unknown
   /// storage effects cannot be modeled, including when a handle is nested in an array or POD.
@@ -47,7 +55,26 @@ public:
   static mlir::LogicalResult validateInput(mlir::ModuleOp module);
 
   static const Lattice *getLattice(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the storage references represented by `val` without replacing them with values
+  /// written to those locations.
   static SourceRefLatticeValue getValueState(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return the logical dependencies of `val` by following known storage writes transitively.
+  /// Expand array/POD contents at their definition; unwritten storage retains its address.
+  /// Use the explicit observation overload to inspect an aggregate after subsequent writes.
+  static SourceRefLatticeValue getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val);
+
+  /// Return array/POD contents before `before`; scalars and component handles keep their
+  /// original SSA observation. Large and symbolic array contents use compact range references.
+  static SourceRefLatticeValue
+  getDependencyState(mlir::DataFlowSolver &solver, mlir::Value val, mlir::Operation *before);
+
+  /// Return the logical dependencies of storage references as observed before `before`.
+  static SourceRefLatticeValue getDependencyState(
+      mlir::DataFlowSolver &solver, const SourceRefLatticeValue &refs, mlir::Operation *before
+  );
+
   static mlir::FailureOr<SourceRefLatticeValue>
   getWriteTargetState(mlir::DataFlowSolver &solver, mlir::Operation *op);
 
@@ -71,13 +98,14 @@ public:
   /// For a defined callable, translates reference states returned by the callee
   /// into the caller's context using the argument lattice states. This is also
   /// used when interprocedural analysis deliberately treats a defined call as
-  /// external.
+  /// external. Arrays and PODs are copied at call boundaries. Only writes through
+  /// component handles (including handles inside copied aggregates) affect caller storage.
   ///
   /// @param call The call operation being analyzed.
-  /// @param argumentLattices The current lattice states of @p call's arguments, in argument order.
+  /// @param operandLattices The current lattice states of @p call's arguments, in argument order.
   /// @param resultLattices The lattice states to update for @p call's results, in result order.
   void visitExternalCall(
-      mlir::CallOpInterface call, mlir::ArrayRef<const Lattice *> argumentLattices,
+      mlir::CallOpInterface call, mlir::ArrayRef<const Lattice *> operandLattices,
       mlir::ArrayRef<Lattice *> resultLattices
   ) override;
 
@@ -96,7 +124,14 @@ protected:
   arraySubdivisionOpUpdate(array::ArrayAccessOpInterface op, const OperandValues &operandVals);
 
 private:
-  mlir::SymbolTableCollection tables;
+  /// Prepare a write RHS without re-reading scalar storage at the consuming operation.
+  SourceRefLatticeValue getStoredValue(mlir::Value value);
+
+  /// Give a mutable aggregate read independent storage initialized from its observed contents.
+  SourceRefLatticeValue recordReadCopy(mlir::Operation *op, const SourceRefLatticeValue &source);
+
+  class StorageState;
+  StorageState *getStorageState(mlir::Operation *op);
 };
 
 /// @brief Parameters and shared objects to pass to child analyses.
@@ -161,6 +196,7 @@ public:
 
   /// @brief Dumps the CDG to stderr.
   void dump() const;
+
   /// @brief Print the CDG to the specified output stream.
   /// @param os The LLVM/MLIR output stream.
   void print(mlir::raw_ostream &os) const;
@@ -169,11 +205,16 @@ public:
   /// context. Used to translate a CDG of a struct to a CDG for a called subcomponent.
   /// @param translation A vector of mappings of current reference prefix -> translated reference
   /// prefix.
+  /// @param resolve Optional resolver receiving the matched original prefix and translated
+  /// reference. The prefix distinguishes captured scalar dependencies from aggregate storage.
   /// @return A CDG that contains only translated references. Non-constant references with
   /// no translation are omitted. This omissions allows calling components to ignore internal
   /// references within subcomponents that are inaccessible to the caller.
   /// Paths through omitted references still connect their translated endpoints.
-  ConstraintDependencyGraph translate(SourceRefRemappings translation) const;
+  ConstraintDependencyGraph translate(
+      SourceRefRemappings translation,
+      const std::function<SourceRefLatticeValue(const SourceRef &, const SourceRef &)> &resolve = {}
+  ) const;
 
   /// @brief Get the values that are connected to the given ref via emitted constraints.
   /// This method looks for constraints to the value in the ref and constraints to any

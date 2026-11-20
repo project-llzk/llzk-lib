@@ -1,0 +1,169 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Recover each incoming slice prefix, preserving the selected column in both rows.
+module attributes {llzk.lang} {
+  function.def @read_last(%value: !array.type<2 x !felt.type>) -> !felt.type {
+    %index = arith.constant 1 : index
+    %read = array.read %value[%index] : !array.type<2 x !felt.type>, !felt.type
+    function.return %read : !felt.type
+  }
+  struct.def @ForArraySlices {
+    function.def @compute(%first: !felt.type, %second: !felt.type, %unused: !felt.type) -> !struct.type<@ForArraySlices> {
+      %self = struct.new : !struct.type<@ForArraySlices>
+      function.return %self : !struct.type<@ForArraySlices>
+    }
+    function.def @constrain(%self: !struct.type<@ForArraySlices>, %first: !felt.type {function.arg_name = "first"}, %second: !felt.type {function.arg_name = "second"}, %unused: !felt.type {function.arg_name = "unused"}) {
+      %matrix = array.new %unused, %first, %unused, %second : !array.type<2,2 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %row0 = array.extract %matrix[%c0] : !array.type<2,2 x !felt.type>
+      %row1 = array.extract %matrix[%c1] : !array.type<2,2 x !felt.type>
+      %zero = felt.const 0
+      %result = scf.for %i = %c0 to %c2 step %c1 iter_args(%current = %row0) -> (!array.type<2 x !felt.type>) {
+        %value = function.call @read_last(%current) : (!array.type<2 x !felt.type>) -> !felt.type
+        constrain.eq %value, %zero : !felt.type
+        scf.yield %row1 : !array.type<2 x !felt.type>
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ForArraySlices ConstraintDependencyGraph {
+// CHECK-NEXT:      { first, second },
+// CHECK-NEXT:      { first, <felt.const: 0> },
+// CHECK-NEXT:      { second, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Loop-carried PODs supply their contents to independent by-value parameters.
+module attributes {llzk.lang} {
+  function.def @write_and_read(%first: !pod.type<[@left: !felt.type, @right: !felt.type]>, %second: !pod.type<[@left: !felt.type, @right: !felt.type]>, %replacement: !felt.type) -> (!felt.type, !felt.type) {
+    pod.write %first[@left] = %replacement : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+    %changed = pod.read %first[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+    %unchanged = pod.read %second[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+    function.return %changed, %unchanged : !felt.type, !felt.type
+  }
+  struct.def @ForPodCopies {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %unused: !felt.type) -> !struct.type<@ForPodCopies> {
+      %self = struct.new : !struct.type<@ForPodCopies>
+      function.return %self : !struct.type<@ForPodCopies>
+    }
+    function.def @constrain(%self: !struct.type<@ForPodCopies>, %initial: !felt.type {function.arg_name = "initial"}, %replacement: !felt.type {function.arg_name = "replacement"}, %unused: !felt.type {function.arg_name = "unused"}) {
+      %source = pod.new { @left = %initial, @right = %unused } : !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %zero = felt.const 0
+      %one = felt.const 1
+      %result = scf.for %i = %c0 to %c1 step %c1 iter_args(%current = %source) -> (!pod.type<[@left: !felt.type, @right: !felt.type]>) {
+        %changed, %unchanged = function.call @write_and_read(%current, %current, %replacement) : (!pod.type<[@left: !felt.type, @right: !felt.type]>, !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type) -> (!felt.type, !felt.type)
+        constrain.eq %changed, %one : !felt.type
+        constrain.eq %unchanged, %zero : !felt.type
+        %caller = pod.read %current[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+        constrain.eq %caller, %zero : !felt.type
+        scf.yield %current : !pod.type<[@left: !felt.type, @right: !felt.type]>
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ForPodCopies ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 1> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Calls in both while regions preserve their respective incoming element/record paths.
+module attributes {llzk.lang} {
+  function.def @read_first(%value: !array.type<2 x !felt.type>) -> !felt.type {
+    %index = arith.constant 0 : index
+    %read = array.read %value[%index] : !array.type<2 x !felt.type>, !felt.type
+    function.return %read : !felt.type
+  }
+  function.def @read_last(%value: !array.type<2 x !felt.type>) -> !felt.type {
+    %index = arith.constant 1 : index
+    %read = array.read %value[%index] : !array.type<2 x !felt.type>, !felt.type
+    function.return %read : !felt.type
+  }
+  struct.def @WhileArrayArguments {
+    function.def @compute(%beforeInput: !felt.type, %afterInput: !felt.type) -> !struct.type<@WhileArrayArguments> {
+      %self = struct.new : !struct.type<@WhileArrayArguments>
+      function.return %self : !struct.type<@WhileArrayArguments>
+    }
+    function.def @constrain(%self: !struct.type<@WhileArrayArguments>, %beforeInput: !felt.type {function.arg_name = "beforeInput"}, %afterInput: !felt.type {function.arg_name = "afterInput"}) {
+      %source = array.new %beforeInput, %afterInput : !array.type<2 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %zero = felt.const 0
+      %one = felt.const 1
+      %result:2 = scf.while (%i = %c0, %before = %source) : (index, !array.type<2 x !felt.type>) -> (index, !array.type<2 x !felt.type>) {
+        %value = function.call @read_first(%before) : (!array.type<2 x !felt.type>) -> !felt.type
+        constrain.eq %value, %zero : !felt.type
+        %condition = arith.cmpi slt, %i, %c1 : index
+        scf.condition(%condition) %i, %before : index, !array.type<2 x !felt.type>
+      } do {
+      ^bb0(%j: index, %after: !array.type<2 x !felt.type>):
+        %value = function.call @read_last(%after) : (!array.type<2 x !felt.type>) -> !felt.type
+        constrain.eq %value, %one : !felt.type
+        %next = arith.addi %j, %c1 : index
+        scf.yield %next, %after : index, !array.type<2 x !felt.type>
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @WhileArrayArguments ConstraintDependencyGraph {
+// CHECK-NEXT:      { beforeInput, <felt.const: 0> },
+// CHECK-NEXT:      { afterInput, <felt.const: 1> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Calls in both while regions preserve their respective incoming element/record paths.
+module attributes {llzk.lang} {
+  function.def @read_first(%value: !pod.type<[@left: !felt.type, @right: !felt.type]>) -> !felt.type {
+    %read = pod.read %value[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+    function.return %read : !felt.type
+  }
+  function.def @read_last(%value: !pod.type<[@left: !felt.type, @right: !felt.type]>) -> !felt.type {
+    %read = pod.read %value[@right] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+    function.return %read : !felt.type
+  }
+  struct.def @WhilePodArguments {
+    function.def @compute(%beforeInput: !felt.type, %afterInput: !felt.type) -> !struct.type<@WhilePodArguments> {
+      %self = struct.new : !struct.type<@WhilePodArguments>
+      function.return %self : !struct.type<@WhilePodArguments>
+    }
+    function.def @constrain(%self: !struct.type<@WhilePodArguments>, %beforeInput: !felt.type {function.arg_name = "beforeInput"}, %afterInput: !felt.type {function.arg_name = "afterInput"}) {
+      %source = pod.new { @left = %beforeInput, @right = %afterInput } : !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %zero = felt.const 0
+      %one = felt.const 1
+      %result:2 = scf.while (%i = %c0, %before = %source) : (index, !pod.type<[@left: !felt.type, @right: !felt.type]>) -> (index, !pod.type<[@left: !felt.type, @right: !felt.type]>) {
+        %value = function.call @read_first(%before) : (!pod.type<[@left: !felt.type, @right: !felt.type]>) -> !felt.type
+        constrain.eq %value, %zero : !felt.type
+        %condition = arith.cmpi slt, %i, %c1 : index
+        scf.condition(%condition) %i, %before : index, !pod.type<[@left: !felt.type, @right: !felt.type]>
+      } do {
+      ^bb0(%j: index, %after: !pod.type<[@left: !felt.type, @right: !felt.type]>):
+        %value = function.call @read_last(%after) : (!pod.type<[@left: !felt.type, @right: !felt.type]>) -> !felt.type
+        constrain.eq %value, %one : !felt.type
+        %next = arith.addi %j, %c1 : index
+        scf.yield %next, %after : index, !pod.type<[@left: !felt.type, @right: !felt.type]>
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @WhilePodArguments ConstraintDependencyGraph {
+// CHECK-NEXT:      { beforeInput, <felt.const: 0> },
+// CHECK-NEXT:      { afterInput, <felt.const: 1> }
+// CHECK-NEXT:  }

@@ -83,3 +83,116 @@ module attributes {llzk.lang} {
 // CHECK:       compute {
 // CHECK-NEXT:    %self.storage.value in TypeA:[ 5, 7 ]
 // CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @ComputedPodRecordRead {
+    struct.member @result : !felt.type
+
+    function.def @compute() -> !struct.type<@ComputedPodRecordRead> {
+      %self = struct.new : !struct.type<@ComputedPodRecordRead>
+      %one = felt.const 1
+      %two = felt.const 2
+      %sum = felt.add %one, %two : !felt.type
+      %storage = pod.new { @value = %sum } : !pod.type<[@value: !felt.type]>
+      %read = pod.read %storage[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      struct.writem %self[@result] = %read : !struct.type<@ComputedPodRecordRead>, !felt.type
+      function.return %self : !struct.type<@ComputedPodRecordRead>
+    }
+
+    function.def @constrain(%self: !struct.type<@ComputedPodRecordRead>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ComputedPodRecordRead StructIntervals {
+// CHECK: compute {
+// CHECK-NEXT:         %self.result in Degenerate(3)
+// CHECK: }
+
+// -----
+
+// An array allocated without initializers retains exact values when copied into a POD.
+module attributes {llzk.lang} {
+  struct.def @StaticArrayPodInitializer {
+    struct.member @result : !felt.type
+    function.def @compute() -> !struct.type<@StaticArrayPodInitializer> {
+      %self = struct.new : !struct.type<@StaticArrayPodInitializer>
+      %array = array.new : !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %seven = felt.const 7
+      array.write %array[%c0] = %seven : !array.type<1 x !felt.type>, !felt.type
+      %pod = pod.new { @values = %array } : !pod.type<[@values: !array.type<1 x !felt.type>]>
+      // Later source writes must not change the copied record's interval.
+      %replacement = felt.const 13
+      array.write %array[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %copied = pod.read %pod[@values] : !pod.type<[@values: !array.type<1 x !felt.type>]>, !array.type<1 x !felt.type>
+      %value = array.read %copied[%c0] : !array.type<1 x !felt.type>, !felt.type
+      struct.writem %self[@result] = %value : !struct.type<@StaticArrayPodInitializer>, !felt.type
+      function.return %self : !struct.type<@StaticArrayPodInitializer>
+    }
+    function.def @constrain(%self: !struct.type<@StaticArrayPodInitializer>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @StaticArrayPodInitializer StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %self.result in Degenerate(7)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.result in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// POD writes preserve multidimensional array paths, computed values, and unwritten elements.
+module attributes {llzk.lang} {
+  struct.def @StaticArrayPodWrite {
+    struct.member @first : !felt.type
+    struct.member @second : !felt.type
+    struct.member @unwritten : !felt.type
+    function.def @compute() -> !struct.type<@StaticArrayPodWrite> {
+      %self = struct.new : !struct.type<@StaticArrayPodWrite>
+      %array = array.new : !array.type<2,2 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %three = felt.const 3
+      %four = felt.const 4
+      %seven = felt.add %three, %four : !felt.type
+      %eleven = felt.const 11
+      array.write %array[%c0, %c1] = %seven : !array.type<2,2 x !felt.type>, !felt.type
+      array.write %array[%c1, %c0] = %eleven : !array.type<2,2 x !felt.type>, !felt.type
+      %pod = pod.new : !pod.type<[@values: !array.type<2,2 x !felt.type>]>
+      pod.write %pod[@values] = %array : !pod.type<[@values: !array.type<2,2 x !felt.type>]>, !array.type<2,2 x !felt.type>
+      %copied = pod.read %pod[@values] : !pod.type<[@values: !array.type<2,2 x !felt.type>]>, !array.type<2,2 x !felt.type>
+      %first = array.read %copied[%c0, %c1] : !array.type<2,2 x !felt.type>, !felt.type
+      %second = array.read %copied[%c1, %c0] : !array.type<2,2 x !felt.type>, !felt.type
+      %unwritten = array.read %copied[%c0, %c0] : !array.type<2,2 x !felt.type>, !felt.type
+      struct.writem %self[@unwritten] = %unwritten : !struct.type<@StaticArrayPodWrite>, !felt.type
+      struct.writem %self[@first] = %first : !struct.type<@StaticArrayPodWrite>, !felt.type
+      struct.writem %self[@second] = %second : !struct.type<@StaticArrayPodWrite>, !felt.type
+      function.return %self : !struct.type<@StaticArrayPodWrite>
+    }
+    function.def @constrain(%self: !struct.type<@StaticArrayPodWrite>) {
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @StaticArrayPodWrite StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %self.first in Degenerate(7)
+// CHECK-NEXT:          %self.second in Degenerate(11)
+// CHECK-NEXT:          %self.unwritten in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.first in Entire
+// CHECK-NEXT:          %self.second in Entire
+// CHECK-NEXT:          %self.unwritten in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
