@@ -1582,6 +1582,64 @@ module attributes {llzk.lang} {
   EXPECT_EQ(smt->check(), std::optional<bool>(true));
 }
 
+// Conditional storage roots retain the nested/disjoint alias proofs from the preceding stack.
+TEST_F(IntervalAnalysisAPITests, ConditionalArrayReadsPreserveStackedAliasProofs) {
+  for (bool sameIndex : {false, true}) {
+    for (bool disjointWrite : {false, true}) {
+      SCOPED_TRACE(sameIndex ? "same index" : "independent indices");
+      SCOPED_TRACE(disjointWrite ? "disjoint write" : "overlapping write");
+      std::string source = R"mlir(
+!A = !array.type<2 x !felt.type>
+module attributes {llzk.lang} {
+  function.def @test(%a: !A, %b: !A, %i: index, %j: index, %condition: i1, %input: !felt.type) {
+    %selected = scf.if %condition -> (!A) {
+      scf.yield %a : !A
+    } else {
+      scf.yield %b : !A
+    }
+    %fresh = array.new : !A
+    %yes = arith.constant true
+    %left = array.read %selected[%i] : !A, !felt.type
+    array.write WRITE_TARGET[%i] = %input : !A, !felt.type
+    scf.if %yes {
+      %right = array.read %selected[READ_INDEX] : !A, !felt.type
+      %different = bool.cmp ne(%left, %right)
+      bool.assert %different
+    }
+    function.return
+  }
+}
+)mlir";
+      source.replace(
+          source.find("WRITE_TARGET"), StringRef("WRITE_TARGET").size(),
+          disjointWrite ? "%fresh" : "%selected"
+      );
+      source.replace(
+          source.find("READ_INDEX"), StringRef("READ_INDEX").size(), sameIndex ? "%i" : "%j"
+      );
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      solver.load<IntervalDataFlowAnalysis>(smt, Field::getField("babybear"), false, false);
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      SmallVector<boolean::CmpOp> comparisons;
+      mod->walk([&](boolean::CmpOp comparison) { comparisons.push_back(comparison); });
+      ASSERT_EQ(comparisons.size(), 1U);
+      const auto *lattice =
+          solver.lookupState<IntervalAnalysisLattice>(comparisons.front().getResult());
+      ASSERT_NE(lattice, nullptr);
+      ASSERT_FALSE(lattice->getConstraints().empty());
+      for (const ExpressionValue &constraint : lattice->getConstraints()) {
+        smt->addConstraint(constraint.getExpr());
+      }
+      EXPECT_EQ(smt->check(), std::optional<bool>(!(sameIndex && disjointWrite)));
+    }
+  }
+}
+
 // Equal-looking values in separate functions must still have separate SMT identities.
 TEST_F(IntervalAnalysisAPITests, ValueSymbolsCacheIdentityAndPreserveSorts) {
   auto mod = parseModule(R"mlir(
