@@ -1,2 +1,2 @@
 fixed:
-  - Interval Analysis: Propagate delayed and overlapping storage writes through aggregate copies, replacing stale publications while retaining independent destination writes and component identities.
+  - Interval Analysis: Propagate delayed and overlapping storage writes through aggregate copies and SCF yields, replacing stale publications while retaining alternative source values, independent destination writes, and component identities.

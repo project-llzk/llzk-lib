@@ -1540,6 +1540,122 @@ module attributes {llzk.lang} {
   });
 }
 
+// A revisited yield replaces its stale default while preserving the other branch's contribution.
+TEST_F(IntervalStorageTests, RecomputedYieldsReplaceDefaultsAndPreserveOtherBranches) {
+  for (bool separateSource : {false, true}) {
+    SCOPED_TRACE(separateSource ? "distinct branch sources" : "same branch source");
+    std::string source = R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %source = pod.new : !P
+    scf.if %condition {
+      pod.write %source[@value] = %seven : !P, !felt.type
+    }
+    pod.write %source[@value] = %seven : !P, !felt.type
+    %other = pod.new { @value = %nine } : !P
+    %result = scf.if %condition -> (!P) {
+      scf.yield %source : !P
+    } else {
+      scf.yield ELSE_SOURCE : !P
+    }
+    function.return
+  }
+}
+)mlir";
+    source.replace(
+        source.find("ELSE_SOURCE"), std::string("ELSE_SOURCE").size(),
+        separateSource ? "%other" : "%source"
+    );
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto guaranteed = *fn.getOps<pod::WritePodOp>().begin();
+    auto conditionals = llvm::to_vector(fn.getOps<scf::IfOp>());
+    auto sourcePod = *fn.getOps<pod::NewPodOp>().begin();
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    SourceRef resultRef(conditionals.back()->getResult(0), {value});
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op == guaranteed.getOperation()) {
+          continue;
+        }
+        if (&op == conditionals.front().getOperation()) {
+          ASSERT_TRUE(succeeded(visit(&conditionals.front().thenBlock()->front())));
+        } else if (&op == conditionals.back().getOperation()) {
+          ASSERT_TRUE(succeeded(visit(conditionals.back().thenBlock()->getTerminator())));
+          ASSERT_TRUE(succeeded(visit(conditionals.back().elseBlock()->getTerminator())));
+        } else {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      expectStored(analysis, resultRef, Interval::Entire(field));
+      ASSERT_TRUE(succeeded(visit(guaranteed)));
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      expectStored(
+          analysis, SourceRef(sourcePod->getResult(0), {value}),
+          Interval::Degenerate(field, field.felt(7))
+      );
+      expectStored(
+          analysis, resultRef,
+          separateSource ? UnreducedInterval(7, 9).reduce(field)
+                         : Interval::Degenerate(field, field.felt(7))
+      );
+    });
+  }
+}
+
+// One yield can forward several possible sources; all must contribute to each result leaf.
+TEST_F(IntervalStorageTests, YieldRemapsPreserveAliasedSources) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!A = !array.type<1 x !felt.type>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = pod.new { @value = %seven } : !P
+    %right = pod.new { @value = %nine } : !P
+    %leftArray = array.new : !A
+    %rightArray = array.new : !A
+    array.write %leftArray[%zero] = %seven : !A, !felt.type
+    array.write %rightArray[%zero] = %nine : !A, !felt.type
+    %selected, %selectedArray = scf.if %condition -> (!P, !A) {
+      scf.yield %left, %leftArray : !P, !A
+    } else {
+      scf.yield %right, %rightArray : !P, !A
+    }
+    %result, %resultArray = scf.execute_region -> (!P, !A) {
+      scf.yield %selected, %selectedArray : !P, !A
+    }
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto result = *fn.getOps<scf::ExecuteRegionOp>().begin();
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+    for (Operation &op : fn.getBody().front()) {
+      if (isa<scf::IfOp, scf::ExecuteRegionOp>(op)) {
+        for (Region &region : op.getRegions()) {
+          ASSERT_TRUE(succeeded(visit(region.front().getTerminator())));
+        }
+      } else {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+  }, [&](IntervalDataFlowAnalysis &analysis) {
+    auto expected = UnreducedInterval(7, 9).reduce(field);
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    expectStored(analysis, SourceRef(result->getResult(0), {value}), expected);
+    expectStored(analysis, SourceRef(result->getResult(1), {SourceRefIndex(0)}), expected);
+  });
+}
+
 // Notify overlapping prefixes in both directions; disjoint writes must not alter copies.
 TEST_F(IntervalStorageTests, AggregateSubscribersObserveOverlappingWrites) {
   for (unsigned selection : {0U, 1U, 2U}) {
