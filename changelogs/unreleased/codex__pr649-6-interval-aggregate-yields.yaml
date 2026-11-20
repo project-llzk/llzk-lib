@@ -2,3 +2,4 @@ fixed:
   - Preserve unknown alternatives and merge all live branches when propagating intervals through conditional aggregate yields.
   - Revisit aggregate joins when new source fields appear, waiting for pending producers before publishing their intervals.
   - Preserve type-default intervals for aggregate fields left unwritten by every live conditional branch.
+  - Propagate aggregate storage updates through successive POD and array copies and aggregate read aliases.
