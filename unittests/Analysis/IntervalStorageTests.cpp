@@ -13,6 +13,8 @@
 #include "llzk/Analysis/AnalysisUtil.h"
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/StreamHelper.h"
 
 #include <mlir/Parser/Parser.h>
@@ -136,6 +138,85 @@ module attributes {llzk.lang} {
     auto expected = Interval::Degenerate(field, field.felt(i == 0 ? 7 : 9));
     EXPECT_TRUE(checkCond(expected, actual.getInterval(), expected == actual.getInterval()));
     EXPECT_EQ(actual.getExpr(), analysis->getOrCreateSymbol(value));
+  }
+}
+
+// Relational constraints need equal solver values for proven aliases, even with entire bounds.
+TEST_F(IntervalStorageTests, ProvenRangedAliasesHaveEqualSolverValues) {
+  for (bool memberReads : {false, true}) {
+    SCOPED_TRACE(memberReads ? "component members" : "array elements");
+    for (unsigned selection : {0U, 1U, 2U, 3U}) {
+      // Same index, independent indices, intervening writes, or one repeated SSA value.
+      SCOPED_TRACE(selection);
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %input: !felt.type, %replacement: !struct.type<@Cell>) {
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    // ARRAY_WRITE
+    %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
+    %leftCell = array.read %cells[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    // COMPONENT_WRITE
+    %rightCell = array.read %cells[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %leftMember = struct.readm %leftCell[@value] : !struct.type<@Cell>, !felt.type
+    %rightMember = struct.readm %rightCell[@value] : !struct.type<@Cell>, !felt.type
+    %different = bool.cmp ne(%left, %right)
+    bool.assert %different
+    function.return
+  }
+}
+)mlir";
+      if (selection == 2) {
+        source.replace(
+            source.find("// ARRAY_WRITE"), std::string("// ARRAY_WRITE").size(),
+            "array.write %array[%i] = %input : !array.type<2 x !felt.type>, !felt.type"
+        );
+        source.replace(
+            source.find("// COMPONENT_WRITE"), std::string("// COMPONENT_WRITE").size(),
+            "array.write %cells[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, "
+            "!struct.type<@Cell>"
+        );
+      }
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      if (selection != 1) {
+        for (auto read : fn.getOps<array::ReadArrayOp>()) {
+          read->setOperand(1, fn.getArgument(2));
+        }
+      }
+      auto comparison = *fn.getOps<boolean::CmpOp>().begin();
+      if (memberReads) {
+        auto members = llvm::to_vector(fn.getOps<component::MemberReadOp>());
+        comparison->setOperand(0, members[0]->getResult(0));
+        comparison->setOperand(1, members[1]->getResult(0));
+      }
+      if (selection == 3) {
+        comparison->setOperand(1, comparison.getLhs());
+      }
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(comparison.getResult());
+      ASSERT_NE(lattice, nullptr);
+      ASSERT_FALSE(lattice->getConstraints().empty());
+      for (const ExpressionValue &constraint : lattice->getConstraints()) {
+        smt->addConstraint(constraint.getExpr());
+      }
+      EXPECT_EQ(smt->check(), std::optional<bool>(selection == 1 || selection == 2));
+    }
   }
 }
 

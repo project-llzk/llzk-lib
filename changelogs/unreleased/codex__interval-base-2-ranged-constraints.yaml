@@ -2,3 +2,4 @@ fixed:
   - Interval Analysis:
     - Keep constraints on independently indexed array elements and component members from incorrectly refining one another.
     - Preserve contradiction detection for repeated dynamic reads with the same SSA indices and no intervening writes.
+    - Equate proven read aliases in the solver so relational constraints detect contradictory repeated dynamic reads.
