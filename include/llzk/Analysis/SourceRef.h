@@ -152,7 +152,7 @@ static inline mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceR
 class SourceRef {
 public:
   // 99.5% have a path length of 0 or 1, so we use a small vector to avoid heap allocations.
-  using Path = std::vector<SourceRefIndex>;
+  using Path = llvm::SmallVector<SourceRefIndex, 1>;
 
 private:
   // Sort in the following order:
