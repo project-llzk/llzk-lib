@@ -1,0 +1,146 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --check-prefixes=CHECK,UNREDUCED --implicit-check-not=error:
+
+// Type-default leaves must be retained even when no branch writes any field.
+module attributes {llzk.lang} {
+  struct.def @UnwrittenPodArguments {
+    struct.member @storage : !pod.type<[@flag: i1]>
+    function.def @compute(%condition: i1, %left: !pod.type<[@flag: i1]>, %right: !pod.type<[@flag: i1]>) -> !struct.type<@UnwrittenPodArguments> {
+      %self = struct.new : !struct.type<@UnwrittenPodArguments>
+      %selected = scf.if %condition -> (!pod.type<[@flag: i1]>) {
+        scf.yield %left : !pod.type<[@flag: i1]>
+      } else {
+        scf.yield %right : !pod.type<[@flag: i1]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@UnwrittenPodArguments>, !pod.type<[@flag: i1]>
+      function.return %self : !struct.type<@UnwrittenPodArguments>
+    }
+    function.def @constrain(%self: !struct.type<@UnwrittenPodArguments>, %condition: i1, %left: !pod.type<[@flag: i1]>, %right: !pod.type<[@flag: i1]>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @UnwrittenPodArguments StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.flag in Entire
+// CHECK-NEXT:          %arg2.flag in Entire
+// CHECK-NEXT:          %self.storage.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.flag in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.flag in Entire
+// CHECK-NEXT:          %arg3.flag in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @UnwrittenNestedSwitch {
+    struct.member @storage : !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>
+    function.def @compute(%selector: index, %left: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>, %right: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>) -> !struct.type<@UnwrittenNestedSwitch> {
+      %self = struct.new : !struct.type<@UnwrittenNestedSwitch>
+      %selected = scf.index_switch %selector -> !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>
+      case 0 {
+        scf.yield %left : !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>
+      }
+      case 1 {
+        scf.yield %right : !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>
+      }
+      default {
+        scf.yield %left : !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@UnwrittenNestedSwitch>, !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>
+      function.return %self : !struct.type<@UnwrittenNestedSwitch>
+    }
+    function.def @constrain(%self: !struct.type<@UnwrittenNestedSwitch>, %selector: index, %left: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>, %right: !pod.type<[@child: !pod.type<[@flag: i1, @value: !felt.type]>, @flags: !array.type<2, 2 x i1>]>) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @UnwrittenNestedSwitch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.child.flag in Entire
+// CHECK-NEXT:          %arg1.child.value in Entire
+// CHECK-NEXT:          %arg1.flags[0][0] in Entire
+// CHECK-NEXT:          %arg1.flags[0][1] in Entire
+// CHECK-NEXT:          %arg1.flags[1][0] in Entire
+// CHECK-NEXT:          %arg1.flags[1][1] in Entire
+// CHECK-NEXT:          %arg2.child.flag in Entire
+// CHECK-NEXT:          %arg2.child.value in Entire
+// CHECK-NEXT:          %arg2.flags[0][0] in Entire
+// CHECK-NEXT:          %arg2.flags[0][1] in Entire
+// CHECK-NEXT:          %arg2.flags[1][0] in Entire
+// CHECK-NEXT:          %arg2.flags[1][1] in Entire
+// CHECK-NEXT:          %self.storage.child.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.child.value in Entire
+// CHECK-NEXT:          %self.storage.flags[0][0] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.flags[0][1] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.flags[1][0] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %self.storage.flags[1][1] in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.child.flag in Entire
+// CHECK-NEXT:          %self.storage.child.value in Entire
+// CHECK-NEXT:          %self.storage.flags[0][0] in Entire
+// CHECK-NEXT:          %self.storage.flags[0][1] in Entire
+// CHECK-NEXT:          %self.storage.flags[1][0] in Entire
+// CHECK-NEXT:          %self.storage.flags[1][1] in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.child.flag in Entire
+// CHECK-NEXT:          %arg2.child.value in Entire
+// CHECK-NEXT:          %arg2.flags[0][0] in Entire
+// CHECK-NEXT:          %arg2.flags[0][1] in Entire
+// CHECK-NEXT:          %arg2.flags[1][0] in Entire
+// CHECK-NEXT:          %arg2.flags[1][1] in Entire
+// CHECK-NEXT:          %arg3.child.flag in Entire
+// CHECK-NEXT:          %arg3.child.value in Entire
+// CHECK-NEXT:          %arg3.flags[0][0] in Entire
+// CHECK-NEXT:          %arg3.flags[0][1] in Entire
+// CHECK-NEXT:          %arg3.flags[1][0] in Entire
+// CHECK-NEXT:          %arg3.flags[1][1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @UnwrittenPodInitializers {
+    struct.member @storage : !pod.type<[@flag: i1]>
+    function.def @compute(%condition: i1) -> !struct.type<@UnwrittenPodInitializers> {
+      %self = struct.new : !struct.type<@UnwrittenPodInitializers>
+      %selected = scf.if %condition -> (!pod.type<[@flag: i1]>) {
+        %left = pod.new : !pod.type<[@flag: i1]>
+        scf.yield %left : !pod.type<[@flag: i1]>
+      } else {
+        %right = pod.new : !pod.type<[@flag: i1]>
+        scf.yield %right : !pod.type<[@flag: i1]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@UnwrittenPodInitializers>, !pod.type<[@flag: i1]>
+      function.return %self : !struct.type<@UnwrittenPodInitializers>
+    }
+    function.def @constrain(%self: !struct.type<@UnwrittenPodInitializers>, %condition: i1) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @UnwrittenPodInitializers StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage.flag in TypeA:[ 0, 1 ]
+// UNREDUCED-SAME:      ( Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.flag in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
