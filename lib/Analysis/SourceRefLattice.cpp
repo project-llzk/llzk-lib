@@ -42,12 +42,11 @@ using namespace polymorphic;
 /* SourceRefLatticeValue */
 
 mlir::ChangeResult SourceRefLatticeValue::insert(const SourceRef &rhs) {
-  auto rhsVal = SourceRefLatticeValue(rhs);
   if (isScalar()) {
-    return updateScalar(rhsVal.getScalarValue());
-  } else {
-    return foldAndUpdate(rhsVal);
+    return getScalarValue().insert(rhs).second ? mlir::ChangeResult::Change
+                                               : mlir::ChangeResult::NoChange;
   }
+  return foldAndUpdate(SourceRefLatticeValue(rhs));
 }
 
 mlir::ChangeResult SourceRefLatticeValue::remove(const SourceRef &ref) {
@@ -267,8 +266,9 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
 }
 
 mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(const TranslationMap &translation) {
-  const ScalarTy current = getScalarValue();
+  const ScalarTy &current = getScalarValue();
   ScalarTy replaced;
+  replaced.reserve(current.size());
   for (const SourceRef &currentRef : current) {
     bool matched = false;
     for (const auto &[prefix, replacementVal] : translation) {
