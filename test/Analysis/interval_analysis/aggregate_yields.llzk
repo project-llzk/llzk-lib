@@ -1,18 +1,6 @@
 // RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
 
 // An unwritten argument on the first path must remain a possible value.
-// CHECK-LABEL: @UnknownThen StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @UnknownThen {
     struct.member @storage : !pod.type<[@value: !felt.type]>
@@ -33,22 +21,22 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @UnknownThen StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.value in Entire
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
 // Reversing branch order must not make the known initializer unconditional.
-// CHECK-LABEL: @UnknownElse StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @UnknownElse {
     struct.member @storage : !pod.type<[@value: !felt.type]>
@@ -69,20 +57,22 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @UnknownElse StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.value in Entire
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
 // Wait for both branch-local initializers and preserve their precise union.
-// CHECK-LABEL: @KnownBranches StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 7 ]
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @KnownBranches {
     struct.member @storage : !pod.type<[@value: !felt.type]>
@@ -105,20 +95,20 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @KnownBranches StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.storage.value in TypeA:[ 0, 7 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
 // Unreachable unknown alternatives must not weaken a known result.
-// CHECK-LABEL: @DeadUnknownBranch StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(0)
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @DeadUnknownBranch {
     struct.member @storage : !pod.type<[@value: !felt.type]>
@@ -140,26 +130,20 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @DeadUnknownBranch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0.value in Entire
+// CHECK-NEXT:          %self.storage.value in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
 // Static-array result paths retain unknown elements from another branch.
-// CHECK-LABEL: @UnknownArrayBranch StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_1]][1] in Entire
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_2]][1] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_3]][1] in Entire
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_5]][1] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @UnknownArrayBranch {
     struct.member @storage : !array.type<2 x !felt.type>
@@ -181,30 +165,26 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @UnknownArrayBranch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1[0] in Entire
+// CHECK-NEXT:          %arg1[1] in Entire
+// CHECK-NEXT:          %self.storage[0] in Entire
+// CHECK-NEXT:          %self.storage[1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage[0] in Entire
+// CHECK-NEXT:          %self.storage[1] in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2[0] in Entire
+// CHECK-NEXT:          %arg2[1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
 // Index-switch joins preserve nested paths and use Boolean defaults for i1 fields.
-// CHECK-LABEL: @SwitchUnknownBranch StructIntervals {
-// CHECK-NEXT:      compute {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_2]][1] in Entire
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ]
-// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_4]][1] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:      constrain {
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_6]][1] in Entire
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] in Entire
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]][0] in Entire
-// CHECK-NEXT:          %[[VAL_9]][1] in Entire
-// CHECK-NEXT:      }
-// CHECK-NEXT:  }
 module attributes {llzk.lang} {
   struct.def @SwitchUnknownBranch {
     struct.member @storage : !pod.type<[@flag: i1, @values: !array.type<2 x !felt.type>]>
@@ -230,3 +210,23 @@ module attributes {llzk.lang} {
     }
   }
 }
+// CHECK-LABEL: @SwitchUnknownBranch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1.flag in Entire
+// CHECK-NEXT:          %arg1.values[0] in Entire
+// CHECK-NEXT:          %arg1.values[1] in Entire
+// CHECK-NEXT:          %self.storage.flag in TypeA:[ 0, 1 ]
+// CHECK-NEXT:          %self.storage.values[0] in Entire
+// CHECK-NEXT:          %self.storage.values[1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.flag in Entire
+// CHECK-NEXT:          %self.storage.values[0] in Entire
+// CHECK-NEXT:          %self.storage.values[1] in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2.flag in Entire
+// CHECK-NEXT:          %arg2.values[0] in Entire
+// CHECK-NEXT:          %arg2.values[1] in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
