@@ -105,6 +105,54 @@ protected:
   }
 };
 
+// Repeated concrete reads share storage identity even before a value has been written.
+TEST_F(IntervalStorageTests, UnwrittenConcreteReadsShareStorageSymbols) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %pod: !P, %input: !felt.type) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %left = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    %other = array.read %array[%one] : !array.type<2 x !felt.type>, !felt.type
+    %podLeft = pod.read %pod[@value] : !P, !felt.type
+    %podRight = pod.read %pod[@value] : !P, !felt.type
+    %podOther = pod.read %pod[@other] : !P, !felt.type
+    function.return %left, %right, %other, %podLeft, %podRight, %podOther, %input : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  SmallVector<llvm::SMTExprRef> expressions;
+  for (Value value : fn.getBody().front().getTerminator()->getOperands()) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    const auto &stored = lattice->getValue().getScalarValue();
+    EXPECT_EQ(stored.getInterval(), Interval::Entire(field));
+    EXPECT_EQ(stored.getOptionalUnreducedInterval(), Interval::Entire(field).firstUnreduced());
+    ASSERT_NE(stored.getExpr(), nullptr);
+    expressions.push_back(stored.getExpr());
+  }
+  for (unsigned first : {0U, 3U}) {
+    EXPECT_TRUE(*expressions[first] == *expressions[first + 1]);
+    EXPECT_FALSE(*expressions[first] == *expressions[first + 2]);
+  }
+  EXPECT_EQ(expressions.back(), analysis->getOrCreateSymbol(fn.getArgument(2)));
+  smt->addConstraint(smt->mkOr(
+      smt->mkNot(smt->mkEqual(expressions[0], expressions[1])),
+      smt->mkNot(smt->mkEqual(expressions[3], expressions[4]))
+  ));
+  EXPECT_EQ(smt->check(), std::optional<bool>(false));
+}
+
 // A ranged write does not make independent selections equal to its stored expression.
 TEST_F(IntervalStorageTests, RangedReadsKeepIndependentSymbols) {
   for (bool storedRange : {false, true}) {
