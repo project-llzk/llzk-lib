@@ -448,9 +448,16 @@ module attributes {llzk.lang} {
 
 // A product decomposition requires one value in every factor, not matching index ranges.
 TEST_F(IntervalStorageTests, DecompositionRejectsIndependentRangedMembers) {
-  const StringRef cases[] = {"independent indices",      "one SSA value",
-                             "one concrete location",    "same dynamic index",
-                             "same aggregate SSA value", "intervening array write"};
+  const StringRef cases[] = {
+      "independent indices",
+      "one SSA value",
+      "one concrete location",
+      "same dynamic index",
+      "same aggregate SSA value",
+      "intervening array write",
+      "disjoint write between array reads",
+      "disjoint write between member reads"
+  };
   for (auto [selection, name] : llvm::enumerate(cases)) {
     SCOPED_TRACE(name.str());
     std::string source = R"mlir(
@@ -475,6 +482,7 @@ module attributes {llzk.lang} {
     // WRITE
     %right = array.read %array[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
     %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+    // MEMBER_WRITE
     %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
     %xMinusSeven = felt.sub %x, %seven
     %yMinusNine = felt.sub %y, %nine
@@ -490,6 +498,12 @@ module attributes {llzk.lang} {
           "array.write %array[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, "
           "!struct.type<@Cell>"
       );
+    } else if (selection == 6 || selection == 7) {
+      StringRef marker = selection == 6 ? "// WRITE" : "// MEMBER_WRITE";
+      source.replace(source.find(marker), marker.size(), R"mlir(
+        %scratch = array.new : !array.type<2 x !felt.type>
+        array.write %scratch[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+      )mlir");
     }
     auto mod = parseModule(source);
     ASSERT_TRUE(mod);
@@ -498,7 +512,7 @@ module attributes {llzk.lang} {
     if (selection == 1) {
       auto subtractions = llvm::to_vector(fn.getOps<felt::SubFeltOp>());
       subtractions.back()->setOperand(0, members.front().getResult());
-    } else if (selection == 2 || selection == 3 || selection == 5) {
+    } else if (selection == 2 || selection == 3 || selection == 5 || selection == 6) {
       Value index = fn.getArgument(1);
       if (selection == 2) {
         index = fn.getBody().front().front().getResult(0);
@@ -506,7 +520,7 @@ module attributes {llzk.lang} {
       for (auto read : fn.getOps<array::ReadArrayOp>()) {
         read->setOperand(1, index);
       }
-    } else if (selection == 4) {
+    } else if (selection == 4 || selection == 7) {
       members.back()->setOperand(0, members.front()->getOperand(0));
     }
     auto smt = llvm::CreateZ3Solver();
@@ -519,10 +533,10 @@ module attributes {llzk.lang} {
       const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(read.getResult());
       ASSERT_NE(lattice, nullptr);
       const auto &actual = lattice->getValue().getScalarValue().getInterval();
-      auto expected =
-          selection == 2 || selection == 3 || selection == 4 || (selection == 1 && i == 0)
-              ? UnreducedInterval(7, 9).reduce(field)
-              : Interval::Entire(field);
+      auto expected = selection == 2 || selection == 3 || selection == 4 || selection == 6 ||
+                              selection == 7 || (selection == 1 && i == 0)
+                          ? UnreducedInterval(7, 9).reduce(field)
+                          : Interval::Entire(field);
       EXPECT_TRUE(checkCond(expected, actual, expected == actual));
       if (selection == 0 || selection == 5) {
         auto witness = Interval::Degenerate(field, field.felt(i == 0 ? 11 : 9));
