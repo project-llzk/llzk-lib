@@ -141,7 +141,12 @@ bool preservesReadStorage(Operation *op, Operation *read) {
     return !memberRead || memberWrite.getMemberNameAttr() != memberRead.getMemberNameAttr() ||
            haveDisjointStorage(memberWrite.getComponent(), memberRead.getComponent());
   }
-  if (llvm::isa<CreateArrayOp, CreateStructOp, pod::NewPodOp, pod::WritePodOp>(op)) {
+  if (auto podWrite = llvm::dyn_cast<pod::WritePodOp>(op)) {
+    auto podRead = llvm::dyn_cast<pod::ReadPodOp>(read);
+    return !podRead || podWrite.getRecordNameAttr() != podRead.getRecordNameAttr() ||
+           haveDisjointStorage(podWrite.getPodRef(), podRead.getPodRef());
+  }
+  if (llvm::isa<CreateArrayOp, CreateStructOp, pod::NewPodOp>(op)) {
     return true;
   }
   // Assertions have a modeled write effect to keep them live, but cannot change read values.
@@ -217,19 +222,23 @@ bool hasReadPreservingPath(Operation *first, Operation *second) {
   return true;
 }
 
-/// Prove repeated reads equivalent using SSA indices and a storage-preserving structured path.
+/// Prove repeated reads equivalent using equal indices and a storage-preserving structured path.
 bool haveSameReadValue(Value lhs, Value rhs) {
   if (lhs == rhs) {
     return true;
   }
   Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
-  if (!llvm::isa_and_present<ReadArrayOp, MemberReadOp>(left) ||
-      !llvm::isa_and_present<ReadArrayOp, MemberReadOp>(right)) {
+  if (!llvm::isa_and_present<ReadArrayOp, MemberReadOp, pod::ReadPodOp>(left) ||
+      !llvm::isa_and_present<ReadArrayOp, MemberReadOp, pod::ReadPodOp>(right)) {
     return false;
   }
   auto sameOperand = [](Value a, Value b) {
+    llvm::APInt aIndex, bIndex;
     return success(
-        a == b || (llvm::isa<ArrayType, StructType>(a.getType()) && haveSameReadValue(a, b))
+        a == b ||
+        (matchPattern(a, m_ConstantInt(&aIndex)) && matchPattern(b, m_ConstantInt(&bIndex)) &&
+         aIndex == bIndex) ||
+        (llvm::isa<ArrayType, StructType, pod::PodType>(a.getType()) && haveSameReadValue(a, b))
     );
   };
   if (!OperationEquivalence::isEquivalentTo(
@@ -1381,7 +1390,15 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       return LatticeValue(anyVal);
     }
 
-    return LatticeValue(getRefValue(refSet.getSingleValue(), getOrCreateSymbol(value)));
+    const SourceRef &ref = refSet.getSingleValue();
+    auto stored = getRefValue(ref, getOrCreateSymbol(value));
+    if (isReadOp(value.getDefiningOp()) && !ref.getPath().empty() && !hasRangedSelection(ref) &&
+        stored.getExpr() == getOrCreateSymbol(ref)) {
+      // Storage summaries are flow-insensitive. Their unknown/merged location symbol
+      // must not equate reads separated by a write, including after worklist revisits.
+      stored = stored.withExpression(getOrCreateConcreteReadSymbol(value, ref));
+    }
+    return LatticeValue(stored);
   };
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
@@ -1847,6 +1864,18 @@ llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateSymbol(Value val) {
   return sym;
 }
 
+llvm::SMTExprRef
+IntervalDataFlowAnalysis::getOrCreateConcreteReadSymbol(Value value, const SourceRef &ref) {
+  auto &representatives = concreteReadRepresentatives[ref];
+  for (Value representative : representatives) {
+    if (haveSameReadValue(value, representative)) {
+      return getOrCreateSymbol(representative);
+    }
+  }
+  representatives.push_back(value);
+  return getOrCreateSymbol(value);
+}
+
 llvm::SMTExprRef IntervalDataFlowAnalysis::getOrCreateInverseSymbol(Operation *op) {
   auto it = inverseSymbols.find(op);
   if (it != inverseSymbols.end()) {
@@ -2220,8 +2249,8 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     }
   };
 
-  auto propagateRangedRead = [&](const SourceRef &ref) {
-    auto &readers = rangedReadResults[ref];
+  auto propagateRead = [&](const SourceRef &ref) {
+    auto &readers = hasRangedSelection(ref) ? rangedReadResults[ref] : readResults[ref];
     readers.insert(valLattice);
     SmallVector<Lattice *> aliases;
     Interval shared = newLatticeVal.getInterval();
@@ -2246,50 +2275,21 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   auto readmCase = [&](MemberReadOp) {
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
-      propagateRangedRead(sourceRefVal.getSingleValue());
-    }
-    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
-      const SourceRef &ref = sourceRefVal.getSingleValue();
-      readResults[ref].insert(valLattice);
-
-      // Also propagate to all other member read results for this member
-      for (Lattice *l : readResults[ref]) {
-        if (l != valLattice) {
-          propagateIfChanged(l, l->setValue(newLatticeVal));
-        }
-      }
+    if (sourceRefVal.isSingleValue()) {
+      propagateRead(sourceRefVal.getSingleValue());
     }
   };
 
   auto readArrCase = [&](ReadArrayOp) {
     auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
-    if (succeeded(arrayRef) && hasRangedSelection(*arrayRef)) {
-      propagateRangedRead(*arrayRef);
-    }
-    // A constraint on one selection cannot refine other reads of the same possible range.
-    if (succeeded(arrayRef) && !hasRangedSelection(*arrayRef)) {
-      readResults[*arrayRef].insert(valLattice);
-
-      for (Lattice *l : readResults[*arrayRef]) {
-        if (l != valLattice) {
-          propagateIfChanged(l, l->setValue(newLatticeVal));
-        }
-      }
+    if (succeeded(arrayRef)) {
+      propagateRead(*arrayRef);
     }
 
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
-      const SourceRef &ref = sourceRefVal.getSingleValue();
-      readResults[ref].insert(valLattice);
-
-      // Also propagate to all other member read results for this member
-      for (Lattice *l : readResults[ref]) {
-        if (l != valLattice) {
-          propagateIfChanged(l, l->setValue(newLatticeVal));
-        }
-      }
+    if (sourceRefVal.isSingleValue()) {
+      propagateRead(sourceRefVal.getSingleValue());
     }
   };
 
@@ -2370,11 +2370,10 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
         return failure();
       }
       SourceRef r = refSet.getSingleValue();
-      // Matching ranges do not prove that independently selected values are equal.
-      // Require SSA identity or a proven read alias for ranged selections.
+      // Even a concrete address can hold different values across a write.
+      // Require SSA identity or a proven read alias for every selection.
       if (signalRef.has_value() &&
-          (signalRef.value() != r ||
-           (hasRangedSelection(r) && !haveSameReadValue(signalVal, *signalVals.begin())))) {
+          (signalRef.value() != r || !haveSameReadValue(signalVal, *signalVals.begin()))) {
         return failure();
       } else if (!signalRef.has_value()) {
         signalRef = r;
