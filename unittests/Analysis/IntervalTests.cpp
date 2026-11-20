@@ -1376,6 +1376,138 @@ module attributes {llzk.lang} {
   }
 }
 
+// Equal ranges describe possible locations, not equal values at independent dynamic indices.
+TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadsHaveIndependentSymbols) {
+  for (bool storedRange : {false, true}) {
+    SCOPED_TRACE(storedRange ? "ranged writes" : "unwritten arrays");
+    std::string source = R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
+    %zero = arith.constant 0 : index
+    %leftPod = array.read %pods[%i] : !array.type<2 x !P>, !P
+    %rightPod = array.read %pods[%j] : !array.type<2 x !P>, !P
+    // WRITES
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
+    %nestedLeft = pod.read %leftPod[@value] : !P, !felt.type
+    %nestedRight = pod.read %rightPod[@value] : !P, !felt.type
+    %leftCopy = pod.new { @child = %leftPod } : !W
+    %rightCopy = pod.new { @child = %rightPod } : !W
+    %leftChild = pod.read %leftCopy[@child] : !W, !P
+    %rightChild = pod.read %rightCopy[@child] : !W, !P
+    %copiedLeft = pod.read %leftChild[@value] : !P, !felt.type
+    %copiedRight = pod.read %rightChild[@value] : !P, !felt.type
+    %leftChoice = scf.if %condition -> (!P) {
+      scf.yield %leftPod : !P
+    } else {
+      scf.yield %leftPod : !P
+    }
+    %rightChoice = scf.if %condition -> (!P) {
+      scf.yield %rightPod : !P
+    } else {
+      scf.yield %rightPod : !P
+    }
+    %chosenLeft = pod.read %leftChoice[@value] : !P, !felt.type
+    %chosenRight = pod.read %rightChoice[@value] : !P, !felt.type
+    %exactLeft = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    %exactRight = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+    function.return %left, %right, %nestedLeft, %nestedRight, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight, %exactLeft, %exactRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
+  }
+}
+)mlir";
+    if (storedRange) {
+      source.replace(
+          source.find("// WRITES"), std::string("// WRITES").size(),
+          "array.write %array[%i] = %input : !array.type<2 x !felt.type>, !felt.type\n"
+          "    pod.write %leftPod[@value] = %input : !P, !felt.type"
+      );
+    }
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    const Field &field = Field::getField("babybear");
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto returned = fn.getBody().front().getTerminator()->getOperands();
+    SmallVector<llvm::SMTExprRef> expressions;
+    for (Value value : returned) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+      ASSERT_NE(lattice, nullptr);
+      const auto &stored = lattice->getValue().getScalarValue();
+      ASSERT_NE(stored.getExpr(), nullptr);
+      EXPECT_EQ(stored.getInterval(), Interval::Entire(field));
+      EXPECT_EQ(
+          stored.getOptionalUnreducedInterval(), UnreducedInterval(field.zero(), field.maxVal())
+      );
+      expressions.push_back(stored.getExpr());
+    }
+    for (unsigned first : {0U, 2U, 4U, 6U}) {
+      EXPECT_FALSE(*expressions[first] == *expressions[first + 1]);
+      if (first < 4) {
+        EXPECT_EQ(expressions[first], analysis->getOrCreateSymbol(returned[first]));
+        EXPECT_EQ(expressions[first + 1], analysis->getOrCreateSymbol(returned[first + 1]));
+      }
+      // Distinct dynamic selections can read 7 and 9, even after a ranged write.
+      smt->addConstraint(smt->mkEqual(
+          expressions[first], smt->mkBitvector(toAPSInt(field.felt(7)), field.bitWidth())
+      ));
+      smt->addConstraint(smt->mkEqual(
+          expressions[first + 1], smt->mkBitvector(toAPSInt(field.felt(9)), field.bitWidth())
+      ));
+    }
+    EXPECT_EQ(smt->check(), std::optional<bool>(true));
+    // Reads of the same concrete location retain their shared storage identity.
+    EXPECT_TRUE(*expressions[8] == *expressions[9]);
+  }
+}
+
+// Refining one dynamic selection must not constrain another selection from the same range.
+TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadConstraintsStayIndependent) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %j: index) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
+    %leftCheck = bool.cmp eq(%left, %seven)
+    bool.assert %leftCheck
+    %rightCheck = bool.cmp eq(%right, %nine)
+    bool.assert %rightCheck
+    function.return %left, %right : !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto returned = fn.getBody().front().getTerminator()->getOperands();
+  for (auto [i, value] : llvm::enumerate(returned)) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    const auto &stored = lattice->getValue().getScalarValue();
+    auto expected = field.felt(i == 0 ? 7 : 9);
+    EXPECT_EQ(stored.getInterval(), Interval::Degenerate(field, expected));
+    ASSERT_NE(stored.getExpr(), nullptr);
+    smt->addConstraint(
+        smt->mkEqual(stored.getExpr(), smt->mkBitvector(toAPSInt(expected), field.bitWidth()))
+    );
+  }
+  EXPECT_EQ(smt->check(), std::optional<bool>(true));
+}
+
 // Equal-looking values in separate functions must still have separate SMT identities.
 TEST_F(IntervalAnalysisAPITests, ValueSymbolsCacheIdentityAndPreserveSorts) {
   auto mod = parseModule(R"mlir(
