@@ -15,17 +15,40 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
 #include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Analysis/DataFlowFramework.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
+#include <functional>
 #include <gtest/gtest.h>
+#include <utility>
 
 using namespace mlir;
 using namespace llzk;
 
 namespace {
+
+/// Establish an ordered initial visit sequence while the real dataflow solver is running.
+class IntervalStorageInitialization : public DataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalStorageInitialization)
+
+  IntervalStorageInitialization(DataFlowSolver &dataflowSolver, std::function<void()> callback)
+      : DataFlowAnalysis(dataflowSolver), initializeCallback(std::move(callback)) {}
+
+  LogicalResult initialize(Operation *) override {
+    initializeCallback();
+    return success(!testing::Test::HasFatalFailure());
+  }
+  LogicalResult visit(ProgramPoint *) override { return success(); }
+
+private:
+  std::function<void()> initializeCallback;
+};
 
 /// Exercise stored intervals and symbolic identities through the public analysis API.
 class IntervalStorageTests : public LLZKTest {
@@ -34,6 +57,49 @@ protected:
 
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     return parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  }
+
+  using Visit = std::function<LogicalResult(Operation *)>;
+
+  /// Initialize references, seed interval visits, then drain their real queued dependencies.
+  void runOrdered(
+      ModuleOp mod,
+      const std::function<void(IntervalDataFlowAnalysis &, const Visit &)> &initialize,
+      const std::function<void(IntervalDataFlowAnalysis &)> &check
+  ) {
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod)));
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    Visit visit = [&](Operation *op) {
+      SmallVector<const IntervalAnalysisLattice *> operands;
+      SmallVector<IntervalAnalysisLattice *> results;
+      for (Value value : op->getOperands()) {
+        operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+      }
+      for (Value value : op->getResults()) {
+        results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+      }
+      return analysis->visitOperation(op, operands, results);
+    };
+    auto *driver =
+        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit); });
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod, [&](DataFlowAnalysis &candidate) {
+      return &candidate == driver;
+    })));
+    check(*analysis);
+  }
+
+  /// Check both reduced and unreduced storage bounds without relying on aggregate SSA lattices.
+  void
+  expectStored(IntervalDataFlowAnalysis &analysis, const SourceRef &ref, const Interval &expected) {
+    auto it = analysis.getWriteResults().find(ref);
+    ASSERT_NE(it, analysis.getWriteResults().end()) << debug::toStringOne(ref);
+    const auto &actual = it->second.getInterval();
+    EXPECT_TRUE(checkCond(expected, actual, expected == actual));
+    EXPECT_EQ(it->second.getOptionalUnreducedInterval(), expected.firstUnreduced());
   }
 };
 
@@ -461,6 +527,80 @@ module attributes {llzk.lang} {
         EXPECT_FALSE(actual.intersect(witness).isEmpty());
       }
     }
+  }
+}
+
+// An unconditional write must remove the no-write alternative in either visitation order.
+TEST_F(IntervalStorageTests, UnconditionalWritesRemoveNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %pod = pod.new : !P
+    %array = array.new : !array.type<2 x !felt.type>
+    scf.if %condition {
+      pod.write %pod[@value] = %seven : !P, !felt.type
+      pod.write %pod[@other] = %seven : !P, !felt.type
+      array.write %array[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %array[%one] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    pod.write %pod[@value] = %nine : !P, !felt.type
+    array.write %array[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto podValue = *fn.getOps<pod::NewPodOp>().begin();
+    auto arrayValue = *fn.getOps<array::CreateArrayOp>().begin();
+    auto conditional = *fn.getOps<scf::IfOp>().begin();
+    auto isWrite = [](Operation *op) { return isa<pod::WritePodOp, array::WriteArrayOp>(op); };
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (!isWrite(&op) && !isa<scf::IfOp>(op)) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      auto visitWrites = [&](Block &block) {
+        for (Operation &op : block) {
+          if (isWrite(&op)) {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+      };
+      if (optionalFirst) {
+        visitWrites(*conditional.thenBlock());
+        visitWrites(fn.getBody().front());
+      } else {
+        visitWrites(fn.getBody().front());
+        visitWrites(*conditional.thenBlock());
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis) {
+      auto joined = UnreducedInterval(7, 9).reduce(field);
+      expectStored(
+          analysis,
+          SourceRef(podValue->getResult(0), {SourceRefIndex(StringAttr::get(&ctx, "value"))}),
+          joined
+      );
+      expectStored(analysis, SourceRef(arrayValue->getResult(0), {SourceRefIndex(0)}), joined);
+      // A guaranteed write to one field does not eliminate defaults at other locations.
+      expectStored(
+          analysis,
+          SourceRef(podValue->getResult(0), {SourceRefIndex(StringAttr::get(&ctx, "other"))}),
+          Interval::Entire(field)
+      );
+      expectStored(
+          analysis, SourceRef(arrayValue->getResult(0), {SourceRefIndex(1)}),
+          Interval::Entire(field)
+      );
+    });
   }
 }
 
