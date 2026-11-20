@@ -1,0 +1,228 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Independent selections can satisfy the product with x = 11 and y = 9.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @IndependentSelections {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@IndependentSelections> {
+      %self = struct.new : !struct.type<@IndependentSelections>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@IndependentSelections>
+    }
+  }
+}
+
+// CHECK-LABEL: @IndependentSelections SSAIntervals {
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+
+// -----
+
+// Reusing one scalar SSA value refines that value, but not the other read.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @SameSSAValue {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameSSAValue> {
+      %self = struct.new : !struct.type<@SameSSAValue>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %x, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@SameSSAValue>
+    }
+  }
+}
+
+// CHECK-LABEL: @SameSSAValue SSAIntervals {
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+
+// -----
+
+// Repeated reads of one concrete element share the decomposition bounds.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @SameConcreteElement {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameConcreteElement> {
+      %self = struct.new : !struct.type<@SameConcreteElement>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@SameConcreteElement>
+    }
+  }
+}
+
+// CHECK-LABEL: @SameConcreteElement SSAIntervals {
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+
+// -----
+
+// Repeated reads through the same dynamic index share the decomposition bounds.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @SameDynamicIndex {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameDynamicIndex> {
+      %self = struct.new : !struct.type<@SameDynamicIndex>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@SameDynamicIndex>
+    }
+  }
+}
+
+// CHECK-LABEL: @SameDynamicIndex SSAIntervals {
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+
+// -----
+
+// Reading twice through one aggregate handle preserves the decomposition bounds.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @SameAggregateHandle {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameAggregateHandle> {
+      %self = struct.new : !struct.type<@SameAggregateHandle>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@SameAggregateHandle>
+    }
+  }
+}
+
+// CHECK-LABEL: @SameAggregateHandle SSAIntervals {
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+
+// -----
+
+// A potentially overlapping write prevents equality between the two reads.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @OverlappingWrite {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@OverlappingWrite> {
+      %self = struct.new : !struct.type<@OverlappingWrite>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %array[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%i] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@OverlappingWrite>
+    }
+  }
+}
+
+// CHECK-LABEL: @OverlappingWrite SSAIntervals {
+// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire

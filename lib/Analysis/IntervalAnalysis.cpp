@@ -1939,7 +1939,11 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
         return failure();
       }
       SourceRef r = refSet.getSingleValue();
-      if (signalRef.has_value() && signalRef.value() != r) {
+      // Matching ranges do not prove that independently selected values are equal.
+      // Require SSA identity or a proven read alias for ranged selections.
+      if (signalRef.has_value() &&
+          (signalRef.value() != r ||
+           (hasRangedSelection(r) && !haveSameReadValue(signalVal, *signalVals.begin())))) {
         return failure();
       } else if (!signalRef.has_value()) {
         signalRef = r;
