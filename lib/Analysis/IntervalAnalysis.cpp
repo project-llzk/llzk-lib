@@ -1184,9 +1184,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       }
     }
   } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
-    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     ExpressionValue writeVal = operandVals.back().getScalarValue();
     auto arrayRef = getArrayAccessRef(op, writeArr);
+    // A ranged access may miss each candidate even when the operation always executes.
+    const bool maySkipWrite =
+        isInMaybeSkippedScfRegion(op) || (succeeded(arrayRef) && hasRangedSelection(*arrayRef));
     if (succeeded(arrayRef)) {
       recordRefWrite(*arrayRef, writeVal, maySkipWrite);
     }
@@ -1199,7 +1201,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto [targetRefs, _] = *targetRefsRes;
       ensure(targetRefs.isScalar(), "array write must resolve to scalar references");
       for (const SourceRef &ref : targetRefs.getScalarValue()) {
-        recordRefWrite(ref, writeVal, maySkipWrite);
+        recordRefWrite(
+            ref, writeVal, maySkipWrite || !targetRefs.isSingleValue() || hasRangedSelection(ref)
+        );
       }
     }
   } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
