@@ -53,3 +53,49 @@ module attributes {llzk.lang} {
 // INTRA-NEXT:      { %arg1, <felt.const: 0> }
 // INTRA-NEXT:  }
 // INTRA-NEXT:  @Parent ConstraintDependencyGraph { }
+
+// -----
+
+
+// A neutral loop initializer is omitted while a separate explicit zero constraint remains.
+module attributes {llzk.lang} {
+  struct.def @LoopNormalization {
+    struct.member @sum : !felt.type {llzk.pub, signal}
+    struct.member @zero : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%in: !felt.type) -> !struct.type<@LoopNormalization> {
+      %self = struct.new : !struct.type<@LoopNormalization>
+      struct.writem %self[@sum] = %in : !struct.type<@LoopNormalization>, !felt.type
+      struct.writem %self[@zero] = %in : !struct.type<@LoopNormalization>, !felt.type
+      function.return %self : !struct.type<@LoopNormalization>
+    }
+
+    function.def @constrain(%self: !struct.type<@LoopNormalization>, %in: !felt.type)
+        attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+      %sum = struct.readm %self[@sum] : !struct.type<@LoopNormalization>, !felt.type
+      %zeroOut = struct.readm %self[@zero] : !struct.type<@LoopNormalization>, !felt.type
+      %zero = felt.const 0
+      %true = arith.constant true
+      %loop = scf.while (%acc = %zero) : (!felt.type) -> !felt.type {
+        scf.condition(%true) %acc : !felt.type
+      } do {
+      ^bb0(%acc: !felt.type):
+        %next = felt.add %acc, %in : !felt.type, !felt.type
+        scf.yield %next : !felt.type
+      }
+      constrain.eq %sum, %loop : !felt.type
+      constrain.eq %zeroOut, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @LoopNormalization ConstraintDependencyGraph {
+// CHECK-NEXT:      { %self.sum, %arg1 },
+// CHECK-NEXT:      { %self.zero, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @LoopNormalization ConstraintDependencyGraph {
+// INTRA-NEXT:      { %self.sum, %arg1 },
+// INTRA-NEXT:      { %self.zero, <felt.const: 0> }
+// INTRA-NEXT:  }
