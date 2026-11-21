@@ -1,0 +1,42 @@
+// RUN: llzk-opt -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck %s
+// RUN: llzk-opt -llzk-print-constraint-dependency-graphs=intraprocedural %s -o /dev/null 2>&1 | FileCheck %s
+
+// The loop exceeds both ends of the materialized array, but the guarded read is valid.
+// Its dependency range must be clamped before extracting the array's elements.
+module attributes {llzk.lang} {
+  struct.def @ClampedLoopRanges {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type)
+        -> !struct.type<@ClampedLoopRanges> {
+      %self = struct.new : !struct.type<@ClampedLoopRanges>
+      function.return %self : !struct.type<@ClampedLoopRanges>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ClampedLoopRanges>,
+        %a: !felt.type, %b: !felt.type, %c: !felt.type) {
+      %values = array.new %a, %b, %c : !array.type<3 x !felt.type>
+      %out = struct.readm %self[@out] : !struct.type<@ClampedLoopRanges>, !felt.type
+      %lower = arith.constant -1 : index
+      %upper = arith.constant 4 : index
+      %zero = arith.constant 0 : index
+      %size = arith.constant 3 : index
+      %step = arith.constant 1 : index
+      scf.for %i = %lower to %upper step %step {
+        %nonnegative = arith.cmpi sge, %i, %zero : index
+        %inbounds = arith.cmpi slt, %i, %size : index
+        %valid = arith.andi %nonnegative, %inbounds : i1
+        scf.if %valid {
+          %value = array.read %values[%i] : !array.type<3 x !felt.type>, !felt.type
+          constrain.eq %out, %value : !felt.type
+        }
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ClampedLoopRanges ConstraintDependencyGraph {
+// CHECK-NEXT:      { %self.out, %arg1, %arg2, %arg3 }
+// CHECK-NEXT:  }

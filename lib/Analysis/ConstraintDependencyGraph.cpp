@@ -31,6 +31,7 @@
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/Support/Debug.h>
 
+#include <algorithm>
 #include <numeric>
 #include <unordered_set>
 
@@ -103,17 +104,21 @@ static std::vector<SourceRefIndex> getArrayAccessIndices(
     llvm::function_ref<const SourceRefLatticeValue &(Value)> getIndexState
 ) {
   std::vector<SourceRefIndex> indices;
+  ArrayType arrayType = access.getArrRef().getType();
   for (auto [i, index] : llvm::enumerate(access.getIndices())) {
+    int64_t dimSize = arrayType.getDimSize(llzk::checkedCast<unsigned>(i));
     auto constantIndex = getIndexState(index).getConstantValue();
     if (succeeded(constantIndex)) {
       indices.emplace_back(*constantIndex);
-    } else if (auto bounds = getStaticLoopIndexRange(index)) {
-      indices.emplace_back(bounds->first, bounds->second);
+    } else if (
+        auto bounds = getStaticLoopIndexRange(index); bounds && !ShapedType::isDynamic(dimSize)
+    ) {
+      // A guarded access may be valid even when the loop exceeds the array's bounds.
+      auto lower = std::clamp(bounds->first, DynamicAPInt(0), DynamicAPInt(dimSize));
+      auto upper = std::clamp(bounds->second, lower, DynamicAPInt(dimSize));
+      indices.emplace_back(lower, upper);
     } else {
-      ArrayType arrayType = access.getArrRef().getType();
-      indices.push_back(
-          SourceRefIndex::forArrayDimension(arrayType.getDimSize(llzk::checkedCast<unsigned>(i)))
-      );
+      indices.push_back(SourceRefIndex::forArrayDimension(dimSize));
     }
   }
   return indices;
