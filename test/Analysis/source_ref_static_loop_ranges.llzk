@@ -35,9 +35,9 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @LoopRanges ConstraintDependencyGraph {
-// CHECK-NEXT:      { %self.out[0:2], %arg1[0:2] }
+// CHECK-NEXT:      { %self.out[0], %self.out[1], %arg1[0:2] }
 // CHECK-NEXT:  }
 
 // INTRA-LABEL: @LoopRanges ConstraintDependencyGraph {
-// INTRA-NEXT:      { %self.out[0:2], %arg1[0:2] }
+// INTRA-NEXT:      { %self.out[0], %self.out[1], %arg1[0:2] }
 // INTRA-NEXT:  }

@@ -1,0 +1,55 @@
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Capturing a handle preserves its identity while sharing later member updates.
+// Copying an array member through that handle also preserves its exact expression.
+module attributes {llzk.lang} {
+  struct.def @CapturedHandleMemberUpdates {
+    struct.member @value : !felt.type
+    struct.member @items : !array.type<1 x !felt.type>
+    struct.member @observedScalar : !felt.type
+    struct.member @observedElement : !felt.type
+    function.def @compute(%other: !struct.type<@CapturedHandleMemberUpdates>) -> !struct.type<@CapturedHandleMemberUpdates> {
+      %self = struct.new : !struct.type<@CapturedHandleMemberUpdates>
+      %source = array.new %self : !array.type<1 x !struct.type<@CapturedHandleMemberUpdates>>
+      %c0 = arith.constant 0 : index
+      %captured = array.read %source[%c0] : !array.type<1 x !struct.type<@CapturedHandleMemberUpdates>>, !struct.type<@CapturedHandleMemberUpdates>
+      array.write %source[%c0] = %other : !array.type<1 x !struct.type<@CapturedHandleMemberUpdates>>, !struct.type<@CapturedHandleMemberUpdates>
+      %seven = felt.const 7
+      struct.writem %self[@value] = %seven : !struct.type<@CapturedHandleMemberUpdates>, !felt.type
+      %two = felt.const 2
+      %sum = felt.add %two, %two
+      %items = array.new %sum : !array.type<1 x !felt.type>
+      struct.writem %self[@items] = %items : !struct.type<@CapturedHandleMemberUpdates>, !array.type<1 x !felt.type>
+      %scalar = struct.readm %captured[@value] : !struct.type<@CapturedHandleMemberUpdates>, !felt.type
+      %copy = struct.readm %captured[@items] : !struct.type<@CapturedHandleMemberUpdates>, !array.type<1 x !felt.type>
+      %element = array.read %copy[%c0] : !array.type<1 x !felt.type>, !felt.type
+      struct.writem %self[@observedScalar] = %scalar : !struct.type<@CapturedHandleMemberUpdates>, !felt.type
+      struct.writem %self[@observedElement] = %element : !struct.type<@CapturedHandleMemberUpdates>, !felt.type
+      function.return %self : !struct.type<@CapturedHandleMemberUpdates>
+    }
+    function.def @constrain(%self: !struct.type<@CapturedHandleMemberUpdates>, %other: !struct.type<@CapturedHandleMemberUpdates>) { function.return }
+  }
+}
+
+// CHECK-LABEL: @CapturedHandleMemberUpdates StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0.value in Entire
+// CHECK-NEXT:          %arg0.items[0] in Entire
+// CHECK-NEXT:          %arg0.observedScalar in Entire
+// CHECK-NEXT:          %arg0.observedElement in Entire
+// CHECK-NEXT:          %self.value in Degenerate(7)
+// CHECK-NEXT:          %self.items[0] in Degenerate(4)
+// CHECK-NEXT:          %self.observedScalar in Degenerate(7)
+// CHECK-NEXT:          %self.observedElement in Degenerate(4)
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:          %self.items[0] in Entire
+// CHECK-NEXT:          %self.observedScalar in Entire
+// CHECK-NEXT:          %self.observedElement in Entire
+// CHECK-NEXT:          %arg1.value in Entire
+// CHECK-NEXT:          %arg1.items[0] in Entire
+// CHECK-NEXT:          %arg1.observedScalar in Entire
+// CHECK-NEXT:          %arg1.observedElement in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

@@ -25,7 +25,6 @@
 #include <llvm/Support/Debug.h>
 
 #include <numeric>
-#include <unordered_set>
 
 #define DEBUG_TYPE "llzk-constrain-ref-lattice"
 
@@ -170,7 +169,7 @@ SourceRefLatticeValue::referencePodRecord(mlir::StringAttr recordName) const {
 }
 
 mlir::FailureOr<std::pair<SourceRefLatticeValue, mlir::ChangeResult>>
-SourceRefLatticeValue::extract(const std::vector<SourceRefIndex> &indices) const {
+SourceRefLatticeValue::extract(llvm::ArrayRef<SourceRefIndex> indices) const {
   if (isArray()) {
     ensure(indices.size() <= getNumArrayDims(), "invalid extract array operands");
 
@@ -353,6 +352,12 @@ mlir::FailureOr<SourceRef> SourceRefLattice::getSourceRef(mlir::Value val) {
     } else if (auto nonDet = llvm::dyn_cast<NonDetOp>(defOp)) {
       return SourceRef(nonDet);
     } else if (llvm::isa<global::GlobalReadOp>(defOp)) {
+      return SourceRef(llvm::cast<mlir::OpResult>(val));
+    } else if (
+        llvm::isa<ReadPodOp, ReadArrayOp, MemberReadOp>(defOp) &&
+        llvm::isa<ArrayType, PodType>(val.getType())
+    ) {
+      // Mutable aggregate reads produce independent copied storage.
       return SourceRef(llvm::cast<mlir::OpResult>(val));
     } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(defOp)) {
       return SourceRef(createArray->getResult(0));
