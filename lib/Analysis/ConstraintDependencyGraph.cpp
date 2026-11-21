@@ -140,6 +140,88 @@ static bool isBooleanLiteral(const SourceRef &ref, int64_t literal) {
   return succeeded(index) && *index == literal;
 }
 
+/// Collect POD record positions used to distinguish indexed aggregate alternatives.
+static llvm::SmallVector<std::pair<uint64_t, uint64_t>>
+getAggregateAlternativeOrdinals(const SourceRef &ref) {
+  llvm::SmallVector<std::pair<uint64_t, uint64_t>> result;
+  auto root = ref.getRoot();
+  if (failed(root)) {
+    return result;
+  }
+  Type currentType = root->getType();
+  for (const SourceRefIndex &index : ref.getPath()) {
+    if (index.isMember()) {
+      currentType = index.getMember().getType();
+      continue;
+    }
+    if (index.isPodRecord()) {
+      auto podType = llvm::dyn_cast<PodType>(currentType);
+      if (!podType) {
+        continue;
+      }
+      auto records = podType.getRecords();
+      for (auto [ordinal, record] : llvm::enumerate(records)) {
+        if (record.getName() == index.getPodRecordNameAttr()) {
+          result.emplace_back(ordinal, records.size());
+          currentType = record.getType();
+          break;
+        }
+      }
+      continue;
+    }
+    if (index.isIndex() || index.isIndexRange()) {
+      if (auto arrayType = llvm::dyn_cast<ArrayType>(currentType)) {
+        currentType = arrayType.getElementType();
+      }
+    }
+  }
+  return result;
+}
+
+/// Check whether a POD alternative matches the selected aggregate element.
+static bool isCompatibleIndexedAlternative(const SourceRef &candidate, const SourceRef &selection) {
+  llvm::SmallVector<std::pair<uint64_t, uint64_t>> selectedIndices;
+  auto root = selection.getRoot();
+  if (failed(root)) {
+    return true;
+  }
+  Type currentType = root->getType();
+  for (const SourceRefIndex &index : selection.getPath()) {
+    if (index.isMember()) {
+      currentType = index.getMember().getType();
+      continue;
+    }
+    if (index.isPodRecord()) {
+      if (auto podType = llvm::dyn_cast<PodType>(currentType)) {
+        for (auto record : podType.getRecords()) {
+          if (record.getName() == index.getPodRecordNameAttr()) {
+            currentType = record.getType();
+            break;
+          }
+        }
+      }
+      continue;
+    }
+    if (auto arrayType = llvm::dyn_cast<ArrayType>(currentType)) {
+      if (index.isIndex()) {
+        selectedIndices.emplace_back(
+            static_cast<uint64_t>(static_cast<int64_t>(index.getIndex())), arrayType.getDimSize(0)
+        );
+      }
+      currentType = arrayType.getElementType();
+    }
+  }
+
+  for (auto [ordinal, alternativeCount] : getAggregateAlternativeOrdinals(candidate)) {
+    for (auto [selected, dimensionSize] : selectedIndices) {
+      if (alternativeCount == dimensionSize && ordinal != selected) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 } // namespace
 
 /* SourceRefAnalysis */
@@ -603,6 +685,16 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
     for (const auto &[source, targets] : translatedCDG.conditionalDependencyEdges) {
       conditionalDependencyEdges[source].insert(targets.begin(), targets.end());
     }
+    auto &translatedAliases = translatedCDG.directAliases;
+    for (const auto *leaderIt : translatedAliases) {
+      if (!leaderIt->isLeader()) {
+        continue;
+      }
+      const SourceRef &leader = leaderIt->getData();
+      for (const SourceRef &member : translatedAliases.members(*leaderIt)) {
+        directAliases.unionSets(leader, member);
+      }
+    }
     // And update the constant sets
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
@@ -620,6 +712,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
 ) {
   std::vector<SourceRef> signalUsages, constUsages;
   std::vector<SourceRef> conditionalUsages;
+  llvm::SmallVector<SourceRefSet, 2> operandSignals;
 
   // Some frontends preserve a witness-only conditional in @constrain as an empty scf.if marker.
   // Associate that marker's condition with the next emitted constraint in the block.
@@ -650,6 +743,7 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   for (auto operand : emitOp->getOperands()) {
     auto latticeVal = SourceRefAnalysis::getValueState(solver, operand);
+    SourceRefSet currentOperandSignals;
     for (const auto &ref : latticeVal.foldToScalar()) {
       if (ref.isConstant() || ref.isTemplateConstant()) {
         constUsages.push_back(ref);
@@ -657,6 +751,24 @@ void ConstraintDependencyGraph::walkConstrainOp(
         signalUsages.push_back(ref);
       }
     }
+    for (const SourceRef &ref : SourceRefAnalysis::getValueState(solver, operand).foldToScalar()) {
+      if (!ref.isConstant() && !ref.isTemplateConstant()) {
+        currentOperandSignals.insert(ref);
+      }
+    }
+    operandSignals.push_back(std::move(currentOperandSignals));
+  }
+
+  auto isStorageIdentity = [](Value operand) {
+    return llvm::isa<BlockArgument>(operand) ||
+           llvm::isa_and_present<MemberReadOp, ReadArrayOp, ReadPodOp>(operand.getDefiningOp());
+  };
+  if (llvm::isa<EmitEqualityOp>(emitOp) && operandSignals.size() == 2 &&
+      llvm::all_of(emitOp->getOperands(), isStorageIdentity) && operandSignals[0].size() == 1 &&
+      operandSignals[1].size() == 1) {
+    const SourceRef &lhs = *operandSignals[0].begin();
+    const SourceRef &rhs = *operandSignals[1].begin();
+    directAliases.unionSets(lhs, rhs);
   }
 
   // Compute a transitive closure over the signals.
@@ -793,6 +905,32 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
   };
   translateEdges(dependencyEdges, res.dependencyEdges);
 
+  for (const auto *leaderIt : directAliases) {
+    if (!leaderIt->isLeader()) {
+      continue;
+    }
+    std::vector<SourceRef> translatedAliases;
+    for (auto memberIt = directAliases.member_begin(*leaderIt);
+         memberIt != directAliases.member_end(); ++memberIt) {
+      auto translated = translate(*memberIt);
+      if (failed(translated)) {
+        continue;
+      }
+      llvm::copy_if(
+          *translated, std::back_inserter(translatedAliases),
+          [](const SourceRef &translatedRef) { return !translatedRef.isConstant(); }
+      );
+    }
+    if (translatedAliases.empty()) {
+      continue;
+    }
+    const SourceRef &leader = translatedAliases.front();
+    res.directAliases.insert(leader);
+    for (const SourceRef &alias : llvm::drop_begin(translatedAliases)) {
+      res.directAliases.unionSets(leader, alias);
+    }
+  }
+
   translateEdges(conditionalDependencyEdges, res.conditionalDependencyEdges);
 
   // Translate ref2Val as well
@@ -838,13 +976,17 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
 
       for (const auto &[source, targets] : dependencyEdges) {
         if ((!source.overlaps(*currRef) &&
-             !(includeDescendants && source.isValidPrefix(*currRef)))) {
+             !(includeDescendants && source.isValidPrefix(*currRef))) ||
+            !isCompatibleIndexedAlternative(source, ref)) {
           continue;
         }
         if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
           res.insert(constIt->second.begin(), constIt->second.end());
         }
         for (const SourceRef &target : targets) {
+          if (!isCompatibleIndexedAlternative(target, ref)) {
+            continue;
+          }
           SourceRef narrowed = target.narrowRanges(*currRef);
           if (!visited.contains(narrowed)) {
             worklist.push_back(narrowed);
@@ -861,10 +1003,14 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
       if (followConditionalDependencies) {
         for (const auto &[source, targets] : conditionalDependencyEdges) {
           if ((!source.overlaps(*currRef) &&
-               !(includeDescendants && source.isValidPrefix(*currRef)))) {
+               !(includeDescendants && source.isValidPrefix(*currRef))) ||
+              !isCompatibleIndexedAlternative(source, ref)) {
             continue;
           }
           for (const SourceRef &target : targets) {
+            if (!isCompatibleIndexedAlternative(target, ref)) {
+              continue;
+            }
             SourceRef narrowed = target.narrowRanges(*currRef);
             if (!visited.contains(narrowed)) {
               worklist.push_back(narrowed);
@@ -877,7 +1023,8 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
       }
       for (const auto &[constantSource, constants] : constantSets) {
         if ((constantSource.overlaps(*currRef) ||
-             (includeDescendants && constantSource.isValidPrefix(*currRef)))) {
+             (includeDescendants && constantSource.isValidPrefix(*currRef))) &&
+            isCompatibleIndexedAlternative(constantSource, ref)) {
           res.insert(constants.begin(), constants.end());
         }
       }
@@ -891,7 +1038,137 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
     }
   }
 
-  return res;
+  DenseMap<SourceRef, SourceRef> preferredAliases;
+  auto root = ref.getRoot();
+  StructDefOp queriedStruct =
+      succeeded(root) ? root->getParentRegion()->getParentOfType<StructDefOp>() : nullptr;
+  auto rankAlias = [queriedStruct](const SourceRef &candidate) {
+    if (candidate.isBlockArgument() && *candidate.getInputNum() > 0) {
+      auto candidateRoot = candidate.getRoot();
+      auto candidateStruct = succeeded(candidateRoot)
+                                 ? candidateRoot->getParentRegion()->getParentOfType<StructDefOp>()
+                                 : nullptr;
+      return candidateStruct == queriedStruct ? 0 : 1;
+    }
+    if (candidate.isCreateStructOp()) {
+      return 2;
+    }
+    if (candidate.isBlockArgument()) {
+      return 3;
+    }
+    return 4;
+  };
+  for (const auto *leaderIt : directAliases) {
+    if (!leaderIt->isLeader()) {
+      continue;
+    }
+    auto memberIt = directAliases.member_begin(*leaderIt);
+    SourceRef preferred = *memberIt;
+    for (; memberIt != directAliases.member_end(); ++memberIt) {
+      if (rankAlias(*memberIt) < rankAlias(preferred) ||
+          (rankAlias(*memberIt) == rankAlias(preferred) && *memberIt < preferred)) {
+        preferred = *memberIt;
+      }
+    }
+    for (memberIt = directAliases.member_begin(*leaderIt); memberIt != directAliases.member_end();
+         ++memberIt) {
+      preferredAliases.try_emplace(*memberIt, preferred);
+    }
+  }
+
+  SourceRefSet normalized;
+  if (ctx.runIntraproceduralAnalysis() &&
+      llvm::any_of(res, [](const SourceRef &resultRef) { return resultRef.isNonDetOp(); })) {
+    SourceRefSet equivalentInputs;
+    for (const auto *candidate : signalSets) {
+      const SourceRef &candidateRef = candidate->getData();
+      if (candidateRef.isBlockArgument() && *candidateRef.getInputNum() > 0) {
+        equivalentInputs.insert(candidateRef);
+      }
+    }
+    res.insert(equivalentInputs.begin(), equivalentInputs.end());
+  }
+
+  for (const SourceRef &resultRef : res) {
+    auto aliasIt = preferredAliases.find(resultRef);
+    if (aliasIt == preferredAliases.end()) {
+      normalized.insert(resultRef);
+    } else if (!aliasIt->second.overlaps(ref)) {
+      normalized.insert(aliasIt->second);
+    } else if (!resultRef.overlaps(ref)) {
+      normalized.insert(resultRef);
+    }
+  }
+
+  const bool hasInputDependency = llvm::any_of(normalized, [](const SourceRef &resultRef) {
+    return resultRef.isBlockArgument() && *resultRef.getInputNum() > 0;
+  });
+  if (hasInputDependency) {
+    auto isLogicalComponentPath = [](const SourceRef &resultRef) {
+      if (!resultRef.isBlockArgument() || *resultRef.getInputNum() != 0) {
+        return false;
+      }
+      return llvm::any_of(resultRef.getPath(), [](const SourceRefIndex &index) {
+        return index.isMember() && llvm::isa<StructType>(index.getMember().getType());
+      });
+    };
+    const bool queryIsPodStorage = llvm::isa<PodType>(ref.getType());
+    const bool hasLogicalComponentPath =
+        !queryIsPodStorage && llvm::any_of(normalized, isLogicalComponentPath);
+    SourceRefSet terminalDependencies;
+    auto isTerminal = [&](const SourceRef &resultRef) {
+      if (resultRef.isConstant() || (isLogicalComponentPath(resultRef) && !queryIsPodStorage)) {
+        return true;
+      }
+      if (!resultRef.isBlockArgument() || *resultRef.getInputNum() == 0) {
+        return false;
+      }
+      return !hasLogicalComponentPath || llvm::none_of(resultRef.getPath(), [](const auto &index) {
+        return index.isIndexRange();
+      });
+    };
+    for (const SourceRef &resultRef : normalized) {
+      if (isTerminal(resultRef)) {
+        terminalDependencies.insert(resultRef);
+      }
+    }
+    normalized = std::move(terminalDependencies);
+  }
+
+  auto isStrictRangeSubset = [](const SourceRef &candidate, const SourceRef &other) {
+    auto candidateRoot = candidate.getRoot();
+    auto otherRoot = other.getRoot();
+    if (failed(candidateRoot) || failed(otherRoot) || *candidateRoot != *otherRoot ||
+        candidate.getPath().size() != other.getPath().size()) {
+      return false;
+    }
+
+    bool isStrict = false;
+    for (auto [candidateIndex, otherIndex] : llvm::zip(candidate.getPath(), other.getPath())) {
+      if (candidateIndex == otherIndex) {
+        continue;
+      }
+      if (!candidateIndex.isIndexRange() || !otherIndex.isIndexRange()) {
+        return false;
+      }
+      auto [candidateLower, candidateUpper] = candidateIndex.getIndexRange();
+      auto [otherLower, otherUpper] = otherIndex.getIndexRange();
+      if (candidateLower < otherLower || candidateUpper > otherUpper) {
+        return false;
+      }
+      isStrict = true;
+    }
+    return isStrict;
+  };
+  SourceRefSet minimalRanges;
+  for (const SourceRef &candidate : normalized) {
+    if (llvm::none_of(normalized, [&](const SourceRef &other) {
+      return isStrictRangeSubset(candidate, other);
+    })) {
+      minimalRanges.insert(candidate);
+    }
+  }
+  return minimalRanges;
 }
 
 /* ConstraintDependencyGraphModuleAnalysis */
