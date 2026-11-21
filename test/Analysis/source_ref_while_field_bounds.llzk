@@ -1,0 +1,77 @@
+// RUN: llzk-opt -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck %s
+// RUN: llzk-opt -llzk-print-constraint-dependency-graphs=intraprocedural %s -o /dev/null 2>&1 | FileCheck %s
+
+module attributes {llzk.lang, llzk.fields = [#felt.field<"small", 3>]} {
+  // A fieldless -1 becomes p-1 after field resolution, so this loop can execute.
+  // Until then, the array dependency must conservatively include every element.
+  struct.def @FieldlessWhileBound {
+    struct.member @out : !felt.type {llzk.pub, signal}
+
+    function.def @compute(%a: !felt.type, %b: !felt.type, %c: !felt.type)
+        -> !struct.type<@FieldlessWhileBound> {
+      %self = struct.new : !struct.type<@FieldlessWhileBound>
+      function.return %self : !struct.type<@FieldlessWhileBound>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@FieldlessWhileBound>,
+        %a: !felt.type, %b: !felt.type, %c: !felt.type)
+        attributes {function.allow_non_native_field_ops} {
+      %values = array.new %a, %b, %c : !array.type<3 x !felt.type>
+      %out = struct.readm %self[@out] : !struct.type<@FieldlessWhileBound>, !felt.type
+      %zero = felt.const 0
+      %upper = felt.const -1
+      scf.while (%i = %zero) : (!felt.type) -> !felt.type {
+        %continue = bool.cmp lt(%i, %upper)
+        scf.condition(%continue) %i : !felt.type
+      } do {
+      ^bb0(%i: !felt.type):
+        %index = cast.toindex %i
+        %value = array.read %values[%index] : !array.type<3 x !felt.type>, !felt.type
+        constrain.eq %out, %value : !felt.type
+        scf.yield %upper : !felt.type
+      }
+      function.return
+    }
+  }
+
+  // With a known field, -1 reduces to 2 and the inferred range remains [0, 2).
+  struct.def @ResolvedWhileBound {
+    struct.member @out : !felt.type<"small"> {llzk.pub, signal}
+
+    function.def @compute(%a: !felt.type<"small">, %b: !felt.type<"small">, %c: !felt.type<"small">)
+        -> !struct.type<@ResolvedWhileBound> {
+      %self = struct.new : !struct.type<@ResolvedWhileBound>
+      function.return %self : !struct.type<@ResolvedWhileBound>
+    }
+
+    function.def @constrain(
+        %self: !struct.type<@ResolvedWhileBound>,
+        %a: !felt.type<"small">, %b: !felt.type<"small">, %c: !felt.type<"small">)
+        attributes {function.allow_non_native_field_ops} {
+      %values = array.new %a, %b, %c : !array.type<3 x !felt.type<"small">>
+      %out = struct.readm %self[@out] : !struct.type<@ResolvedWhileBound>, !felt.type<"small">
+      %zero = felt.const 0 : !felt.type<"small">
+      %upper = felt.const -1 : !felt.type<"small">
+      scf.while (%i = %zero) : (!felt.type<"small">) -> !felt.type<"small"> {
+        %continue = bool.cmp lt(%i, %upper) : !felt.type<"small">, !felt.type<"small">
+        scf.condition(%continue) %i : !felt.type<"small">
+      } do {
+      ^bb0(%i: !felt.type<"small">):
+        %index = cast.toindex %i : !felt.type<"small">
+        %value = array.read %values[%index] : !array.type<3 x !felt.type<"small">>, !felt.type<"small">
+        constrain.eq %out, %value : !felt.type<"small">
+        scf.yield %upper : !felt.type<"small">
+      }
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @FieldlessWhileBound ConstraintDependencyGraph {
+// CHECK-NEXT:      { %self.out, %arg1, %arg2, %arg3 }
+// CHECK-NEXT:  }
+
+// CHECK-LABEL: @ResolvedWhileBound ConstraintDependencyGraph {
+// CHECK-NEXT:      { %self.out, %arg1, %arg2 }
+// CHECK-NEXT:  }

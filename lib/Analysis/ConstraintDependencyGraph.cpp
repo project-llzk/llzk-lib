@@ -93,9 +93,14 @@ static std::optional<std::pair<DynamicAPInt, DynamicAPInt>> getStaticLoopIndexRa
   if (!upper) {
     return std::nullopt;
   }
+  auto upperBound = upper.getValue().getReducedValue();
+  if (!upperBound) {
+    // A fieldless literal is not a bound until its field representative is known.
+    return std::nullopt;
+  }
   // The backedge need not be monotone. The condition proves an upper bound, while a felt's
   // representative is nonnegative regardless of the initializer or recurrence.
-  return std::pair(DynamicAPInt(0), upper.getValue().getReducedValueOrRaw());
+  return std::pair(DynamicAPInt(0), *upperBound);
 }
 
 /// Select constant indices, known loop ranges, or whole dimensions from operand states.
