@@ -1386,6 +1386,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       }
       if (isBooleanType(value.getType())) {
         joinedInterval = joinedInterval.intersect(Interval::Boolean(field.get()));
+        if (trackUnreducedIntervals) {
+          joinedUnreduced = getBooleanUnreducedInterval(joinedInterval);
+        }
       }
       ExpressionValue anyVal = createUnknownValue(value)
                                    .withInterval(joinedInterval)
@@ -1399,6 +1402,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       stored = refineReducedInterval(
           stored, stored.getInterval().intersect(Interval::Boolean(field.get()))
       );
+      if (trackUnreducedIntervals) {
+        stored =
+            stored.withOptionalUnreducedInterval(getBooleanUnreducedInterval(stored.getInterval()));
+      }
     }
     if (isReadOp(value.getDefiningOp()) && !ref.getPath().empty() && !hasRangedSelection(ref) &&
         stored.getExpr() == getOrCreateSymbol(ref)) {

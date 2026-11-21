@@ -2375,7 +2375,7 @@ TEST_F(IntervalTests, HashIgnoresIntegerRepresentation) {
   EXPECT_EQ(x, y);
   EXPECT_EQ(Interval::Hash {}(x), Interval::Hash {}(y));
 }
-// Reads must respect their boolean type even while stored intervals are still at top.
+// Reads must bound both reduced and unreduced intervals even while storage summaries are broad.
 TEST_F(IntervalAnalysisAPITests, BooleanStorageReadsBoundBroadSummaries) {
   auto mod = parseModule(R"mlir(
 module attributes {llzk.lang} {
@@ -2408,6 +2408,7 @@ module attributes {llzk.lang} {
   Value value = fn.getArgument(2);
   (void)solver.getOrCreateState<IntervalAnalysisLattice>(value)->setValue(
       ExpressionValue(field, analysis->getOrCreateSymbol(value))
+          .withUnreducedInterval(UnreducedInterval(field.zero(), field.maxVal()))
   );
   auto visit = [&](Operation *op) {
     SmallVector<const IntervalAnalysisLattice *> operands;
@@ -2441,6 +2442,8 @@ module attributes {llzk.lang} {
   for (auto read : reads) {
     const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(read.getResult());
     ASSERT_NE(lattice, nullptr);
-    EXPECT_EQ(lattice->getValue().getScalarValue().getInterval(), Interval::Boolean(field));
+    const auto &expr = lattice->getValue().getScalarValue();
+    EXPECT_EQ(expr.getInterval(), Interval::Boolean(field));
+    EXPECT_EQ(expr.getOptionalUnreducedInterval(), std::make_optional<UnreducedInterval>(0, 1));
   }
 }
