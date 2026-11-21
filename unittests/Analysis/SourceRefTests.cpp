@@ -1129,6 +1129,20 @@ TEST_F(SourceRefTests, CapturedComponentBoundariesSurviveTranslation) {
   EXPECT_EQ(*translated->getParentPrefix(), translatedSlot->captureComponent());
   EXPECT_EQ(*translated->getParentPrefix()->getParentPrefix(), *row);
 
+  // Every replacement retains the capture boundary, even when the prefix depth changes.
+  SourceRefLatticeValue replacementRoots(root);
+  EXPECT_EQ(replacementRoots.insert(*row), ChangeResult::Change);
+  TranslationMap translations {{root, replacementRoots}};
+  SourceRefSet expectedMembers {*member, *translated};
+  auto [translatedMembers, translationChanged] =
+      SourceRefLatticeValue(*member).translate(translations);
+  EXPECT_EQ(translationChanged, ChangeResult::Change);
+  EXPECT_EQ(translatedMembers.getScalarValue(), expectedMembers);
+  auto [replacedMembers, replacementChanged] =
+      SourceRefLatticeValue(*member).replacePrefixes(translations);
+  EXPECT_EQ(replacementChanged, ChangeResult::Change);
+  EXPECT_EQ(replacedMembers.getScalarValue(), expectedMembers);
+
   TranslationMap aliases {{*slot, SourceRefLatticeValue(SourceRef(self))}};
   auto [preserved, unchanged] =
       SourceRefLatticeValue(*member).replacePrefixes(aliases, /*preserveCaptures=*/true);

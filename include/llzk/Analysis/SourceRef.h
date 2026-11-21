@@ -398,6 +398,10 @@ public:
   /// @return
   mlir::FailureOr<SourceRef> translate(const SourceRef &prefix, const SourceRef &other) const;
 
+  /// Translate a previously checked suffix onto `other`, preserving captured-component boundaries.
+  /// The suffix must come from a successful getSuffix() call on this unmodified reference.
+  SourceRef translateSuffix(llvm::ArrayRef<SourceRefIndex> suffix, const SourceRef &other) const;
+
   /// @brief Create a new reference that is the immediate prefix of this reference if possible.
   mlir::FailureOr<SourceRef> getParentPrefix() const {
     if (!isRooted() || getPath().empty()) {
