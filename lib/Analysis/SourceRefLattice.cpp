@@ -312,13 +312,12 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
     }
     for (const TranslationMap::Entry *entry : entries) {
       const auto &[prefix, replacementPrefixes] = *entry;
-      if (currRef.isValidPrefix(prefix)) {
-        for (const SourceRef &replacementPrefix : replacementPrefixes) {
-          auto translatedRefRes = currRef.translate(prefix, replacementPrefix);
-          if (succeeded(translatedRefRes)) {
-            res |= insert(*translatedRefRes);
-          }
-        }
+      auto suffix = currRef.getSuffix(prefix);
+      if (failed(suffix)) {
+        continue;
+      }
+      for (const SourceRef &replacementPrefix : replacementPrefixes) {
+        res |= insert(currRef.translateSuffix(*suffix, replacementPrefix));
       }
     }
   }
@@ -355,9 +354,7 @@ mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(
       }
       matched = true;
       for (const SourceRef &replacementPrefix : replacementPrefixes) {
-        auto translated = currentRef.translate(prefix, replacementPrefix);
-        ensure(succeeded(translated), "matching prefix must translate");
-        replaced.insert(*translated);
+        replaced.insert(currentRef.translateSuffix(*suffix, replacementPrefix));
       }
     }
     if (!matched) {
