@@ -586,6 +586,9 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         signalSets.unionSets(leader, member);
       }
     }
+    for (const auto &[source, targets] : translatedCDG.dependencyEdges) {
+      dependencyEdges[source].insert(targets.begin(), targets.end());
+    }
     // And update the constant sets
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
@@ -616,6 +619,13 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   // Compute a transitive closure over the signals.
   if (!signalUsages.empty()) {
+    for (const SourceRef &lhs : signalUsages) {
+      for (const SourceRef &rhs : signalUsages) {
+        if (lhs != rhs) {
+          dependencyEdges[lhs].insert(rhs);
+        }
+      }
+    }
     auto leader = signalSets.getOrInsertLeaderValue(signalUsages.front());
     for (const SourceRef &signal : llvm::drop_begin(signalUsages)) {
       signalSets.unionSets(leader, signal);
@@ -708,6 +718,31 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     }
   }
 
+  // Translate dependency edges with the same filtering.
+  auto translateEdges = [&translate](const auto &edges, auto &translatedEdges) {
+    for (const auto &[source, targets] : edges) {
+      auto translatedSources = translate(source);
+      if (failed(translatedSources)) {
+        continue;
+      }
+      for (const SourceRef &target : targets) {
+        auto translatedTargets = translate(target);
+        if (failed(translatedTargets)) {
+          continue;
+        }
+        for (const SourceRef &translatedSource : *translatedSources) {
+          for (const SourceRef &translatedTarget : *translatedTargets) {
+            if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
+                translatedSource != translatedTarget) {
+              translatedEdges[translatedSource].insert(translatedTarget);
+            }
+          }
+        }
+      }
+    }
+  };
+  translateEdges(dependencyEdges, res.dependencyEdges);
+
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
@@ -723,28 +758,59 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
 
 SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &ref) const {
   SourceRefSet res;
-  auto currRef = mlir::FailureOr<SourceRef>(ref);
-  while (mlir::succeeded(currRef)) {
-    // A dynamic access is represented by a half-open range. Match every concrete element and
-    // range that overlaps the queried path, as well as exact references.
-    for (const auto *candidate : signalSets) {
-      const SourceRef &candidateRef = candidate->getData();
-      if (!candidateRef.overlaps(*currRef)) {
-        continue;
+  SourceRefSet visited;
+  llvm::SmallVector<SourceRef> worklist = {ref};
+  const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(ref.getType());
+
+  // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
+  // bridges transitively so that, for example, `out[2] == child.out[2]` and a child constraint on
+  // `child.out[0:N]` connect `out[2]` to the child's inputs.
+  while (!worklist.empty()) {
+    auto currRef = mlir::FailureOr<SourceRef>(worklist.pop_back_val());
+    while (mlir::succeeded(currRef)) {
+      if (!visited.insert(*currRef).second) {
+        break;
       }
-      for (const SourceRef &member : signalSets.members(candidateRef)) {
-        if (!member.overlaps(ref)) {
-          res.insert(member);
+
+      for (const auto &[source, targets] : dependencyEdges) {
+        if ((!source.overlaps(*currRef) &&
+             !(includeDescendants && source.isValidPrefix(*currRef)))) {
+          continue;
+        }
+        if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
+          res.insert(constIt->second.begin(), constIt->second.end());
+        }
+        for (const SourceRef &target : targets) {
+          SourceRef narrowed = target.narrowRanges(*currRef);
+          if (!visited.contains(narrowed)) {
+            worklist.push_back(narrowed);
+          }
+          if (!narrowed.overlaps(ref)) {
+            res.insert(narrowed);
+          }
+          auto constIt = constantSets.find(target);
+          if (constIt != constantSets.end()) {
+            res.insert(constIt->second.begin(), constIt->second.end());
+          }
         }
       }
-      auto constIt = constantSets.find(candidateRef);
-      if (constIt != constantSets.end()) {
-        res.insert(constIt->second.begin(), constIt->second.end());
+
+      for (const auto &[constantSource, constants] : constantSets) {
+        if ((constantSource.overlaps(*currRef) ||
+             (includeDescendants && constantSource.isValidPrefix(*currRef)))) {
+          res.insert(constants.begin(), constants.end());
+        }
+      }
+      // Constraints on an aggregate also constrain its scalar descendants.
+      auto parent = currRef->getParentPrefix();
+      if (includeDescendants && succeeded(parent) && ref.isValidPrefix(*parent) && *parent != ref) {
+        currRef = failure();
+      } else {
+        currRef = parent;
       }
     }
-    // Go to parent
-    currRef = currRef->getParentPrefix();
   }
+
   return res;
 }
 
