@@ -3,15 +3,6 @@
 
 // A statically bounded loop visits only the first two elements of a three-element array.
 
-// CHECK-LABEL: @LoopRanges ConstraintDependencyGraph {
-// CHECK-NEXT:      { %self.out[0:2], %arg1[0:2] }
-// CHECK-NEXT:  }
-
-
-// INTRA-LABEL: @LoopRanges ConstraintDependencyGraph {
-// INTRA-NEXT:      { %self.out[0:2], %arg1[0:2] }
-// INTRA-NEXT:  }
-
 module attributes {llzk.lang} {
   struct.def @LoopRanges {
     struct.member @out : !array.type<3 x !felt.type> {llzk.pub, signal}
@@ -42,3 +33,11 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// CHECK-LABEL: @LoopRanges ConstraintDependencyGraph {
+// CHECK-NEXT:      { %self.out[0:2], %arg1[0:2] }
+// CHECK-NEXT:  }
+
+// INTRA-LABEL: @LoopRanges ConstraintDependencyGraph {
+// INTRA-NEXT:      { %self.out[0:2], %arg1[0:2] }
+// INTRA-NEXT:  }

@@ -17,6 +17,7 @@
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
@@ -110,9 +111,8 @@ static std::vector<SourceRefIndex> getArrayAccessIndices(
       indices.emplace_back(bounds->first, bounds->second);
     } else {
       ArrayType arrayType = access.getArrRef().getType();
-      assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
       indices.push_back(
-          SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
+          SourceRefIndex::forArrayDimension(arrayType.getDimSize(llzk::checkedCast<unsigned>(i)))
       );
     }
   }
