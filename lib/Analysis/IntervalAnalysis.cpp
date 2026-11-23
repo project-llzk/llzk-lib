@@ -108,12 +108,11 @@ bool hasNoStorageWrites(Operation *op) {
   } else if (!recursive) {
     return false;
   }
-  if (recursive) {
-    for (Region &region : op->getRegions()) {
-      for (Block &block : region) {
-        if (!llvm::all_of(block, [](Operation &nested) { return hasNoStorageWrites(&nested); })) {
-          return false;
-        }
+  // Direct effects can be empty even when an operation's regions contain writes.
+  for (Region &region : op->getRegions()) {
+    for (Block &block : region) {
+      if (!llvm::all_of(block, [](Operation &nested) { return hasNoStorageWrites(&nested); })) {
+        return false;
       }
     }
   }
@@ -203,8 +202,7 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     // its creation through its use, in addition to the interval between the scalar reads.
     return success(
         !llvm::isa<ArrayType>(a.getType()) ||
-        (hasReadOnlyPath(a.getDefiningOp(), left) &&
-         hasReadOnlyPath(b.getDefiningOp(), right))
+        (hasReadOnlyPath(a.getDefiningOp(), left) && hasReadOnlyPath(b.getDefiningOp(), right))
     );
   };
   if (!OperationEquivalence::isEquivalentTo(

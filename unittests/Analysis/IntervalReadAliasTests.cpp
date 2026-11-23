@@ -49,7 +49,7 @@ module attributes {llzk.lang} {
     array.write %cells[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
     function.return
   }
-  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %condition: i1, %input: !felt.type, %replacement: !struct.type<@Cell>) {
+  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %condition: i1, %input: !felt.type, %replacement: !struct.type<@Cell>) attributes {function.allow_non_native_field_ops} {
     %zero = arith.constant 0 : index
     %one = arith.constant 1 : index
     %two = arith.constant 2 : index
@@ -253,6 +253,36 @@ TEST_F(IntervalReadAliasTests, NestedReadAliasesRespectWriteBarriers) {
   for (bool memberReads : {false, true}) {
     for (bool constants : {false, true}) {
       checkAliases("scf.if %condition { // READ\n }", memberReads, false, constants, false);
+    }
+  }
+}
+
+// Quantifiers report no direct effects, but their verifier permits writes in the body.
+TEST_F(IntervalReadAliasTests, QuantifierWritesBlockNestedReadAliases) {
+  const std::pair<StringRef, StringRef> cases[] = {
+      {"forall", R"mlir(
+        %quantified = bool.forall %element in %array : !array.type<2 x !felt.type> {
+          // WRITE
+          bool.yield %condition
+        }
+        scf.if %condition { // READ
+        }
+      )mlir"},
+      {"exists", R"mlir(
+        %quantified = bool.exists %element in %array : !array.type<2 x !felt.type> {
+          // WRITE
+          bool.yield %condition
+        }
+        scf.if %condition { // READ
+        }
+      )mlir"}
+  };
+  for (auto [name, body] : cases) {
+    SCOPED_TRACE(name.str());
+    for (bool memberReads : {false, true}) {
+      for (bool constants : {false, true}) {
+        checkAliases(body, memberReads, true, constants, false);
+      }
     }
   }
 }
