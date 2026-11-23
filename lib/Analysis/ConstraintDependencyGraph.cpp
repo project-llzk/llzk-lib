@@ -129,6 +129,45 @@ static std::vector<SourceRefIndex> getArrayAccessIndices(
   return indices;
 }
 
+/// Extract array selections in the dimension order used by SourceRef::narrowRanges.
+static llvm::SmallVector<SourceRefIndex> getReferenceArrayIndices(const SourceRef &ref) {
+  llvm::SmallVector<SourceRefIndex> indices;
+  llvm::copy_if(ref.getPath(), std::back_inserter(indices), [](const SourceRefIndex &index) {
+    return index.isIndex() || index.isIndexRange();
+  });
+  return indices;
+}
+
+/// Prove correspondence only for single-source reads of the same SSA indices. Matching ranges
+/// alone do not prove correspondence: independent loop variables can have identical bounds.
+static bool haveCorrespondingArrayIndices(Operation *emitOp, DataFlowSolver &solver) {
+  if (!llvm::isa<EmitEqualityOp>(emitOp) || emitOp->getNumOperands() != 2) {
+    return false;
+  }
+  auto lhs = emitOp->getOperand(0).getDefiningOp<ReadArrayOp>();
+  auto rhs = emitOp->getOperand(1).getDefiningOp<ReadArrayOp>();
+  if (!lhs || !rhs || !llvm::equal(lhs.getIndices(), rhs.getIndices())) {
+    return false;
+  }
+  for (ReadArrayOp read : {lhs, rhs}) {
+    auto value = SourceRefAnalysis::getValueState(solver, read.getResult());
+    if (!value.isSingleValue()) {
+      return false;
+    }
+    llvm::SmallDenseMap<Value, SourceRefLatticeValue> indexStates;
+    for (Value index : read.getIndices()) {
+      indexStates.try_emplace(index, SourceRefAnalysis::getValueState(solver, index));
+    }
+    auto indices = getArrayAccessIndices(read, [&](Value index) -> const SourceRefLatticeValue & {
+      return indexStates.find(index)->second;
+    });
+    if (!llvm::equal(indices, getReferenceArrayIndices(value.getSingleValue()))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -591,7 +630,9 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
       }
     }
     for (const auto &[source, targets] : translatedCDG.dependencyEdges) {
-      dependencyEdges[source].insert(targets.begin(), targets.end());
+      for (const auto &[target, elementwise] : targets) {
+        addDependencyEdge(source, target, elementwise);
+      }
     }
     // And update the constant sets
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
@@ -603,6 +644,15 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   }
 
   return mlir::success();
+}
+
+void ConstraintDependencyGraph::addDependencyEdge(
+    const SourceRef &source, const SourceRef &target, bool elementwise
+) {
+  auto [it, inserted] = dependencyEdges[source].try_emplace(target, elementwise);
+  if (!inserted) {
+    it->second &= elementwise;
+  }
 }
 
 void ConstraintDependencyGraph::walkConstrainOp(
@@ -623,10 +673,11 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   // Compute a transitive closure over the signals.
   if (!signalUsages.empty()) {
+    const bool elementwise = haveCorrespondingArrayIndices(emitOp, solver);
     for (const SourceRef &lhs : signalUsages) {
       for (const SourceRef &rhs : signalUsages) {
         if (lhs != rhs) {
-          dependencyEdges[lhs].insert(rhs);
+          addDependencyEdge(lhs, rhs, elementwise);
         }
       }
     }
@@ -723,13 +774,13 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
   }
 
   // Translate dependency edges with the same filtering.
-  auto translateEdges = [&translate](const auto &edges, auto &translatedEdges) {
+  auto translateEdges = [&translate, &res](const auto &edges) {
     for (const auto &[source, targets] : edges) {
       auto translatedSources = translate(source);
       if (failed(translatedSources)) {
         continue;
       }
-      for (const SourceRef &target : targets) {
+      for (const auto &[target, elementwise] : targets) {
         auto translatedTargets = translate(target);
         if (failed(translatedTargets)) {
           continue;
@@ -738,14 +789,22 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
           for (const SourceRef &translatedTarget : *translatedTargets) {
             if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
                 translatedSource != translatedTarget) {
-              translatedEdges[translatedSource].insert(translatedTarget);
+              // Prefix translation may add or remove array dimensions. Preserve the proof
+              // only when both endpoints retain their original array selections.
+              res.addDependencyEdge(
+                  translatedSource, translatedTarget,
+                  elementwise &&
+                      getReferenceArrayIndices(source) ==
+                          getReferenceArrayIndices(translatedSource) &&
+                      getReferenceArrayIndices(target) == getReferenceArrayIndices(translatedTarget)
+              );
             }
           }
         }
       }
     }
   };
-  translateEdges(dependencyEdges, res.dependencyEdges);
+  translateEdges(dependencyEdges);
 
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {
@@ -784,8 +843,8 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
         if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
           res.insert(constIt->second.begin(), constIt->second.end());
         }
-        for (const SourceRef &target : targets) {
-          SourceRef narrowed = target.narrowRanges(*currRef);
+        for (const auto &[target, elementwise] : targets) {
+          SourceRef narrowed = elementwise ? target.narrowRanges(*currRef) : target;
           if (!visited.contains(narrowed)) {
             worklist.push_back(narrowed);
           }

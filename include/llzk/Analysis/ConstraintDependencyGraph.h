@@ -221,7 +221,10 @@ private:
   llvm::EquivalenceClasses<SourceRef> signalSets;
   // Pairwise dependency edges retain the origin of relationships that an equivalence-class
   // closure would otherwise erase, especially for control-flow-selected aggregate alternatives.
-  std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> dependencyEdges;
+  // A target's flag is true only when every contributing constraint proves that the source
+  // and target array indices correspond, permitting per-element range narrowing.
+  using DependencyTargets = std::unordered_map<SourceRef, bool, SourceRef::Hash>;
+  std::unordered_map<SourceRef, DependencyTargets, SourceRef::Hash> dependencyEdges;
   // A simple set mapping of constants, as we do not want to compute a transitive closure over
   // constants.
   std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> constantSets;
@@ -246,6 +249,9 @@ private:
   /// @param am The module-level AnalysisManager.
   /// @return mlir::success() if no issues were encountered, mlir::failure() otherwise
   mlir::LogicalResult computeConstraints(mlir::DataFlowSolver &solver, mlir::AnalysisManager &am);
+
+  /// Merge an edge, retaining index correspondence only if all occurrences prove it.
+  void addDependencyEdge(const SourceRef &source, const SourceRef &target, bool elementwise);
 
   /// @brief Update the signalSets EquivalenceClasses based on the given
   /// emit operation. Relies on the caller to verify that `emitOp` is either
