@@ -959,7 +959,9 @@ class PassImpl : public llzk::smt::impl::SMTLoweringPassBase<PassImpl> {
     mia.setField(*selectedField);
     mia.setTrackUnreducedIntervals(true);
     auto am = getAnalysisManager();
-    mia.ensureAnalysisRun(am);
+    if (failed(mia.ensureAnalysisRun(am))) {
+      return signalPassFailure();
+    }
 
     SmallVector<component::StructDefOp> structDefs = walkCollect<component::StructDefOp>(mod);
 

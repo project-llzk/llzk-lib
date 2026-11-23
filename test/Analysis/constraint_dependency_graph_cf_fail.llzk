@@ -1,0 +1,66 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs -verify-diagnostics %s -o /dev/null
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" -verify-diagnostics %s -o /dev/null
+
+// Unstructured branches in a constrain function are outside the CDG input contract.
+module attributes {llzk.lang} {
+  struct.def @ConstrainCf {
+    function.def @compute(%condition: i1) -> !struct.type<@ConstrainCf> {
+      %self = struct.new : !struct.type<@ConstrainCf>
+      function.return %self : !struct.type<@ConstrainCf>
+    }
+    function.def @constrain(%self: !struct.type<@ConstrainCf>, %condition: i1) {
+      // expected-error @+1 {{constraint dependency graph analysis requires SCF control flow; operations from the 'cf' dialect are unsupported}}
+      cf.cond_br %condition, ^left, ^right
+    ^left:
+      function.return
+    ^right:
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Check free functions too, even without structs and when CF is nested inside SCF.
+module attributes {llzk.lang} {
+  function.def @helper() {
+    scf.execute_region {
+      // expected-error @+1 {{constraint dependency graph analysis requires SCF control flow; operations from the 'cf' dialect are unsupported}}
+      cf.br ^done
+    ^done:
+      scf.yield
+    }
+    function.return
+  }
+}
+
+// -----
+
+// The restriction covers the entire CF dialect and compute functions as well.
+module attributes {llzk.lang} {
+  struct.def @ComputeCf {
+    function.def @compute(%condition: i1) -> !struct.type<@ComputeCf> {
+      %self = struct.new : !struct.type<@ComputeCf>
+      // expected-error @+1 {{constraint dependency graph analysis requires SCF control flow; operations from the 'cf' dialect are unsupported}}
+      cf.assert %condition, "expected true"
+      function.return %self : !struct.type<@ComputeCf>
+    }
+    function.def @constrain(%self: !struct.type<@ComputeCf>, %condition: i1) {
+      function.return
+    }
+  }
+}
+
+// -----
+
+// Unsupported input is rejected before dataflow, including unreachable CF operations.
+module attributes {llzk.lang} {
+  function.def @dead_cf(%condition: i1) {
+    %false = arith.constant false
+    scf.if %false {
+      // expected-error @+1 {{constraint dependency graph analysis requires SCF control flow; operations from the 'cf' dialect are unsupported}}
+      cf.assert %condition, "unreachable"
+    }
+    function.return
+  }
+}

@@ -40,7 +40,9 @@ using namespace constrain;
 using namespace function;
 using namespace pod;
 
-/* SourceRefAnalysis */
+//===----------------------------------------------------------------------===//
+// SourceRefAnalysis
+//===----------------------------------------------------------------------===//
 
 const SourceRefAnalysis::Lattice *SourceRefAnalysis::getLattice(DataFlowSolver &solver, Value val) {
   return solver.lookupState<Lattice>(val);
@@ -325,7 +327,9 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
   return newVals;
 }
 
-/* ConstraintDependencyGraph */
+//===----------------------------------------------------------------------===//
+// ConstraintDependencyGraph
+//===----------------------------------------------------------------------===//
 
 FailureOr<ConstraintDependencyGraph> ConstraintDependencyGraph::compute(
     ModuleOp m, StructDefOp s, DataFlowSolver &solver, AnalysisManager &am,
@@ -643,7 +647,26 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   return res;
 }
 
-/* ConstraintDependencyGraphStructAnalysis */
+//===----------------------------------------------------------------------===//
+// ConstraintDependencyGraphModuleAnalysis
+//===----------------------------------------------------------------------===//
+
+LogicalResult ConstraintDependencyGraphModuleAnalysis::validateInput(ModuleOp module) const {
+  auto result = module.walk([](Operation *op) -> WalkResult {
+    if (op->getName().getDialectNamespace() == "cf") {
+      return op->emitOpError(
+          "constraint dependency graph analysis requires SCF control flow; "
+          "operations from the 'cf' dialect are unsupported"
+      );
+    }
+    return WalkResult::advance();
+  });
+  return failure(result.wasInterrupted());
+}
+
+//===----------------------------------------------------------------------===//
+// ConstraintDependencyGraphStructAnalysis
+//===----------------------------------------------------------------------===//
 
 mlir::LogicalResult ConstraintDependencyGraphStructAnalysis::runAnalysis(
     mlir::DataFlowSolver &solver, mlir::AnalysisManager &moduleAnalysisManager,
