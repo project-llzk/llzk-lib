@@ -65,6 +65,13 @@ std::optional<UnreducedInterval> mergeUnreducedIntervals(
   return lhs->doUnion(*rhs);
 }
 
+/// Ranges describe possible locations rather than one concrete storage identity.
+bool hasRangedSelection(const SourceRef &ref) {
+  return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
+    return index.isIndexRange();
+  });
+}
+
 template <typename Fn>
 std::optional<UnreducedInterval>
 combineUnreducedIntervals(const ExpressionValue &lhs, const ExpressionValue &rhs, Fn &&fn) {
@@ -91,7 +98,9 @@ bool isInMaybeSkippedScfRegion(Operation *op) {
     // `writeResults` is a storage side-channel, not a path-sensitive lattice.
     // Writes nested under branch/loop control may not be absolute on every path through the
     // enclosing op, so keep the prior state instead of treating the nested write as unconditional.
-    if (llvm::isa<scf::ForOp, scf::IfOp, scf::WhileOp>(parent)) {
+    if (llvm::isa<
+            scf::ForOp, scf::IfOp, scf::WhileOp, scf::IndexSwitchOp, scf::ParallelOp,
+            scf::ForallOp>(parent)) {
       return true;
     }
   }
@@ -804,7 +813,8 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
 
 ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Value val) {
   if (auto it = writeResults.find(ref); it != writeResults.end()) {
-    return it->second;
+    // Independent indices can select different elements of the same range.
+    return hasRangedSelection(ref) ? it->second.withExpression(getOrCreateSymbol(val)) : it->second;
   }
   return createUnknownValue(val)
       .withInterval(getRefInterval(ref))
@@ -927,9 +937,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto arrayRef = getArrayAccessRef(op, readArr);
       if (succeeded(arrayRef)) {
         if (auto it = writeResults.find(*arrayRef); it != writeResults.end()) {
-          operandVals.emplace_back(it->second);
+          auto stored = getRefValue(*arrayRef, val);
+          operandVals.emplace_back(stored);
           Lattice *operandLattice = getLatticeElement(val);
-          (void)operandLattice->setValue(it->second);
+          (void)operandLattice->setValue(stored);
           continue;
         }
       }
@@ -944,7 +955,20 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       continue;
     }
 
-    auto resolvedValue = resolveRefStateValue(val, refSet);
+    std::optional<LatticeValue> resolvedValue;
+    if (auto argument = llvm::dyn_cast<BlockArgument>(val)) {
+      resolvedValue = LatticeValue(getRefValue(SourceRef(argument), val));
+    } else {
+      Operation *definition = val.getDefiningOp();
+      if (isReadOp(definition) || isConstOp(definition)) {
+        resolvedValue = resolveRefStateValue(val, refSet);
+      } else {
+        // Dependency sets erase the operation that produced a value. In particular,
+        // a call returning `a + a` cannot inherit the exact value or interval of `a`.
+        // Without an interval expression, keep an independent unknown SSA value.
+        resolvedValue = LatticeValue(createUnknownValue(val));
+      }
+    }
     if (!resolvedValue.has_value()) {
       // We still return success so we can return overapproximated and partial
       // results to the user.

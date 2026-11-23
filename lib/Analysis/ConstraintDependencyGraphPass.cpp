@@ -38,7 +38,9 @@ class PassImpl : public llzk::impl::ConstraintDependencyGraphPrinterPassBase<Pas
     auto &cs = getAnalysis<llzk::ConstraintDependencyGraphModuleAnalysis>();
     cs.setIntraprocedural(runIntraprocedural);
     auto am = getAnalysisManager();
-    cs.ensureAnalysisRun(am);
+    if (failed(cs.ensureAnalysisRun(am))) {
+      return signalPassFailure();
+    }
 
     auto &os = llzk::toStream(outputStream);
     for (const auto &[s, cdg] : cs.getCurrentResults()) {
