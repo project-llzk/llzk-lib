@@ -167,7 +167,8 @@ static bool haveCorrespondingArrayIndices(Operation *emitOp, DataFlowSolver &sol
     for (Value index : read.getIndices()) {
       indexStates.try_emplace(index, SourceRefAnalysis::getValueState(solver, index));
     }
-    auto indices = getArrayAccessIndices(read, [&indexStates](Value index) {
+    auto indices =
+        getArrayAccessIndices(read, [&indexStates](Value index) -> const SourceRefLatticeValue & {
       return indexStates.find(index)->second;
     });
     if (!llvm::equal(indices, getReferenceArrayIndices(value.getSingleValue()))) {
