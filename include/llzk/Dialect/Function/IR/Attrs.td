@@ -21,7 +21,8 @@ class FunctionDialectAttr<string name, string attrMnemonic,
   let mnemonic = attrMnemonic;
 }
 
-def LLZK_DeterministicAttr : FunctionDialectAttr<"Deterministic", "deterministic"> {
+def LLZK_DeterministicAttr
+    : FunctionDialectAttr<"Deterministic", "deterministic"> {
   let summary = "A unit attribute marking repeatable function results";
   let description = [{
     The unit attribute `function.deterministic` may be attached to any `function.def`,
@@ -75,7 +76,7 @@ def LLZK_AllowVerifOpsAttr
   let summary = "Marks functions to allow certain `verif` dialect operations "
                 "within their body";
   let description = [{
-    A unit attribute that can be attached to a `FuncDefOp` to indicate that ops 
+    A unit attribute that can be attached to a `FuncDefOp` to indicate that ops
     marked with `Verification` are allowed within its body.
   }];
 }
