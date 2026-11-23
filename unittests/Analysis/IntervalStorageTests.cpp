@@ -1481,6 +1481,81 @@ module attributes {llzk.lang} {
   }
 }
 
+// A copied leaf that expands must also widen its scalar users and their publications.
+TEST_F(IntervalStorageTests, GrowingCopiesReexpandDownstreamCalculations) {
+  for (bool late : {false, true}) {
+    SCOPED_TRACE(late ? "write after calculations" : "write before calculations");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = felt.const 1
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %source = pod.new { @value = %seven } : !P
+    %copy = pod.new { @child = %source } : !W
+    %alias = pod.read %copy[@child] : !W, !P
+    pod.write %alias[@value] = %nine : !P, !felt.type
+    %array = array.new %alias : !array.type<1 x !P>
+    %element = array.read %array[%zero] : !array.type<1 x !P>, !P
+    %read = pod.read %element[@value] : !P, !felt.type
+    %sum = felt.add %read, %one
+    %negative = felt.neg %sum
+    %selected = arith.select %condition, %sum, %one : !felt.type
+    %out = pod.new { @value = %selected } : !P
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto write = *fn.getOps<pod::WritePodOp>().begin();
+    auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+    auto array = *fn.getOps<array::CreateArrayOp>().begin();
+    auto read = llvm::to_vector(fn.getOps<pod::ReadPodOp>()).back();
+    auto sum = *fn.getOps<felt::AddFeltOp>().begin();
+    auto negative = *fn.getOps<felt::NegFeltOp>().begin();
+    auto selected = *fn.getOps<arith::SelectOp>().begin();
+    SourceRefIndex child(StringAttr::get(&ctx, "child"));
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    auto checkValues = [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver, int high) {
+      auto stored = UnreducedInterval(7, high).reduce(field);
+      expectStored(
+          analysis, SourceRef(pods.front()->getResult(0), {value}),
+          Interval::Degenerate(field, field.felt(7))
+      );
+      expectStored(analysis, SourceRef(pods[1]->getResult(0), {child, value}), stored);
+      expectStored(analysis, SourceRef(array->getResult(0), {SourceRefIndex(0), value}), stored);
+      expectValue(solver, read.getResult(), UnreducedInterval(7, high));
+      expectValue(solver, sum.getResult(), UnreducedInterval(8, high + 1));
+      expectValue(solver, negative.getResult(), UnreducedInterval(-high - 1, -8));
+      expectValue(solver, selected.getResult(), UnreducedInterval(1, high + 1));
+      expectStored(
+          analysis, SourceRef(pods.back()->getResult(0), {value}),
+          UnreducedInterval(1, high + 1).reduce(field)
+      );
+    };
+    runOrdered(
+        *mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &solver) {
+      for (Operation &op : fn.getBody().front()) {
+        if (late && &op == write.getOperation()) {
+          continue;
+        }
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+      checkValues(analysis, solver, late ? 7 : 9);
+      if (late) {
+        ASSERT_TRUE(succeeded(visit(write)));
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+      checkValues(analysis, solver, 9);
+    }
+    );
+  }
+}
+
 // Replace a copy's stale default without discarding independent writes to its destination.
 TEST_F(IntervalStorageTests, RecomputedCopiesReplaceDefaultsAndPreserveOtherWrites) {
   auto mod = parseModule(R"mlir(
