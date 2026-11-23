@@ -816,3 +816,46 @@ module attributes {llzk.lang} {
   EXPECT_TRUE(allB.contains(SourceRef(fn.getArgument(4))));
   EXPECT_TRUE(allB.contains(SourceRef(seven)));
 }
+
+TEST_F(SourceRefTests, ConstraintQueriesIncludeParentsOfAggregateElements) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @AggregateParents {
+    function.def @compute(%matrix: !array.type<2,3 x !felt.type>,
+                          %other: !array.type<2,3 x !felt.type>)
+        -> !struct.type<@AggregateParents> {
+      %self = struct.new : !struct.type<@AggregateParents>
+      function.return %self : !struct.type<@AggregateParents>
+    }
+    function.def @constrain(%self: !struct.type<@AggregateParents>,
+                            %matrix: !array.type<2,3 x !felt.type>,
+                            %other: !array.type<2,3 x !felt.type>) {
+      constrain.eq %matrix, %other : !array.type<2,3 x !felt.type>
+      %seven = felt.const 7
+      constrain.in %matrix, %seven : !array.type<2,3 x !felt.type>, !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto fn = structDef.getConstrainFuncOp();
+  felt::FeltConstantOp seven;
+  fn.walk([&](felt::FeltConstantOp op) { seven = op; });
+  ASSERT_TRUE(seven);
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+
+  for (int64_t index = 0; index < 2; ++index) {
+    SourceRef row(fn.getArgument(1), {SourceRefIndex(DynamicAPInt(index))});
+    ASSERT_TRUE(llvm::isa<array::ArrayType>(row.getType()));
+    auto dependencies = graph.getConstrainingValues(row);
+    EXPECT_TRUE(dependencies.contains(SourceRef(fn.getArgument(2))));
+    EXPECT_TRUE(dependencies.contains(SourceRef(seven)));
+  }
+}

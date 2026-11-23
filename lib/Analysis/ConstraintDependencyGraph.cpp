@@ -868,13 +868,8 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
           res.insert(constants.begin(), constants.end());
         }
       }
-      // Constraints on an aggregate also constrain its scalar descendants.
-      auto parent = currRef->getParentPrefix();
-      if (includeDescendants && succeeded(parent) && ref.isValidPrefix(*parent) && *parent != ref) {
-        currRef = failure();
-      } else {
-        currRef = parent;
-      }
+      // Constraints on a parent also constrain aggregate-valued and scalar descendants.
+      currRef = currRef->getParentPrefix();
     }
   }
 
