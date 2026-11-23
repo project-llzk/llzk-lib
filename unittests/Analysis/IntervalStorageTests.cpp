@@ -14,14 +14,15 @@
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/StreamHelper.h"
 
-#include <mlir/Parser/Parser.h>
-
-#include "llzk/Dialect/POD/IR/Ops.h"
 #include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/Parser/Parser.h>
+
 #include <functional>
 #include <gtest/gtest.h>
 #include <tuple>
@@ -109,8 +110,9 @@ protected:
   /// Initialize references, seed interval visits, then drain their real queued dependencies.
   void runOrdered(
       ModuleOp mod,
-      const std::function<void(IntervalDataFlowAnalysis &, const Visit &)> &initialize,
-      const std::function<void(IntervalDataFlowAnalysis &)> &check
+      const std::function<void(IntervalDataFlowAnalysis &, const Visit &, DataFlowSolver &)>
+          &initialize,
+      const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check
   ) {
     auto smt = llvm::CreateZ3Solver();
     DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
@@ -122,7 +124,9 @@ protected:
       SmallVector<const IntervalAnalysisLattice *> operands;
       SmallVector<IntervalAnalysisLattice *> results;
       for (Value value : op->getOperands()) {
-        operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        auto *lattice = solver.getOrCreateState<IntervalAnalysisLattice>(value);
+        lattice->useDefSubscribe(analysis);
+        operands.push_back(lattice);
       }
       for (Value value : op->getResults()) {
         results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
@@ -130,11 +134,21 @@ protected:
       return analysis->visitOperation(op, operands, results);
     };
     auto *driver =
-        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit); });
+        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit, solver); });
     ASSERT_TRUE(succeeded(solver.initializeAndRun(mod, [&](DataFlowAnalysis &candidate) {
       return &candidate == driver;
     })));
-    check(*analysis);
+    check(*analysis, solver);
+  }
+
+  /// Check a scalar result after the solver has propagated storage changes to its users.
+  void expectValue(DataFlowSolver &solver, Value value, const UnreducedInterval &expected) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    const auto &actual = lattice->getValue().getScalarValue();
+    auto reduced = expected.reduce(field);
+    EXPECT_TRUE(checkCond(reduced, actual.getInterval(), reduced == actual.getInterval()));
+    EXPECT_EQ(actual.getOptionalUnreducedInterval(), expected);
   }
 
   /// Check both reduced and unreduced storage bounds without relying on aggregate SSA lattices.
@@ -808,7 +822,7 @@ module attributes {llzk.lang} {
     ASSERT_TRUE(mod);
     auto fn = *mod->getOps<function::FuncDefOp>().begin();
     auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
-    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
       for (Operation &op : fn.getBody().front()) {
         if (!isa<array::WriteArrayOp, scf::IfOp>(op)) {
           ASSERT_TRUE(succeeded(visit(&op)));
@@ -826,7 +840,7 @@ module attributes {llzk.lang} {
         visitWrites(fn.getBody().front());
         visitWrites(*conditional.thenBlock());
       }
-    }, [&](IntervalDataFlowAnalysis &analysis) {
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
       auto range = SourceRefIndex::forArrayDimension(2);
       expectStored(analysis, SourceRef(fn.getArgument(0), {range}), Interval::Entire(field));
       expectStored(
@@ -875,7 +889,7 @@ module attributes {llzk.lang} {
     ASSERT_TRUE(mod);
     auto fn = *mod->getOps<function::FuncDefOp>().begin();
     auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
-    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
       for (Operation &op : fn.getBody().front()) {
         if (!isa<pod::WritePodOp, scf::IfOp>(op)) {
           ASSERT_TRUE(succeeded(visit(&op)));
@@ -893,7 +907,7 @@ module attributes {llzk.lang} {
         visitWrites(fn.getBody().front());
         visitWrites(*conditional.thenBlock());
       }
-    }, [&](IntervalDataFlowAnalysis &analysis) {
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
       SourceRefIndex value(StringAttr::get(&ctx, "value"));
       SourceRefIndex nested(StringAttr::get(&ctx, "nested"));
       for (unsigned arg : {0U, 1U}) {
@@ -938,7 +952,7 @@ module attributes {llzk.lang} {
     auto arrayValue = *fn.getOps<array::CreateArrayOp>().begin();
     auto conditional = *fn.getOps<scf::IfOp>().begin();
     auto isWrite = [](Operation *op) { return isa<pod::WritePodOp, array::WriteArrayOp>(op); };
-    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
       for (Operation &op : fn.getBody().front()) {
         if (!isWrite(&op) && !isa<scf::IfOp>(op)) {
           ASSERT_TRUE(succeeded(visit(&op)));
@@ -958,7 +972,7 @@ module attributes {llzk.lang} {
         visitWrites(fn.getBody().front());
         visitWrites(*conditional.thenBlock());
       }
-    }, [&](IntervalDataFlowAnalysis &analysis) {
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
       auto joined = UnreducedInterval(7, 9).reduce(field);
       expectStored(
           analysis,
@@ -976,6 +990,192 @@ module attributes {llzk.lang} {
           analysis, SourceRef(arrayValue->getResult(0), {SourceRefIndex(1)}),
           Interval::Entire(field)
       );
+    });
+  }
+}
+
+// A later contribution must re-expand existing reads and every dependent calculation.
+TEST_F(IntervalStorageTests, GrowingWritesReexpandReadersAndUsers) {
+  for (bool optional : {false, true}) {
+    SCOPED_TRACE(optional ? "optional third write" : "unconditional third write");
+    for (bool late : {false, true}) {
+      SCOPED_TRACE(late ? "third write after readers" : "third write before readers");
+      auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%pod: !P, %array: !array.type<1 x !felt.type>, %condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = felt.const 1
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %eleven = felt.const 11
+    scf.if %condition {
+      pod.write %pod[@value] = %seven : !P, !felt.type
+      array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+    }
+    pod.write %pod[@value] = %nine : !P, !felt.type
+    array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+    scf.if %condition {
+      pod.write %pod[@value] = %eleven : !P, !felt.type
+      array.write %array[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+    }
+    %podRead = pod.read %pod[@value] : !P, !felt.type
+    %arrayRead = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    %podSum = felt.add %podRead, %one
+    %arraySum = felt.add %arrayRead, %one
+    %podNeg = felt.neg %podSum
+    %arrayNeg = felt.neg %arraySum
+    %podSelect = arith.select %condition, %podSum, %one : !felt.type
+    %arraySelect = arith.select %condition, %arraySum, %one : !felt.type
+    %podNext = felt.add %podSelect, %one
+    %arrayNext = felt.add %arraySelect, %one
+    function.return
+  }
+}
+)mlir");
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto branches = llvm::to_vector(fn.getOps<scf::IfOp>());
+      auto isWrite = [](Operation *op) { return isa<pod::WritePodOp, array::WriteArrayOp>(op); };
+      SmallVector<Operation *> firstWrites, guaranteedWrites, thirdWrites, calculations;
+      for (Operation &op : *branches.front().thenBlock()) {
+        if (isWrite(&op)) {
+          firstWrites.push_back(&op);
+        }
+      }
+      for (Operation &op : fn.getBody().front()) {
+        if (isWrite(&op)) {
+          guaranteedWrites.push_back(&op);
+        } else if (
+            isa<pod::ReadPodOp, array::ReadArrayOp, felt::AddFeltOp, felt::NegFeltOp,
+                arith::SelectOp>(op)
+        ) {
+          calculations.push_back(&op);
+        }
+      }
+      for (Operation &op : *branches.back().thenBlock()) {
+        if (isWrite(&op)) {
+          thirdWrites.push_back(&op);
+        }
+      }
+      if (!optional) {
+        for (Operation *op : thirdWrites) {
+          op->moveBefore(branches.back());
+        }
+      }
+      auto checkValues = [&](DataFlowSolver &solver, int high) {
+        SmallVector<UnreducedInterval> expected {
+            {7, high}, {8, high + 1}, {-high - 1, -8}, {1, high + 1}, {2, high + 2}
+        };
+        ASSERT_EQ(calculations.size(), 2 * expected.size());
+        for (auto [i, op] : llvm::enumerate(calculations)) {
+          SCOPED_TRACE(debug::toStringOne(*op));
+          expectValue(solver, op->getResult(0), expected[i / 2]);
+        }
+      };
+      runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &solver) {
+        for (Operation &op : fn.getBody().front()) {
+          if (isa<arith::ConstantOp, felt::FeltConstantOp>(op)) {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        auto visitAll = [&](ArrayRef<Operation *> ops) {
+          for (Operation *op : ops) {
+            ASSERT_TRUE(succeeded(visit(op)));
+          }
+        };
+        visitAll(firstWrites);
+        visitAll(guaranteedWrites);
+        if (!late) {
+          visitAll(thirdWrites);
+        }
+        visitAll(calculations);
+        checkValues(solver, late ? 9 : 11);
+        if (late) {
+          visitAll(thirdWrites);
+        }
+      }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+        auto joined = UnreducedInterval(7, 11).reduce(field);
+        expectStored(
+            analysis,
+            SourceRef(fn.getArgument(0), {SourceRefIndex(StringAttr::get(&ctx, "value"))}), joined
+        );
+        expectStored(analysis, SourceRef(fn.getArgument(1), {SourceRefIndex(0)}), joined);
+        checkValues(solver, 11);
+      });
+    }
+  }
+}
+
+// Backward bounds inferred from an earlier read must be recomputed after expansion too.
+TEST_F(IntervalStorageTests, GrowingWritesRecomputeConstraintRefinements) {
+  for (unsigned order : {0U, 1U, 2U}) {
+    // Visit the write before constraints, after constraints, or after a lazily resolved read.
+    SCOPED_TRACE(order);
+    bool late = order != 0;
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<1 x !felt.type>, %condition: i1, %input: !felt.type)
+      attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %eleven = felt.const 11
+    %twenty = felt.const 20
+    scf.if %condition {
+      array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+    }
+    array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+    scf.if %condition {
+      array.write %array[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+    }
+    %read = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    %sum = felt.add %read, %input
+    constrain.eq %sum, %twenty : !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto branches = llvm::to_vector(fn.getOps<scf::IfOp>());
+    auto first = *branches.front().thenBlock()->getOps<array::WriteArrayOp>().begin();
+    auto third = *branches.back().thenBlock()->getOps<array::WriteArrayOp>().begin();
+    auto guaranteed = *fn.getOps<array::WriteArrayOp>().begin();
+    auto read = *fn.getOps<array::ReadArrayOp>().begin();
+    auto sum = *fn.getOps<felt::AddFeltOp>().begin();
+    auto constraint = *fn.getOps<constrain::EmitEqualityOp>().begin();
+    auto checkReduced = [&](DataFlowSolver &solver, Value value, int low, int high) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+      ASSERT_NE(lattice, nullptr);
+      const auto &actual = lattice->getValue().getScalarValue().getInterval();
+      auto expected = UnreducedInterval(low, high).reduce(field);
+      EXPECT_TRUE(checkCond(expected, actual, expected == actual));
+    };
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &solver) {
+      for (Operation &op : fn.getBody().front()) {
+        if (isa<arith::ConstantOp, felt::FeltConstantOp>(op)) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      ASSERT_TRUE(succeeded(visit(first)));
+      ASSERT_TRUE(succeeded(visit(guaranteed)));
+      if (!late) {
+        ASSERT_TRUE(succeeded(visit(third)));
+      }
+      if (order != 2) {
+        ASSERT_TRUE(succeeded(visit(read)));
+      }
+      ASSERT_TRUE(succeeded(visit(sum)));
+      ASSERT_TRUE(succeeded(visit(constraint)));
+      checkReduced(solver, fn.getArgument(2), late ? 11 : 9, 13);
+      if (late) {
+        ASSERT_TRUE(succeeded(visit(third)));
+      }
+    }, [&](IntervalDataFlowAnalysis &, DataFlowSolver &solver) {
+      checkReduced(solver, read.getResult(), 7, 11);
+      checkReduced(solver, sum.getResult(), 20, 20);
+      checkReduced(solver, fn.getArgument(2), 9, 13);
     });
   }
 }
