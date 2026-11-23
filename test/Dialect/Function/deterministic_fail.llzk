@@ -1,11 +1,11 @@
 // RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 module attributes {llzk.lang} {
-  // expected-error@+1 {{'llzk.deterministic' attribute must be a unit attribute}}
-  function.def private @external_fn() attributes {llzk.deterministic = true}
+  // expected-error@+1 {{'function.deterministic' attribute must be a unit attribute}}
+  function.def private @external_fn() attributes {function.deterministic = true}
 }
 
 // -----
 
-// expected-error@+1 {{'llzk.deterministic' attribute is only valid on 'function.def'}}
-module attributes {llzk.lang, llzk.deterministic} {}
+// expected-error@+1 {{'function.deterministic' attribute is only valid on 'function.def'}}
+module attributes {llzk.lang, function.deterministic} {}

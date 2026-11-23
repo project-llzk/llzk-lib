@@ -1,0 +1,2 @@
+added:
+  - Add the `function.deterministic` unit attribute in the function dialect (`llzk::function::DeterministicAttr`) to mark functions whose repeated calls with the same arguments return the same results, including struct compute/constrain functions, free functions, and external function declarations.

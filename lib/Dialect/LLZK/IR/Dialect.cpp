@@ -11,7 +11,6 @@
 
 #include "llzk/Config/Config.h"
 #include "llzk/Dialect/Felt/IR/Types.h"
-#include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Dialect/LLZK/IR/Ops.h"
@@ -19,6 +18,7 @@
 #include "llzk/Dialect/Struct/IR/Types.h"
 
 #include <mlir/Bytecode/BytecodeImplementation.h>
+#include <mlir/IR/Builders.h>
 #include <mlir/IR/DialectImplementation.h>
 #include <mlir/Support/LLVM.h>
 
@@ -112,14 +112,6 @@ LogicalResult verifyLlzkMainAttr(Operation *op, Attribute attr) {
 } // namespace
 
 LogicalResult LLZKDialect::verifyOperationAttribute(Operation *op, NamedAttribute attr) {
-  if (attr.getName() == DeterministicAttr::name) {
-    if (!isa<function::FuncDefOp>(op)) {
-      return op->emitError("'llzk.deterministic' attribute is only valid on 'function.def'");
-    }
-    if (!isa<UnitAttr>(attr.getValue())) {
-      return op->emitError("'llzk.deterministic' attribute must be a unit attribute");
-    }
-  }
   if (attr.getName() == MAIN_ATTR_NAME) {
     return verifyLlzkMainAttr(op, attr.getValue());
   }

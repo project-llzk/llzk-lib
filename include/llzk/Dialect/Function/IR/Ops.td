@@ -61,7 +61,7 @@ def FuncDefOp
 
     Modules and `struct.def` ops are not allowed to be nested within functions.
 
-    Functions may carry the unit attribute `llzk.deterministic` to promise
+    Functions may carry the unit attribute `function.deterministic` to promise
     that repeated calls with the same arguments return the same results. This
     also applies to external declarations and struct functions. The attribute
     does not imply absence of side effects.
@@ -161,10 +161,10 @@ def FuncDefOp
     /// compatible.
     void cloneInto(FuncDefOp dest, ::mlir::IRMapping &mapper);
 
-    /// Return `true` iff the function has the `llzk.deterministic` annotation.
+    /// Return `true` iff the function has the `function.deterministic` annotation.
     bool hasDeterministicAttr();
 
-    /// Add or remove the `llzk.deterministic` unit attribute.
+    /// Add or remove the `function.deterministic` unit attribute.
     void setDeterministicAttr(bool newValue = true);
 
     /// Return `true` iff the function def has the `allow_constraint` attribute.
