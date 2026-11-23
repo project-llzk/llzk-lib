@@ -65,6 +65,13 @@ std::optional<UnreducedInterval> mergeUnreducedIntervals(
   return lhs->doUnion(*rhs);
 }
 
+/// Ranges describe possible locations rather than one concrete storage identity.
+bool hasRangedSelection(const SourceRef &ref) {
+  return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
+    return index.isIndexRange();
+  });
+}
+
 template <typename Fn>
 std::optional<UnreducedInterval>
 combineUnreducedIntervals(const ExpressionValue &lhs, const ExpressionValue &rhs, Fn &&fn) {
@@ -806,7 +813,8 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
 
 ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Value val) {
   if (auto it = writeResults.find(ref); it != writeResults.end()) {
-    return it->second;
+    // Independent indices can select different elements of the same range.
+    return hasRangedSelection(ref) ? it->second.withExpression(getOrCreateSymbol(val)) : it->second;
   }
   return createUnknownValue(val)
       .withInterval(getRefInterval(ref))
@@ -929,9 +937,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto arrayRef = getArrayAccessRef(op, readArr);
       if (succeeded(arrayRef)) {
         if (auto it = writeResults.find(*arrayRef); it != writeResults.end()) {
-          operandVals.emplace_back(it->second);
+          auto stored = getRefValue(*arrayRef, val);
+          operandVals.emplace_back(stored);
           Lattice *operandLattice = getLatticeElement(val);
-          (void)operandLattice->setValue(it->second);
+          (void)operandLattice->setValue(stored);
           continue;
         }
       }
