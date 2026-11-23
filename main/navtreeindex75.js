@@ -1,5 +1,9 @@
 var NAVTREEINDEX75 =
 {
+"r1cs-backend.html#publicattr-1":[8,0,0,1,1],
+"r1cs-backend.html#r1cs-dialect":[8,0,0],
+"r1cs-backend.html#r1csadd-r1csaddop":[8,0,0,0,0],
+"r1cs-backend.html#r1cscircuit-r1cscircuitdefop":[8,0,0,0,1],
 "r1cs-backend.html#r1csconst-r1csconstop":[8,0,0,0,2],
 "r1cs-backend.html#r1csconstrain-r1csconstrainop":[8,0,0,0,3],
 "r1cs-backend.html#r1csdef-r1cssignaldefop":[8,0,0,0,4],
@@ -245,9 +249,5 @@ var NAVTREEINDEX75 =
 "structNonDetOpBuildFuncHelper.html#af3e5cbb767285e6dde42777ed07ae902":[13,0,82,0],
 "structNotBoolOpBuildFuncHelper.html":[13,0,83],
 "structNotBoolOpBuildFuncHelper.html#a4d343e63f64cded4c9e60a6685987e29":[13,0,83,0],
-"structNotBoolOpBuildFuncHelper.html#a73533e0c5d9d00b10f3fdc701675d261":[13,0,83,1],
-"structNotFeltOpBuildFuncHelper.html":[13,0,84],
-"structNotFeltOpBuildFuncHelper.html#a7c7ea898e49da34d41eaa17759c2c341":[13,0,84,0],
-"structNotFeltOpBuildFuncHelper.html#abad9643cfd03ee2c9225284ee27568d1":[13,0,84,1],
-"structOldOpBuildFuncHelper.html":[13,0,85]
+"structNotBoolOpBuildFuncHelper.html#a73533e0c5d9d00b10f3fdc701675d261":[13,0,83,1]
 };

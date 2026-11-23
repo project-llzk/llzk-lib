@@ -1,5 +1,9 @@
 var NAVTREEINDEX76 =
 {
+"structNotFeltOpBuildFuncHelper.html":[13,0,84],
+"structNotFeltOpBuildFuncHelper.html#a7c7ea898e49da34d41eaa17759c2c341":[13,0,84,0],
+"structNotFeltOpBuildFuncHelper.html#abad9643cfd03ee2c9225284ee27568d1":[13,0,84,1],
+"structOldOpBuildFuncHelper.html":[13,0,85],
 "structOldOpBuildFuncHelper.html#a09a0015f5ef08512ef0ac7a926e68a61":[13,0,85,0],
 "structOldOpBuildFuncHelper.html#a1555c1971d03bc35d340088b752fa851":[13,0,85,1],
 "structOpGeneratorData.html":[13,0,86],
@@ -245,9 +249,5 @@ var NAVTREEINDEX76 =
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html":[13,0,0,20],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a354e59a3f4b9005c38a46226e6b85403":[11,0,2,20,1],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a354e59a3f4b9005c38a46226e6b85403":[13,0,0,20,1],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[11,0,2,20,0],
-"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[13,0,0,20,0],
-"structllzk_1_1AuxAssignment.html":[11,0,3,23],
-"structllzk_1_1AuxAssignment.html":[13,0,1,19],
-"structllzk_1_1AuxAssignment.html#a8a6ce9d5fdfb8fb3cdbb6ede02a686a3":[11,0,3,23,1]
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[11,0,2,20,0]
 };

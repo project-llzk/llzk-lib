@@ -1,5 +1,9 @@
 var NAVTREEINDEX74 =
 {
+"namespacellzk_1_1ram_1_1detail.html":[11,0,3,18,0],
+"namespacellzk_1_1smt__info.html":[11,0,3,19],
+"namespacellzk_1_1smt__info_1_1detail.html":[11,0,3,19,0],
+"namespacellzk_1_1smt__info_1_1detail.html#a14c5306bbdd65907d86f6d1fb415a1dd":[11,0,3,19,0,2],
 "namespacellzk_1_1smt__info_1_1detail.html#a8944058cb1b62eb6096e832be8f623e5":[11,0,3,19,0,1],
 "namespacellzk_1_1smt__info_1_1detail.html#af8a763c9986129f3971bf6ba39e07c28":[11,0,3,19,0,3],
 "namespacellzk_1_1string.html":[11,0,3,20],
@@ -245,9 +249,5 @@ var NAVTREEINDEX74 =
 "r1cs-backend.html#operands-50":[8,0,0,0,6,0],
 "r1cs-backend.html#operands-51":[8,0,0,0,7,0],
 "r1cs-backend.html#operations-13":[8,0,0,0],
-"r1cs-backend.html#parameters-11":[8,0,0,1,0,0],
-"r1cs-backend.html#publicattr-1":[8,0,0,1,1],
-"r1cs-backend.html#r1cs-dialect":[8,0,0],
-"r1cs-backend.html#r1csadd-r1csaddop":[8,0,0,0,0],
-"r1cs-backend.html#r1cscircuit-r1cscircuitdefop":[8,0,0,0,1]
+"r1cs-backend.html#parameters-11":[8,0,0,1,0,0]
 };

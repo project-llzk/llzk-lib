@@ -511,6 +511,7 @@ Options</h5>
 </div><!-- fragment --><h4 class="doxsection"><a class="anchor" id="autotoc_md-llzk-print-constraint-dependency-graphs"></a>
 <span class="tt">-llzk-print-constraint-dependency-graphs</span></h4>
 <p><em>Print constraint dependency graph for all LLZK structs.</em></p>
+<p>Control flow must use SCF operations. Operations from the <span class="tt">cf</span> dialect are rejected with a diagnostic before analysis begins. This restriction applies throughout the input module, including helper functions and unreachable regions, in both interprocedural and intraprocedural modes.</p>
 <h5 class="doxsection"><a class="anchor" id="options-2"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream          : Specifies the stream to which the pass prints.</div>
