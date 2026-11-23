@@ -130,8 +130,8 @@ static std::vector<SourceRefIndex> getArrayAccessIndices(
 }
 
 /// Extract array selections in the dimension order used by SourceRef::narrowRanges.
-static llvm::SmallVector<SourceRefIndex> getReferenceArrayIndices(const SourceRef &ref) {
-  llvm::SmallVector<SourceRefIndex> indices;
+static SmallVector<SourceRefIndex> getReferenceArrayIndices(const SourceRef &ref) {
+  SmallVector<SourceRefIndex> indices;
   llvm::copy_if(ref.getPath(), std::back_inserter(indices), [](const SourceRefIndex &index) {
     return index.isIndex() || index.isIndexRange();
   });
@@ -167,7 +167,7 @@ static bool haveCorrespondingArrayIndices(Operation *emitOp, DataFlowSolver &sol
     for (Value index : read.getIndices()) {
       indexStates.try_emplace(index, SourceRefAnalysis::getValueState(solver, index));
     }
-    auto indices = getArrayAccessIndices(read, [&](Value index) -> const SourceRefLatticeValue & {
+    auto indices = getArrayAccessIndices(read, [&indexStates](Value index) {
       return indexStates.find(index)->second;
     });
     if (!llvm::equal(indices, getReferenceArrayIndices(value.getSingleValue()))) {
@@ -790,7 +790,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
         continue;
       }
       SourceRefSet visitedInternal;
-      llvm::SmallVector<std::pair<SourceRef, bool>> pending;
+      SmallVector<std::pair<SourceRef, bool>> pending;
       for (const auto &[target, elementwise] : targets) {
         pending.emplace_back(target, elementwise);
       }
@@ -846,7 +846,7 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
 SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &ref) const {
   SourceRefSet res;
   SourceRefSet visited;
-  llvm::SmallVector<SourceRef> worklist = {ref};
+  SmallVector<SourceRef> worklist = {ref};
 
   // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
   // bridges transitively so that, for example, `out[2] == child.out[2]` and a child constraint on
@@ -857,8 +857,8 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
       continue;
     }
     const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(selection.getType());
-    auto currRef = mlir::FailureOr<SourceRef>(selection);
-    while (mlir::succeeded(currRef)) {
+    auto currRef = FailureOr<SourceRef>(selection);
+    while (succeeded(currRef)) {
       // Visiting a parent for its constraints does not select its other descendants.
       // Keep parents out of visited so a later edge can still select the whole aggregate.
       const bool expandDescendants = includeDescendants && *currRef == selection;
