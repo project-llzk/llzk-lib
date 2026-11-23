@@ -172,6 +172,7 @@ public:
   /// @return A CDG that contains only translated references. Non-constant references with
   /// no translation are omitted. This omissions allows calling components to ignore internal
   /// references within subcomponents that are inaccessible to the caller.
+  /// Paths through omitted references still connect their translated endpoints.
   ConstraintDependencyGraph translate(SourceRefRemappings translation) const;
 
   /// @brief Get the values that are connected to the given ref via emitted constraints.

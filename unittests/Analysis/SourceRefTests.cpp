@@ -913,3 +913,67 @@ module attributes {llzk.lang} {
   EXPECT_FALSE(dependencies.contains(SourceRef(fn.getArgument(3))));
   EXPECT_FALSE(dependencies.contains(SourceRef(constants[1])));
 }
+
+TEST_F(SourceRefTests, ConstraintTranslationPreservesPathsThroughInternalReferences) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @InternalBridge {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %isolated: !felt.type)
+        -> !struct.type<@InternalBridge> {
+      %self = struct.new : !struct.type<@InternalBridge>
+      function.return %self : !struct.type<@InternalBridge>
+    }
+    function.def @constrain(%self: !struct.type<@InternalBridge>,
+                            %a: !felt.type, %b: !felt.type, %isolated: !felt.type) {
+      %x = llzk.nondet : !felt.type
+      %y = llzk.nondet : !felt.type
+      %z = llzk.nondet : !felt.type
+      constrain.eq %a, %x : !felt.type
+      constrain.eq %x, %y : !felt.type
+      constrain.eq %y, %b : !felt.type
+      constrain.eq %isolated, %z : !felt.type
+      function.return
+    }
+  }
+  struct.def @BridgeCaller {
+    struct.member @child : !struct.type<@InternalBridge>
+    function.def @compute(%a: !felt.type, %b: !felt.type, %isolated: !felt.type)
+        -> !struct.type<@BridgeCaller> {
+      %self = struct.new : !struct.type<@BridgeCaller>
+      %child = function.call @InternalBridge::@compute(%a, %b, %isolated)
+          : (!felt.type, !felt.type, !felt.type) -> !struct.type<@InternalBridge>
+      struct.writem %self[@child] = %child
+          : !struct.type<@BridgeCaller>, !struct.type<@InternalBridge>
+      function.return %self : !struct.type<@BridgeCaller>
+    }
+    function.def @constrain(%self: !struct.type<@BridgeCaller>,
+                            %a: !felt.type, %b: !felt.type, %isolated: !felt.type) {
+      %child = struct.readm %self[@child]
+          : !struct.type<@BridgeCaller>, !struct.type<@InternalBridge>
+      function.call @InternalBridge::@constrain(%child, %a, %b, %isolated)
+          : (!struct.type<@InternalBridge>, !felt.type, !felt.type, !felt.type) -> ()
+      function.return
+    }
+  }
+}
+)mlir";
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto caller = mod->lookupSymbol<StructDefOp>("BridgeCaller");
+  ASSERT_TRUE(caller);
+  auto fn = caller.getConstrainFuncOp();
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(caller);
+
+  SourceRef a(fn.getArgument(1)), b(fn.getArgument(2)), isolated(fn.getArgument(3));
+  auto fromA = graph.getConstrainingValues(a);
+  EXPECT_TRUE(fromA.contains(b));
+  EXPECT_EQ(fromA.size(), 1U);
+  auto fromB = graph.getConstrainingValues(b);
+  EXPECT_TRUE(fromB.contains(a));
+  EXPECT_EQ(fromB.size(), 1U);
+  EXPECT_TRUE(graph.getConstrainingValues(isolated).empty());
+}

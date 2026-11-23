@@ -782,16 +782,31 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     }
   }
 
-  // Translate dependency edges with the same filtering.
+  // Contract untranslated vertices, retaining paths between caller-visible endpoints.
   auto translateEdges = [&translate, &res](const auto &edges) {
     for (const auto &[source, targets] : edges) {
       auto translatedSources = translate(source);
       if (failed(translatedSources)) {
         continue;
       }
+      SourceRefSet visitedInternal;
+      llvm::SmallVector<std::pair<SourceRef, bool>> pending;
       for (const auto &[target, elementwise] : targets) {
+        pending.emplace_back(target, elementwise);
+      }
+      while (!pending.empty()) {
+        auto [target, elementwise] = pending.pop_back_val();
         auto translatedTargets = translate(target);
         if (failed(translatedTargets)) {
+          if (!visitedInternal.insert(target).second) {
+            continue;
+          }
+          if (auto it = edges.find(target); it != edges.end()) {
+            for (const auto &[next, _] : it->second) {
+              // A contracted path carries connectivity, without assuming index correlation.
+              pending.emplace_back(next, false);
+            }
+          }
           continue;
         }
         for (const SourceRef &translatedSource : *translatedSources) {
