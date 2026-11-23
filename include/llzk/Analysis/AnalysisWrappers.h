@@ -210,6 +210,9 @@ protected:
   mlir::DataFlowSolver solver;
 
   /// @brief Diagnose unsupported input before running dataflow or constructing results.
+  ///
+  /// The default implementation always returns success. Override this method to
+  /// perform any necessary validation on the input module before running the analysis.
   virtual mlir::LogicalResult validateInput(mlir::ModuleOp /*module*/) const {
     return mlir::success();
   }
