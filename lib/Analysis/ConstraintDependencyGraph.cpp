@@ -138,6 +138,15 @@ static llvm::SmallVector<SourceRefIndex> getReferenceArrayIndices(const SourceRe
   return indices;
 }
 
+/// Match a descendant's prefix by overlap, allowing concrete indices inside queried ranges.
+static bool hasOverlappingPrefix(const SourceRef &candidate, const SourceRef &prefix) {
+  auto ancestor = FailureOr<SourceRef>(candidate);
+  while (succeeded(ancestor) && ancestor->getPath().size() > prefix.getPath().size()) {
+    ancestor = ancestor->getParentPrefix();
+  }
+  return succeeded(ancestor) && ancestor->overlaps(prefix);
+}
+
 /// Prove correspondence only for single-source reads of the same SSA indices. Matching ranges
 /// alone do not prove correspondence: independent loop variables can have identical bounds.
 static bool haveCorrespondingArrayIndices(Operation *emitOp, DataFlowSolver &solver) {
@@ -841,7 +850,7 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
 
       for (const auto &[source, targets] : dependencyEdges) {
         if ((!source.overlaps(*currRef) &&
-             !(expandDescendants && source.isValidPrefix(*currRef)))) {
+             !(expandDescendants && hasOverlappingPrefix(source, *currRef)))) {
           continue;
         }
         if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
@@ -864,7 +873,7 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
 
       for (const auto &[constantSource, constants] : constantSets) {
         if ((constantSource.overlaps(*currRef) ||
-             (expandDescendants && constantSource.isValidPrefix(*currRef)))) {
+             (expandDescendants && hasOverlappingPrefix(constantSource, *currRef)))) {
           res.insert(constants.begin(), constants.end());
         }
       }

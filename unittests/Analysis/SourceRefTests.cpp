@@ -859,3 +859,57 @@ module attributes {llzk.lang} {
     EXPECT_TRUE(dependencies.contains(SourceRef(seven)));
   }
 }
+
+TEST_F(SourceRefTests, ConstraintQueriesIncludeConcreteDescendantsOfRanges) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @RangeDescendants {
+    function.def @compute(%matrix: !array.type<3,2 x !felt.type>,
+                          %included: !felt.type, %excluded: !felt.type)
+        -> !struct.type<@RangeDescendants> {
+      %self = struct.new : !struct.type<@RangeDescendants>
+      function.return %self : !struct.type<@RangeDescendants>
+    }
+    function.def @constrain(%self: !struct.type<@RangeDescendants>,
+                            %matrix: !array.type<3,2 x !felt.type>,
+                            %included: !felt.type, %excluded: !felt.type) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %c2 = arith.constant 2 : index
+      %inside = array.read %matrix[%c1, %c0] : !array.type<3,2 x !felt.type>, !felt.type
+      %outside = array.read %matrix[%c2, %c0] : !array.type<3,2 x !felt.type>, !felt.type
+      constrain.eq %inside, %included : !felt.type
+      constrain.eq %outside, %excluded : !felt.type
+      %insideConstant = array.read %matrix[%c0, %c1]
+          : !array.type<3,2 x !felt.type>, !felt.type
+      %outsideConstant = array.read %matrix[%c2, %c1]
+          : !array.type<3,2 x !felt.type>, !felt.type
+      %seven = felt.const 7
+      %nine = felt.const 9
+      constrain.eq %insideConstant, %seven : !felt.type
+      constrain.eq %outsideConstant, %nine : !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto fn = structDef.getConstrainFuncOp();
+  auto constants = llvm::to_vector(fn.getBody().front().getOps<felt::FeltConstantOp>());
+  ASSERT_EQ(constants.size(), 2U);
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+
+  SourceRef rows(fn.getArgument(1), {SourceRefIndex(DynamicAPInt(0), DynamicAPInt(2))});
+  ASSERT_TRUE(llvm::isa<array::ArrayType>(rows.getType()));
+  auto dependencies = graph.getConstrainingValues(rows);
+  EXPECT_TRUE(dependencies.contains(SourceRef(fn.getArgument(2))));
+  EXPECT_TRUE(dependencies.contains(SourceRef(constants[0])));
+  EXPECT_FALSE(dependencies.contains(SourceRef(fn.getArgument(3))));
+  EXPECT_FALSE(dependencies.contains(SourceRef(constants[1])));
+}
