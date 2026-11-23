@@ -42,18 +42,3 @@ auto llzk::function::FunctionDialect::initialize() -> void {
   // clang-format on
   addInterfaces<LLZKDialectBytecodeInterface<FunctionDialect>>();
 }
-
-/// Verify the placement and value of the function determinism annotation.
-mlir::LogicalResult llzk::function::FunctionDialect::verifyOperationAttribute(
-    mlir::Operation *op, mlir::NamedAttribute attr
-) {
-  if (attr.getName() == DeterministicAttr::name) {
-    if (!mlir::isa<FuncDefOp>(op)) {
-      return op->emitError("'function.deterministic' attribute is only valid on 'function.def'");
-    }
-    if (!mlir::isa<mlir::UnitAttr>(attr.getValue())) {
-      return op->emitError("'function.deterministic' attribute must be a unit attribute");
-    }
-  }
-  return mlir::success();
-}

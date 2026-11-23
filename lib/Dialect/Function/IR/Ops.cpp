@@ -15,6 +15,7 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include "llzk/Dialect/Function/IR/Attrs.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
@@ -274,11 +275,7 @@ FuncDefOp FuncDefOp::clone() {
 bool FuncDefOp::hasDeterministicAttr() { return getOperation()->hasAttr(DeterministicAttr::name); }
 
 void FuncDefOp::setDeterministicAttr(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(DeterministicAttr::name, UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(DeterministicAttr::name);
-  }
+  setUnitAttr(getOperation(), DeterministicAttr::name, newValue);
 }
 
 void FuncDefOp::setAllowConstraintAttr(bool newValue) {
