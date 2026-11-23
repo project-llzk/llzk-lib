@@ -823,21 +823,25 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
   SourceRefSet res;
   SourceRefSet visited;
   llvm::SmallVector<SourceRef> worklist = {ref};
-  const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(ref.getType());
 
   // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
   // bridges transitively so that, for example, `out[2] == child.out[2]` and a child constraint on
   // `child.out[0:N]` connect `out[2]` to the child's inputs.
   while (!worklist.empty()) {
-    auto currRef = mlir::FailureOr<SourceRef>(worklist.pop_back_val());
+    const SourceRef selection = worklist.pop_back_val();
+    if (!visited.insert(selection).second) {
+      continue;
+    }
+    const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(selection.getType());
+    auto currRef = mlir::FailureOr<SourceRef>(selection);
     while (mlir::succeeded(currRef)) {
-      if (!visited.insert(*currRef).second) {
-        break;
-      }
+      // Visiting a parent for its constraints does not select its other descendants.
+      // Keep parents out of visited so a later edge can still select the whole aggregate.
+      const bool expandDescendants = includeDescendants && *currRef == selection;
 
       for (const auto &[source, targets] : dependencyEdges) {
         if ((!source.overlaps(*currRef) &&
-             !(includeDescendants && source.isValidPrefix(*currRef)))) {
+             !(expandDescendants && source.isValidPrefix(*currRef)))) {
           continue;
         }
         if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
@@ -860,7 +864,7 @@ SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &r
 
       for (const auto &[constantSource, constants] : constantSets) {
         if ((constantSource.overlaps(*currRef) ||
-             (includeDescendants && constantSource.isValidPrefix(*currRef)))) {
+             (expandDescendants && constantSource.isValidPrefix(*currRef)))) {
           res.insert(constants.begin(), constants.end());
         }
       }

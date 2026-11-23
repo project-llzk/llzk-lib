@@ -759,3 +759,60 @@ module attributes {llzk.lang} {
         << member.getSymName().str();
   }
 }
+
+TEST_F(SourceRefTests, ConstraintQueriesKeepDescendantsWithinSelectedSubtrees) {
+  static constexpr auto source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @ScopedDescendants {
+    function.def @compute(%a: !array.type<2 x !felt.type>,
+                          %b: !array.type<2 x !felt.type>,
+                          %included: !felt.type, %excluded: !felt.type)
+        -> !struct.type<@ScopedDescendants> {
+      %self = struct.new : !struct.type<@ScopedDescendants>
+      function.return %self : !struct.type<@ScopedDescendants>
+    }
+    function.def @constrain(%self: !struct.type<@ScopedDescendants>,
+                            %a: !array.type<2 x !felt.type>,
+                            %b: !array.type<2 x !felt.type>,
+                            %included: !felt.type, %excluded: !felt.type) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %a0 = array.read %a[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %b0 = array.read %b[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %b1 = array.read %b[%c1] : !array.type<2 x !felt.type>, !felt.type
+      constrain.eq %a0, %b0 : !felt.type
+      constrain.eq %b0, %included : !felt.type
+      constrain.eq %b1, %excluded : !felt.type
+      %seven = felt.const 7
+      constrain.eq %b1, %seven : !felt.type
+      function.return
+    }
+  }
+}
+)mlir";
+  auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+  ASSERT_TRUE(mod);
+  auto structDef = *mod->getOps<StructDefOp>().begin();
+  auto fn = structDef.getConstrainFuncOp();
+  felt::FeltConstantOp seven;
+  fn.walk([&](felt::FeltConstantOp op) { seven = op; });
+  ASSERT_TRUE(seven);
+  ModuleAnalysisManager mam(*mod, nullptr);
+  AnalysisManager am = mam;
+  ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+  ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+  const ConstraintDependencyGraph &graph = analysis.getResult(structDef);
+
+  auto dependencies = graph.getConstrainingValues(SourceRef(fn.getArgument(1)));
+  EXPECT_TRUE(dependencies.contains(SourceRef(fn.getArgument(2), {SourceRefIndex(0)})));
+  EXPECT_TRUE(dependencies.contains(SourceRef(fn.getArgument(3))));
+  EXPECT_FALSE(dependencies.contains(SourceRef(fn.getArgument(2), {SourceRefIndex(1)})));
+  EXPECT_FALSE(dependencies.contains(SourceRef(fn.getArgument(4))));
+  EXPECT_FALSE(dependencies.contains(SourceRef(seven)));
+
+  // Querying the second aggregate itself must still expand both of its elements.
+  auto allB = graph.getConstrainingValues(SourceRef(fn.getArgument(2)));
+  EXPECT_TRUE(allB.contains(SourceRef(fn.getArgument(3))));
+  EXPECT_TRUE(allB.contains(SourceRef(fn.getArgument(4))));
+  EXPECT_TRUE(allB.contains(SourceRef(seven)));
+}
