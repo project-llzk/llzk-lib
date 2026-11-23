@@ -1,0 +1,100 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
+
+// The member is unconstrained if the parallel loop executes zero times.
+module attributes {llzk.lang} {
+  struct.def @ParallelUnknown {
+    struct.member @value : !felt.type
+    function.def @compute(%limit: index) -> !struct.type<@ParallelUnknown> {
+      %self = struct.new : !struct.type<@ParallelUnknown>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %seven = felt.const 7
+      scf.parallel (%i) = (%c0) to (%limit) step (%c1) {
+        struct.writem %self[@value] = %seven : !struct.type<@ParallelUnknown>, !felt.type
+        scf.reduce
+      }
+      function.return %self : !struct.type<@ParallelUnknown>
+    }
+    function.def @constrain(%self: !struct.type<@ParallelUnknown>, %limit: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ParallelUnknown StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// The member is unconstrained if the parallel loop executes zero times.
+module attributes {llzk.lang} {
+  struct.def @ForallUnknown {
+    struct.member @value : !felt.type
+    function.def @compute(%limit: index) -> !struct.type<@ForallUnknown> {
+      %self = struct.new : !struct.type<@ForallUnknown>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %seven = felt.const 7
+      scf.forall (%i) in (%limit) {
+        struct.writem %self[@value] = %seven : !struct.type<@ForallUnknown>, !felt.type
+        scf.forall.in_parallel {}
+      }
+      function.return %self : !struct.type<@ForallUnknown>
+    }
+    function.def @constrain(%self: !struct.type<@ForallUnknown>, %limit: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @ForallUnknown StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// A write in one switch arm does not initialize the member on the default path.
+module attributes {llzk.lang} {
+  struct.def @IndexSwitchUnknown {
+    struct.member @value : !felt.type
+    function.def @compute(%selector: index) -> !struct.type<@IndexSwitchUnknown> {
+      %self = struct.new : !struct.type<@IndexSwitchUnknown>
+      %seven = felt.const 7
+      scf.index_switch %selector
+      case 0 {
+        struct.writem %self[@value] = %seven : !struct.type<@IndexSwitchUnknown>, !felt.type
+        scf.yield
+      }
+      default {
+        scf.yield
+      }
+      function.return %self : !struct.type<@IndexSwitchUnknown>
+    }
+    function.def @constrain(%self: !struct.type<@IndexSwitchUnknown>, %selector: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @IndexSwitchUnknown StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
