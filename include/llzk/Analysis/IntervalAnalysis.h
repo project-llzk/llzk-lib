@@ -484,6 +484,8 @@ private:
   /// @brief Return the best known ExpressionValue for a SourceRef, reusing an exact
   /// written value when available and otherwise pairing a fresh SSA symbol with the
   /// SourceRef's current interval.
+  /// Ranged selections always retain the read's SSA symbol because matching ranges
+  /// do not establish equality between independently selected values.
   ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
 
   /// @brief Record a write to the given SourceRef and eagerly refine any reads that
@@ -665,6 +667,11 @@ public:
   void setTrackUnreducedIntervals(bool track) { ctx.trackUnreducedIntervals = track; }
 
 protected:
+  /// Reject opaque calls with shared component arguments before interval or SourceRef dataflow.
+  mlir::LogicalResult validateInput(mlir::ModuleOp module) const override {
+    return SourceRefAnalysis::validateInput(module);
+  }
+
   void initializeSolver() override {
     ensure(ctx.hasField(), "field not set, could not generate analysis context");
     (void)solver.load<SourceRefAnalysis>();

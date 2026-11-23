@@ -564,11 +564,7 @@ void MemberDefOp::build(
 }
 
 void MemberDefOp::setPublicAttr(bool newValue) {
-  if (newValue) {
-    getOperation()->setAttr(PublicAttr::name, UnitAttr::get(getContext()));
-  } else {
-    getOperation()->removeAttr(PublicAttr::name);
-  }
+  setUnitAttr(getOperation(), PublicAttr::name, newValue);
 }
 
 static LogicalResult
