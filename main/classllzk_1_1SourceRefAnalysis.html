@@ -178,6 +178,8 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a1d35519fe0a06fa854aa109198d09887" id="r_a1d35519fe0a06fa854aa109198d09887"><td class="memItemLeft">static mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a1d35519fe0a06fa854aa109198d09887">validateInput</a> (mlir::ModuleOp module)</td></tr>
+<tr class="memdesc:a1d35519fe0a06fa854aa109198d09887"><td class="mdescLeft">&#160;</td><td class="mdescRight">Diagnose opaque calls whose arguments contain shared component handles.  <br /></td></tr>
 <tr class="memitem:ade94212475c769b47b7c835432c9f09d" id="r_ade94212475c769b47b7c835432c9f09d"><td class="memItemLeft">static const <a class="el" href="#ab3f7e3e5c56cf17240450ffdc24cb119">Lattice</a> *&#160;</td><td class="memItemRight"><a class="el" href="#ade94212475c769b47b7c835432c9f09d">getLattice</a> (mlir::DataFlowSolver &amp;solver, mlir::Value val)</td></tr>
 <tr class="memitem:a894529f40fcfa3574011e7468d16292c" id="r_a894529f40fcfa3574011e7468d16292c"><td class="memItemLeft">static <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a>&#160;</td><td class="memItemRight"><a class="el" href="#a894529f40fcfa3574011e7468d16292c">getValueState</a> (mlir::DataFlowSolver &amp;solver, mlir::Value val)</td></tr>
 <tr class="memitem:a739af5f29be9e7d12e058c2871db41f2" id="r_a739af5f29be9e7d12e058c2871db41f2"><td class="memItemLeft">static mlir::FailureOr&lt; <a class="el" href="classllzk_1_1SourceRefLatticeValue.html">SourceRefLatticeValue</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a739af5f29be9e7d12e058c2871db41f2">getWriteTargetState</a> (mlir::DataFlowSolver &amp;solver, mlir::Operation *op)</td></tr>
@@ -288,7 +290,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00295">295</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00332">332</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -324,7 +326,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00281">281</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00318">318</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -355,7 +357,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00047">47</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00048">48</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -386,7 +388,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00051">51</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00052">52</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -417,7 +419,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00059">59</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00060">60</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -448,7 +450,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html#acb9009bb770f79e51e2b3ae0afb03582">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; SourceRefLattice &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00126">126</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00127">127</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -476,6 +478,36 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="SparseAnalysis_8h_source.html#l00133">133</a> of file <a class="el" href="SparseAnalysis_8h_source.html">SparseAnalysis.h</a>.</p>
+
+</div>
+</div>
+<a id="a1d35519fe0a06fa854aa109198d09887" name="a1d35519fe0a06fa854aa109198d09887"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d35519fe0a06fa854aa109198d09887">&#9670;&#160;</a></span>validateInput()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogicalResult llzk::SourceRefAnalysis::validateInput </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ModuleOp</td>          <td class="paramname"><span class="paramname"><em>module</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Diagnose opaque calls whose arguments contain shared component handles. </p>
+<p>Their unknown storage effects cannot be modeled, including when a handle is nested in an array or POD. Unresolved type variables are conservatively treated as possible component handles. Module analyses must validate input before running <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> dataflow. </p>
+
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00242">242</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -524,7 +556,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html#a39b1ae356210c9e60cc2fc8c496cf9c5">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; SourceRefLattice &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00223">223</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00260">260</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>
@@ -573,7 +605,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1dataflow_1_1SparseForwardDataFlowAnalysis.html#ac073da339fa3258e4e13a0efc229e331">llzk::dataflow::SparseForwardDataFlowAnalysis&lt; SourceRefLattice &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00142">142</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00143">143</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>

@@ -6,5 +6,6 @@ var classllzk_1_1ModuleIntervalAnalysis =
     [ "initializeSolver", "classllzk_1_1ModuleIntervalAnalysis.html#abae51e894da3f281515423b33d853387", null ],
     [ "setField", "classllzk_1_1ModuleIntervalAnalysis.html#af5c80dbe5e2b1bead062a1ea557d6834", null ],
     [ "setPropagateInputConstraints", "classllzk_1_1ModuleIntervalAnalysis.html#aa2bc19db79b5ce7770fd1ed44424a5ac", null ],
-    [ "setTrackUnreducedIntervals", "classllzk_1_1ModuleIntervalAnalysis.html#abccc78a6d10ed120acc267c9d732abeb", null ]
+    [ "setTrackUnreducedIntervals", "classllzk_1_1ModuleIntervalAnalysis.html#abccc78a6d10ed120acc267c9d732abeb", null ],
+    [ "validateInput", "classllzk_1_1ModuleIntervalAnalysis.html#aff24bb4de1a4938ddeeac6ef269034ce", null ]
 ];

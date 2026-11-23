@@ -1,5 +1,7 @@
 var NAVTREEINDEX68 =
 {
+"dialects.html#fieldspecattr":[7,4,1,1],
+"dialects.html#function-dialect":[7,5],
 "dialects.html#functioncall-llzkfunctioncallop":[7,5,0,0],
 "dialects.html#functiondef-llzkfunctionfuncdefop":[7,5,0,1],
 "dialects.html#functionreturn-llzkfunctionreturnop":[7,5,0,2],
@@ -247,7 +249,5 @@ var NAVTREEINDEX68 =
 "dir_82f1a4695bc7c91c56fe419f64ce16ea.html":[14,0,2,0,2,6,1],
 "dir_85c338a369c289f6d40b1416a55396c6.html":[14,0,3,3,10],
 "dir_85d38d591fcf5568be01a31c4fb807ff.html":[14,0,4,4],
-"dir_862d3276083eaac55caed79b9120bf29.html":[14,0,3,5],
-"dir_8824517f61f65466f9470639a7e8c03b.html":[14,0,0,0,0,1],
-"dir_883023a15d723b0933e4f4f9a739d0aa.html":[14,0,0,0,0,0]
+"dir_862d3276083eaac55caed79b9120bf29.html":[14,0,3,5]
 };

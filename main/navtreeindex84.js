@@ -1,5 +1,7 @@
 var NAVTREEINDEX84 =
 {
+"zklean-backend.html#zkexprliteral-llzkzkexprliteralop":[8,3,0,0,1],
+"zklean-backend.html#zkexprmul-llzkzkexprmulop":[8,3,0,0,2],
 "zklean-backend.html#zkexprneg-llzkzkexprnegop":[8,3,0,0,3],
 "zklean-backend.html#zkexprsub-llzkzkexprsubop":[8,3,0,0,4],
 "zklean-backend.html#zkexprtype":[8,3,0,1,2],

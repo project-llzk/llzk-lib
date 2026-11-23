@@ -1,5 +1,7 @@
 var NAVTREEINDEX58 =
 {
+"classllzk_1_1ram_1_1StoreOp.html#af4919aeeb790d393e382a3051e3dd497":[13,0,1,14,5,8],
+"classllzk_1_1ram_1_1StoreOp.html#af9140b88987ca9257359656cbfe85b50":[11,0,3,18,5,11],
 "classllzk_1_1ram_1_1StoreOp.html#af9140b88987ca9257359656cbfe85b50":[13,0,1,14,5,11],
 "classllzk_1_1ram_1_1StoreOpAdaptor.html":[11,0,3,18,6],
 "classllzk_1_1ram_1_1StoreOpAdaptor.html":[13,0,1,14,6],
@@ -247,7 +249,5 @@ var NAVTREEINDEX58 =
 "classllzk_1_1string_1_1LitStringOp.html#af936c58d930891b2dfa064f10cef55cd":[13,0,1,16,1,3],
 "classllzk_1_1string_1_1LitStringOp.html#afb9b2d00f3f7b872c1691396ec798691":[11,0,3,20,1,12],
 "classllzk_1_1string_1_1LitStringOp.html#afb9b2d00f3f7b872c1691396ec798691":[13,0,1,16,1,12],
-"classllzk_1_1string_1_1LitStringOpAdaptor.html":[11,0,3,20,2],
-"classllzk_1_1string_1_1LitStringOpAdaptor.html":[13,0,1,16,2],
-"classllzk_1_1string_1_1LitStringOpAdaptor.html#a1736303bf02ce311f94ddcaaf5b656ff":[11,0,3,20,2,2]
+"classllzk_1_1string_1_1LitStringOpAdaptor.html":[11,0,3,20,2]
 };

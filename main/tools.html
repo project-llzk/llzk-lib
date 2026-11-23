@@ -512,6 +512,7 @@ Options</h5>
 <span class="tt">-llzk-print-constraint-dependency-graphs</span></h4>
 <p><em>Print constraint dependency graph for all LLZK structs.</em></p>
 <p>Control flow must use SCF operations. Operations from the <span class="tt">cf</span> dialect are rejected with a diagnostic before analysis begins. This restriction applies throughout the input module, including helper functions and unreachable regions, in both interprocedural and intraprocedural modes.</p>
+<p>Opaque calls receiving <span class="tt">struct.type</span> handles, including handles nested in arrays or PODs, are rejected because their storage effects are unknown. Unresolved <span class="tt">poly.tvar</span> arguments are treated as possible component handles, including when nested in arrays or PODs.</p>
 <h5 class="doxsection"><a class="anchor" id="options-2"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream          : Specifies the stream to which the pass prints.</div>
@@ -521,6 +522,7 @@ Options</h5>
 <p><em>Print interval analysis results for all LLZK structs.</em></p>
 <p>An explicit <span class="tt">field</span> overrides the detected field for interval arithmetic, but preserves the declared-field semantics of <span class="tt">felt.const</span>. A literal <span class="tt">N</span> with declared modulus <span class="tt">p</span> is first interpreted as <span class="tt">N mod p</span>, then reduced into the analysis field of modulus <span class="tt">q</span>: <span class="tt">(N mod p) mod q</span>. Fieldless constants are reduced directly as <span class="tt">N mod q</span>.</p>
 <p>For example, <span class="tt">felt.const 8</span> in a field of modulus <span class="tt">7</span> contributes <span class="tt">1</span> when analyzed with modulus <span class="tt">5</span>, both before and after constant canonicalization. The option changes the analysis field; it does not retarget declared felt types or reinterpret their literals as raw integers in another field.</p>
+<p>Opaque calls receiving <span class="tt">struct.type</span> handles, including handles nested in arrays or PODs, are rejected because their storage effects are unknown. Unresolved <span class="tt">poly.tvar</span> arguments are treated as possible component handles, including when nested in arrays or PODs.</p>
 <h5 class="doxsection"><a class="anchor" id="options-3"></a>
 Options</h5>
 <div class="fragment"><div class="line">-stream                      : Specifies the stream to which the pass prints.</div>

@@ -176,7 +176,7 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
 <tr class="memitem:a136a7562c0be443956c6b274104394ca" id="r_a136a7562c0be443956c6b274104394ca"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#a136a7562c0be443956c6b274104394ca">validateInput</a> (mlir::ModuleOp module) const override</td></tr>
-<tr class="memdesc:a136a7562c0be443956c6b274104394ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reject unsupported CF operations before the shared <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> analysis visits the module.  <br /></td></tr>
+<tr class="memdesc:a136a7562c0be443956c6b274104394ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reject unsupported control flow and opaque component effects before running dataflow.  <br /></td></tr>
 <tr class="memitem:a8b0add31acf139678e1bbaf41b7f02cd" id="r_a8b0add31acf139678e1bbaf41b7f02cd"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a8b0add31acf139678e1bbaf41b7f02cd">initializeSolver</a> () override</td></tr>
 <tr class="memdesc:a8b0add31acf139678e1bbaf41b7f02cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the shared dataflow solver with any common analyses required by the contained struct analyses.  <br /></td></tr>
 <tr class="memitem:acc42b68633eebebaff77d922c01b2c5c" id="r_acc42b68633eebebaff77d922c01b2c5c"><td class="memItemLeft">const <a class="el" href="structllzk_1_1CDGAnalysisContext.html">CDGAnalysisContext</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#acc42b68633eebebaff77d922c01b2c5c">getContext</a> () const override</td></tr>
@@ -192,9 +192,9 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A module-level analysis for constructing <a class="el" href="classllzk_1_1ConstraintDependencyGraph.html" title="A dependency graph of constraints enforced by an LLZK struct.">ConstraintDependencyGraph</a> objects for all structs in the given LLZK module. </p>
-<p>Control flow must use SCF. Any operation from the <span class="tt">cf</span> dialect anywhere in the module, including helper functions and unreachable regions, is diagnosed before analysis begins. </p>
+<p>Control flow must use SCF. Any operation from the <span class="tt">cf</span> dialect anywhere in the module, including helper functions and unreachable regions, is diagnosed before analysis begins. Opaque calls receiving component handles, directly or in aggregates, are also unsupported. </p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00269">269</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00276">276</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a08fa189874513fd483a22d84c98145ea" name="a08fa189874513fd483a22d84c98145ea"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a08fa189874513fd483a22d84c98145ea">&#9670;&#160;</a></span>ConstraintDependencyGraphModuleAnalysis()</h2>
@@ -219,7 +219,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00277">277</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00284">284</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -277,7 +277,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a7c526fe089c335516927f44f6d16fd82">llzk::ModuleAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00292">292</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00299">299</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -308,7 +308,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a611afa38b4248519d6284c5adc643099">llzk::ModuleAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00290">290</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00297">297</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -335,7 +335,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00282">282</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8h_source.html#l00289">289</a> of file <a class="el" href="ConstraintDependencyGraph_8h_source.html">ConstraintDependencyGraph.h</a>.</p>
 
 </div>
 </div>
@@ -362,11 +362,11 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Reject unsupported CF operations before the shared <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> analysis visits the module. </p>
+<p>Reject unsupported control flow and opaque component effects before running dataflow. </p>
 
 <p>Reimplemented from <a class="el" href="classllzk_1_1ModuleAnalysis.html#a8e351fdb6b30f9f21b6e44cfb959c4ad">llzk::ModuleAnalysis&lt; ConstraintDependencyGraph, CDGAnalysisContext, ConstraintDependencyGraphStructAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00654">654</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="ConstraintDependencyGraph_8cpp_source.html#l00691">691</a> of file <a class="el" href="ConstraintDependencyGraph_8cpp_source.html">ConstraintDependencyGraph.cpp</a>.</p>
 
 </div>
 </div>

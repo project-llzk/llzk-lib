@@ -174,13 +174,13 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
+<tr class="memitem:aff24bb4de1a4938ddeeac6ef269034ce" id="r_aff24bb4de1a4938ddeeac6ef269034ce"><td class="memItemLeft">mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="#aff24bb4de1a4938ddeeac6ef269034ce">validateInput</a> (mlir::ModuleOp module) const override</td></tr>
+<tr class="memdesc:aff24bb4de1a4938ddeeac6ef269034ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reject opaque calls with shared component arguments before interval or <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> dataflow.  <br /></td></tr>
 <tr class="memitem:abae51e894da3f281515423b33d853387" id="r_abae51e894da3f281515423b33d853387"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#abae51e894da3f281515423b33d853387">initializeSolver</a> () override</td></tr>
 <tr class="memdesc:abae51e894da3f281515423b33d853387"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the shared dataflow solver with any common analyses required by the contained struct analyses.  <br /></td></tr>
 <tr class="memitem:af2946617791f9628c8db65d7d9c15b02" id="r_af2946617791f9628c8db65d7d9c15b02"><td class="memItemLeft">const <a class="el" href="structllzk_1_1IntervalAnalysisContext.html">IntervalAnalysisContext</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#af2946617791f9628c8db65d7d9c15b02">getContext</a> () const override</td></tr>
 <tr class="memdesc:af2946617791f9628c8db65d7d9c15b02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the current <span class="tt">Context</span> object.  <br /></td></tr>
 <tr class="inherit_header pro_methods_classllzk_1_1ModuleAnalysis"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classllzk_1_1ModuleAnalysis.html">llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;</a></td></tr>
-<tr class="memitem:a8e351fdb6b30f9f21b6e44cfb959c4ad pro_methods_classllzk_1_1ModuleAnalysis" id="r_a8e351fdb6b30f9f21b6e44cfb959c4ad"><td class="memItemLeft">virtual mlir::LogicalResult&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1ModuleAnalysis.html#a8e351fdb6b30f9f21b6e44cfb959c4ad">validateInput</a> (mlir::ModuleOp) const</td></tr>
-<tr class="memdesc:a8e351fdb6b30f9f21b6e44cfb959c4ad pro_methods_classllzk_1_1ModuleAnalysis"><td class="mdescLeft">&#160;</td><td class="mdescRight">Diagnose unsupported input before running dataflow or constructing results.  <br /></td></tr>
 <tr class="memitem:a939c1dbfd9ef63bc9aa2ecf11a398dc3 pro_methods_classllzk_1_1ModuleAnalysis" id="r_a939c1dbfd9ef63bc9aa2ecf11a398dc3"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="classllzk_1_1ModuleAnalysis.html#a939c1dbfd9ef63bc9aa2ecf11a398dc3">constructChildAnalyses</a> (mlir::AnalysisManager &amp;am)</td></tr>
 <tr class="memdesc:a939c1dbfd9ef63bc9aa2ecf11a398dc3 pro_methods_classllzk_1_1ModuleAnalysis"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct and run the <span class="tt">StructAnalysisTy</span> analyses on each <span class="tt"><a class="el" href="classllzk_1_1component_1_1StructDefOp.html">StructDefOp</a></span> contained in the <span class="tt">ModuleOp</span> that is being subjected to this analysis.  <br /></td></tr>
 </table><table class="memberdecls">
@@ -274,7 +274,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a7c526fe089c335516927f44f6d16fd82">llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00682">682</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00687">687</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -305,7 +305,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Implements <a class="el" href="classllzk_1_1ModuleAnalysis.html#a611afa38b4248519d6284c5adc643099">llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00668">668</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00673">673</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>
@@ -387,6 +387,37 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00665">665</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
+
+</div>
+</div>
+<a id="aff24bb4de1a4938ddeeac6ef269034ce" name="aff24bb4de1a4938ddeeac6ef269034ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aff24bb4de1a4938ddeeac6ef269034ce">&#9670;&#160;</a></span>validateInput()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">mlir::LogicalResult llzk::ModuleIntervalAnalysis::validateInput </td>
+          <td>(</td>
+          <td class="paramtype">mlir::ModuleOp</td>          <td class="paramname"><span class="paramname"><em>module</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel override">override</span><span class="mlabel protected">protected</span><span class="mlabel virtual">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reject opaque calls with shared component arguments before interval or <a class="el" href="classllzk_1_1SourceRef.html" title="A reference to a &quot;source&quot;, which is the base value from which other SSA values are derived.">SourceRef</a> dataflow. </p>
+
+<p>Reimplemented from <a class="el" href="classllzk_1_1ModuleAnalysis.html#a8e351fdb6b30f9f21b6e44cfb959c4ad">llzk::ModuleAnalysis&lt; StructIntervals, IntervalAnalysisContext, StructIntervalAnalysis &gt;</a>.</p>
+
+<p class="definition">Definition at line <a class="el" href="IntervalAnalysis_8h_source.html#l00669">669</a> of file <a class="el" href="IntervalAnalysis_8h_source.html">IntervalAnalysis.h</a>.</p>
 
 </div>
 </div>

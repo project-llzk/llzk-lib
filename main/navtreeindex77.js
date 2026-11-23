@@ -1,5 +1,7 @@
 var NAVTREEINDEX77 =
 {
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a354e59a3f4b9005c38a46226e6b85403":[13,0,0,20,1],
+"structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[11,0,2,20,0],
 "structllvm_1_1GraphTraits_3_01const_01llzk_1_1SymbolUseGraph_01_5_01_4.html#a8a55317b9bb52714e3c534aa1d91c9bd":[13,0,0,20,0],
 "structllzk_1_1AuxAssignment.html":[11,0,3,23],
 "structllzk_1_1AuxAssignment.html":[13,0,1,19],
@@ -247,7 +249,5 @@ var NAVTREEINDEX77 =
 "structllzk_1_1PredecessorPrinterPassOptions.html#a8447111ffe713f6fa25a0fe89bf29216":[13,0,1,87,1],
 "structllzk_1_1PredecessorPrinterPassOptions.html#ab90aeb53740b01372d8a5956a6054c08":[11,0,3,91,0],
 "structllzk_1_1PredecessorPrinterPassOptions.html#ab90aeb53740b01372d8a5956a6054c08":[13,0,1,87,0],
-"structllzk_1_1RefValueCapture.html":[11,0,3,93],
-"structllzk_1_1RefValueCapture.html":[13,0,1,89],
-"structllzk_1_1RefValueCapture.html#a16f7c9b2e9613c0a7cb553ebc5cce8f9":[11,0,3,93,0]
+"structllzk_1_1RefValueCapture.html":[11,0,3,93]
 };

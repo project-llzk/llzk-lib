@@ -1,5 +1,7 @@
 var NAVTREEINDEX74 =
 {
+"namespacellzk_1_1polymorphic_1_1impl.html#ae39de184abcb3634585c00b25e46e3f4":[11,0,3,17,1,12],
+"namespacellzk_1_1ram.html":[11,0,3,18],
 "namespacellzk_1_1ram_1_1detail.html":[11,0,3,18,0],
 "namespacellzk_1_1smt__info.html":[11,0,3,19],
 "namespacellzk_1_1smt__info_1_1detail.html":[11,0,3,19,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX74 =
 "r1cs-backend.html#operands-48":[8,0,0,0,3,0],
 "r1cs-backend.html#operands-49":[8,0,0,0,5,1],
 "r1cs-backend.html#operands-50":[8,0,0,0,6,0],
-"r1cs-backend.html#operands-51":[8,0,0,0,7,0],
-"r1cs-backend.html#operations-13":[8,0,0,0],
-"r1cs-backend.html#parameters-11":[8,0,0,1,0,0]
+"r1cs-backend.html#operands-51":[8,0,0,0,7,0]
 };
