@@ -15,6 +15,7 @@
 
 #include "llzk/Dialect/Function/IR/Ops.h"
 
+#include "llzk/Dialect/Function/IR/Attrs.h"
 #include "llzk/Dialect/Function/IR/Dialect.h"
 #include "llzk/Dialect/LLZK/IR/AttributeHelper.h"
 #include "llzk/Dialect/LLZK/IR/Versioning.h"
@@ -269,6 +270,12 @@ FuncDefOp FuncDefOp::clone(IRMapping &mapper) {
 FuncDefOp FuncDefOp::clone() {
   IRMapping mapper;
   return clone(mapper);
+}
+
+bool FuncDefOp::hasDeterministicAttr() { return getOperation()->hasAttr(DeterministicAttr::name); }
+
+void FuncDefOp::setDeterministicAttr(bool newValue) {
+  setUnitAttr(getOperation(), DeterministicAttr::name, newValue);
 }
 
 void FuncDefOp::setAllowConstraintAttr(bool newValue) {

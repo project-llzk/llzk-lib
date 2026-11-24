@@ -61,6 +61,11 @@ def FuncDefOp
 
     Modules and `struct.def` ops are not allowed to be nested within functions.
 
+    Functions may carry the unit attribute `function.deterministic` to promise
+    that repeated calls with the same arguments return the same results. This
+    also applies to external declarations and struct functions. The attribute
+    does not imply absence of side effects.
+
     Function arguments may carry an optional `function.arg_name` attribute to
     preserve the source-level argument name independently from the printed SSA
     block argument name. The value must be a non-empty, untyped `StringAttr`,
@@ -155,6 +160,12 @@ def FuncDefOp
     /// asserts that the attributes of the current function and dest are
     /// compatible.
     void cloneInto(FuncDefOp dest, ::mlir::IRMapping &mapper);
+
+    /// Return `true` iff the function has the `function.deterministic` annotation.
+    bool hasDeterministicAttr();
+
+    /// Add or remove the `function.deterministic` unit attribute.
+    void setDeterministicAttr(bool newValue = true);
 
     /// Return `true` iff the function def has the `allow_constraint` attribute.
     inline bool hasAllowConstraintAttr() {

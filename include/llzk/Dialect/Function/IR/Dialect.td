@@ -19,6 +19,7 @@ def FunctionDialect : Dialect {
   let cppNamespace = "::llzk::function";
 
   let useDefaultAttributePrinterParser = true;
+  let hasOperationAttrVerify = 1;
 }
 
 #endif // LLZK_FUNCTION_DIALECT
