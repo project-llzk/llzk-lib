@@ -1,0 +1,158 @@
+// RUN: llzk-opt -split-input-file -verify-diagnostics -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Guaranteed writes in an execute region initialize later reads, but not earlier reads.
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  struct.def @ExecuteRegionWrites {
+    function.def @product(%array: !array.type<1 x !felt.type>, %pod: !P) -> !struct.type<@ExecuteRegionWrites> {
+      %self = struct.new : !struct.type<@ExecuteRegionWrites>
+      %zero = arith.constant 0 : index
+      %nine = felt.const 9
+      %beforeArray = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %beforePod = pod.read %pod[@value] : !P, !felt.type
+      scf.execute_region {
+        array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+        pod.write %pod[@value] = %nine : !P, !felt.type
+        scf.yield
+      }
+      %afterArray = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %afterPod = pod.read %pod[@value] : !P, !felt.type
+      function.return %self : !struct.type<@ExecuteRegionWrites>
+    }
+  }
+}
+
+// CHECK-LABEL: @ExecuteRegionWrites StructIntervals { }
+// CHECK-LABEL: @ExecuteRegionWrites SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [pod.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [array.read] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [pod.read] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// A nested guaranteed write removes optional-write defaults for reads in enclosing
+// and later sibling regions. Preserve the union of the actual writes, [7,9].
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  struct.def @NestedExecuteRegionWrites {
+    function.def @product(%array: !array.type<1 x !felt.type>, %pod: !P, %condition: i1) -> !struct.type<@NestedExecuteRegionWrites> {
+      %self = struct.new : !struct.type<@NestedExecuteRegionWrites>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      scf.if %condition {
+        array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+        pod.write %pod[@value] = %seven : !P, !felt.type
+      }
+      scf.execute_region {
+        scf.execute_region {
+          array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+          pod.write %pod[@value] = %nine : !P, !felt.type
+          scf.yield
+        }
+        %enclosingArray = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+        %enclosingPod = pod.read %pod[@value] : !P, !felt.type
+        scf.yield
+      }
+      scf.execute_region {
+        %siblingArray = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+        %siblingPod = pod.read %pod[@value] : !P, !felt.type
+        scf.yield
+      }
+      function.return %self : !struct.type<@NestedExecuteRegionWrites>
+    }
+  }
+}
+
+// CHECK-LABEL: @NestedExecuteRegionWrites StructIntervals { }
+// CHECK-LABEL: @NestedExecuteRegionWrites SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [pod.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:          %[[VAL_4]] [array.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:          %[[VAL_5]] [pod.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Executing a region once does not guarantee writes nested under conditional control.
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  struct.def @ConditionalExecuteRegionWrites {
+    function.def @product(%array: !array.type<1 x !felt.type>, %pod: !P, %condition: i1) -> !struct.type<@ConditionalExecuteRegionWrites> {
+      %self = struct.new : !struct.type<@ConditionalExecuteRegionWrites>
+      %zero = arith.constant 0 : index
+      %nine = felt.const 9
+      scf.execute_region {
+        scf.if %condition {
+          array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+          pod.write %pod[@value] = %nine : !P, !felt.type
+        }
+        scf.yield
+      }
+      %arrayRead = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %podRead = pod.read %pod[@value] : !P, !felt.type
+      function.return %self : !struct.type<@ConditionalExecuteRegionWrites>
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalExecuteRegionWrites StructIntervals { }
+// CHECK-LABEL: @ConditionalExecuteRegionWrites SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [pod.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// A write in one block of a multi-block execute region may be bypassed entirely.
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  struct.def @MultiBlockExecuteRegionWrites {
+    function.def @product(%array: !array.type<1 x !felt.type>, %pod: !P, %condition: i1) -> !struct.type<@MultiBlockExecuteRegionWrites> {
+      %self = struct.new : !struct.type<@MultiBlockExecuteRegionWrites>
+      %zero = arith.constant 0 : index
+      %nine = felt.const 9
+      scf.execute_region {
+        // expected-warning @+1 {{unhandled operation, analysis may be incomplete}}
+        cf.cond_br %condition, ^write, ^done
+      ^write:
+        array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+        pod.write %pod[@value] = %nine : !P, !felt.type
+        cf.br ^done
+      ^done:
+        scf.yield
+      }
+      %arrayRead = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %podRead = pod.read %pod[@value] : !P, !felt.type
+      function.return %self : !struct.type<@MultiBlockExecuteRegionWrites>
+    }
+  }
+}
+
+// CHECK-LABEL: @MultiBlockExecuteRegionWrites StructIntervals { }
+// CHECK-LABEL: @MultiBlockExecuteRegionWrites SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in TypeA:[ 0, 1 ] ( unreduced: Unreduced:[ 0, 1 ] )
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [pod.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

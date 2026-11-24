@@ -905,7 +905,17 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
       // A later write cannot initialize an earlier read. This conservative proof also
       // handles reads nested inside an operation after the write's block position.
       Operation *enclosing = writer->getBlock()->findAncestorOpInBlock(*definition);
-      return enclosing && enclosing != writer && writer->isBeforeInBlock(enclosing);
+      while (!enclosing) {
+        // A single-block execute region runs every contained operation before returning.
+        // Multi-block regions may bypass the writer, so do not lift through them.
+        auto executeRegion = llvm::dyn_cast<scf::ExecuteRegionOp>(writer->getParentOp());
+        if (!executeRegion || !llvm::hasSingleElement(executeRegion.getRegion())) {
+          return false;
+        }
+        writer = executeRegion;
+        enclosing = writer->getBlock()->findAncestorOpInBlock(*definition);
+      }
+      return enclosing != writer && writer->isBeforeInBlock(enclosing);
     })) {
       return ExpressionValue(
           getOrCreateSymbol(val),
