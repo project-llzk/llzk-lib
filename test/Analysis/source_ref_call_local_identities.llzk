@@ -1,0 +1,351 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Separate POD returns keep distinct local nondets but share repeated fields.
+module attributes {llzk.lang} {
+  function.def @make() -> !pod.type<[@left: !felt.type, @right: !felt.type]> {
+    %unknown = llzk.nondet : !felt.type
+    %result = pod.new { @left = %unknown, @right = %unknown } : !pod.type<[@left: !felt.type, @right: !felt.type]>
+    function.return %result : !pod.type<[@left: !felt.type, @right: !felt.type]>
+  }
+  struct.def @ReturnedPodNondets {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %shared: !felt.type) -> !struct.type<@ReturnedPodNondets> {
+      %self = struct.new : !struct.type<@ReturnedPodNondets>
+      function.return %self : !struct.type<@ReturnedPodNondets>
+    }
+    function.def @constrain(%self: !struct.type<@ReturnedPodNondets>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}, %shared: !felt.type {function.arg_name = "shared"}) {
+      %first = function.call @make() : () -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %second = function.call @make() : () -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %x = pod.read %first[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %y = pod.read %second[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %same = pod.read %first[@right] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      constrain.eq %same, %shared : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedPodNondets ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, shared, <call @make #0>::<%[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type> },
+// CHECK-NEXT:      { b, <call @make #1>::<%[[VAL_0]] = llzk.nondet : !felt.type> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Array elements preserve local sharing without joining independent calls.
+module attributes {llzk.lang} {
+  function.def @make() -> !array.type<2 x !felt.type> {
+    %unknown = llzk.nondet : !felt.type
+    %result = array.new %unknown, %unknown : !array.type<2 x !felt.type>
+    function.return %result : !array.type<2 x !felt.type>
+  }
+  struct.def @ReturnedArrayNondets {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %shared: !felt.type) -> !struct.type<@ReturnedArrayNondets> {
+      %self = struct.new : !struct.type<@ReturnedArrayNondets>
+      function.return %self : !struct.type<@ReturnedArrayNondets>
+    }
+    function.def @constrain(%self: !struct.type<@ReturnedArrayNondets>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}, %shared: !felt.type {function.arg_name = "shared"}) {
+      %first = function.call @make() : () -> !array.type<2 x !felt.type>
+      %second = function.call @make() : () -> !array.type<2 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %x = array.read %first[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %y = array.read %second[%c0] : !array.type<2 x !felt.type>, !felt.type
+      %same = array.read %first[%c1] : !array.type<2 x !felt.type>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      constrain.eq %same, %shared : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedArrayNondets ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, shared, <call @make #0>::<%[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type> },
+// CHECK-NEXT:      { b, <call @make #1>::<%[[VAL_0]] = llzk.nondet : !felt.type> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Unwritten leaves copied from another local POD are also local to each call.
+module attributes {llzk.lang} {
+  function.def @make() -> !pod.type<[@left: !felt.type, @right: !felt.type]> {
+    %source = pod.new : !pod.type<[@left: !felt.type, @right: !felt.type]>
+    %unknown = pod.read %source[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+    %result = pod.new { @left = %unknown, @right = %unknown } : !pod.type<[@left: !felt.type, @right: !felt.type]>
+    function.return %result : !pod.type<[@left: !felt.type, @right: !felt.type]>
+  }
+  struct.def @CopiedUnwrittenOrigins {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %shared: !felt.type) -> !struct.type<@CopiedUnwrittenOrigins> {
+      %self = struct.new : !struct.type<@CopiedUnwrittenOrigins>
+      function.return %self : !struct.type<@CopiedUnwrittenOrigins>
+    }
+    function.def @constrain(%self: !struct.type<@CopiedUnwrittenOrigins>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}, %shared: !felt.type {function.arg_name = "shared"}) {
+      %first = function.call @make() : () -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %second = function.call @make() : () -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %x = pod.read %first[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %y = pod.read %second[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %same = pod.read %first[@right] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      constrain.eq %same, %shared : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CopiedUnwrittenOrigins ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, shared, <call @make #0>::%[[VAL_0:[0-9a-zA-Z_.-]+]].left },
+// CHECK-NEXT:      { b, <call @make #1>::%[[VAL_0]].left }
+// CHECK-NEXT:  }
+
+// -----
+
+// Nested calls distinguish local origins and share one origin across different results.
+module attributes {llzk.lang} {
+  function.def @make() -> (!pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type) {
+    %left = llzk.nondet : !felt.type
+    %right = llzk.nondet : !felt.type
+    %result = pod.new { @left = %left, @right = %right } : !pod.type<[@left: !felt.type, @right: !felt.type]>
+    function.return %result, %left : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+  }
+  function.def @forward() -> (!pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type) {
+    %pod, %scalar = function.call @make() : () -> (!pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type)
+    function.return %pod, %scalar : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+  }
+  struct.def @NestedCallsKeepLocalSharing {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %shared: !felt.type, %c: !felt.type, %d: !felt.type, %otherShared: !felt.type) -> !struct.type<@NestedCallsKeepLocalSharing> {
+      %self = struct.new : !struct.type<@NestedCallsKeepLocalSharing>
+      function.return %self : !struct.type<@NestedCallsKeepLocalSharing>
+    }
+    function.def @constrain(%self: !struct.type<@NestedCallsKeepLocalSharing>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}, %shared: !felt.type {function.arg_name = "shared"}, %c: !felt.type {function.arg_name = "c"}, %d: !felt.type {function.arg_name = "d"}, %otherShared: !felt.type {function.arg_name = "otherShared"}) {
+      %first, %firstScalar = function.call @forward() : () -> (!pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type)
+      %second, %secondScalar = function.call @forward() : () -> (!pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type)
+      %firstLeft = pod.read %first[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %firstRight = pod.read %first[@right] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %secondLeft = pod.read %second[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %secondRight = pod.read %second[@right] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      constrain.eq %firstLeft, %a : !felt.type
+      constrain.eq %firstRight, %b : !felt.type
+      constrain.eq %firstScalar, %shared : !felt.type
+      constrain.eq %secondLeft, %c : !felt.type
+      constrain.eq %secondRight, %d : !felt.type
+      constrain.eq %secondScalar, %otherShared : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @NestedCallsKeepLocalSharing ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, shared, <call @forward #0>::<call @make #0>::<%[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type> },
+// CHECK-NEXT:      { b, <call @forward #0>::<call @make #0>::<%[[VAL_1:[0-9a-zA-Z_.-]+]] = llzk.nondet : !felt.type> },
+// CHECK-NEXT:      { c, otherShared, <call @forward #1>::<call @make #0>::<%[[VAL_0]] = llzk.nondet : !felt.type> },
+// CHECK-NEXT:      { d, <call @forward #1>::<call @make #0>::<%[[VAL_1]] = llzk.nondet : !felt.type> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Caller-supplied nondeterministic values keep their identity through separate calls.
+module attributes {llzk.lang} {
+  function.def @wrap(%value: !felt.type) -> !pod.type<[@left: !felt.type, @right: !felt.type]> {
+    %result = pod.new { @left = %value, @right = %value } : !pod.type<[@left: !felt.type, @right: !felt.type]>
+    function.return %result : !pod.type<[@left: !felt.type, @right: !felt.type]>
+  }
+  struct.def @CallerNondetStaysShared {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CallerNondetStaysShared> {
+      %self = struct.new : !struct.type<@CallerNondetStaysShared>
+      function.return %self : !struct.type<@CallerNondetStaysShared>
+    }
+    function.def @constrain(%self: !struct.type<@CallerNondetStaysShared>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}) {
+      %shared = llzk.nondet : !felt.type
+      %first = function.call @wrap(%shared) : (!felt.type) -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %second = function.call @wrap(%shared) : (!felt.type) -> !pod.type<[@left: !felt.type, @right: !felt.type]>
+      %x = pod.read %first[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      %y = pod.read %second[@left] : !pod.type<[@left: !felt.type, @right: !felt.type]>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @CallerNondetStaysShared ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, b, <%{{[0-9a-zA-Z_.-]+}} = llzk.nondet : !felt.type> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Different calls return different local handles; repeated results retain sharing.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  function.def @make() -> (!struct.type<@Cell>, !struct.type<@Cell>) {
+    %value = llzk.nondet : !struct.type<@Cell>
+    function.return %value, %value : !struct.type<@Cell>, !struct.type<@Cell>
+  }
+  struct.def @ReturnedLocalStructHandles {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %shared: !felt.type) -> !struct.type<@ReturnedLocalStructHandles> {
+      %self = struct.new : !struct.type<@ReturnedLocalStructHandles>
+      function.return %self : !struct.type<@ReturnedLocalStructHandles>
+    }
+    function.def @constrain(%self: !struct.type<@ReturnedLocalStructHandles>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}, %shared: !felt.type {function.arg_name = "shared"}) {
+      %first, %same = function.call @make() : () -> (!struct.type<@Cell>, !struct.type<@Cell>)
+      %second, %unused = function.call @make() : () -> (!struct.type<@Cell>, !struct.type<@Cell>)
+      %x = struct.readm %first[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %second[@value] : !struct.type<@Cell>, !felt.type
+      %again = struct.readm %same[@value] : !struct.type<@Cell>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      constrain.eq %again, %shared : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @ReturnedLocalStructHandles ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, shared, <call @make #0>::<%[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Cell>>.value },
+// CHECK-NEXT:      { b, <call @make #1>::<%[[VAL_0]] = llzk.nondet : !struct.type<@Cell>>.value }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Outer calls distinguish a local external-call handle forwarded through a helper.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  function.def private @external() -> !struct.type<@Cell>
+  struct.def @NestedExternalStructHandles {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@NestedExternalStructHandles> {
+      %self = struct.new : !struct.type<@NestedExternalStructHandles>
+      function.return %self : !struct.type<@NestedExternalStructHandles>
+    }
+    function.def @constrain(%self: !struct.type<@NestedExternalStructHandles>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}) {
+      %first = function.call @forward() : () -> !struct.type<@Cell>
+      %second = function.call @forward() : () -> !struct.type<@Cell>
+      %x = struct.readm %first[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %second[@value] : !struct.type<@Cell>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      function.return
+    }
+  }
+  function.def @forward() -> !struct.type<@Cell> {
+    %value = function.call @make() : () -> !struct.type<@Cell>
+    function.return %value : !struct.type<@Cell>
+  }
+  function.def @make() -> !struct.type<@Cell> {
+    %value = function.call @external() : () -> !struct.type<@Cell>
+    function.return %value : !struct.type<@Cell>
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @NestedExternalStructHandles ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, <call @forward #0>::<call @make #0>::<call @external %[[VAL_0:[0-9a-zA-Z_.-]+]]>.value },
+// CHECK-NEXT:      { b, <call @forward #1>::<call @make #0>::<call @external %[[VAL_0]]>.value }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// A caller-supplied component keeps its identity across separate forwarding calls.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  function.def @identity(%cell: !struct.type<@Cell>) -> !struct.type<@Cell> {
+    function.return %cell : !struct.type<@Cell>
+  }
+  struct.def @CallerStructHandleStaysShared {
+    function.def @compute(%a: !felt.type, %b: !felt.type) -> !struct.type<@CallerStructHandleStaysShared> {
+      %self = struct.new : !struct.type<@CallerStructHandleStaysShared>
+      function.return %self : !struct.type<@CallerStructHandleStaysShared>
+    }
+    function.def @constrain(%self: !struct.type<@CallerStructHandleStaysShared>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}) {
+      %shared = llzk.nondet : !struct.type<@Cell>
+      %first = function.call @identity(%shared) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+      %second = function.call @identity(%shared) : (!struct.type<@Cell>) -> !struct.type<@Cell>
+      %x = struct.readm %first[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %second[@value] : !struct.type<@Cell>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @CallerStructHandleStaysShared ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, b, <%[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Cell>>.value }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// Returned POD fields preserve local handle sharing without joining independent calls.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  function.def @make() -> !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]> {
+    %value = llzk.nondet : !struct.type<@Cell>
+    %pod = pod.new { @left = %value, @right = %value } : !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]>
+    function.return %pod : !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]>
+  }
+  struct.def @ReturnedPodStructHandles {
+    function.def @compute(%a: !felt.type, %b: !felt.type, %shared: !felt.type) -> !struct.type<@ReturnedPodStructHandles> {
+      %self = struct.new : !struct.type<@ReturnedPodStructHandles>
+      function.return %self : !struct.type<@ReturnedPodStructHandles>
+    }
+    function.def @constrain(%self: !struct.type<@ReturnedPodStructHandles>, %a: !felt.type {function.arg_name = "a"}, %b: !felt.type {function.arg_name = "b"}, %shared: !felt.type {function.arg_name = "shared"}) {
+      %firstPod = function.call @make() : () -> !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]>
+      %secondPod = function.call @make() : () -> !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]>
+      %first = pod.read %firstPod[@left] : !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %same = pod.read %firstPod[@right] : !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %second = pod.read %secondPod[@left] : !pod.type<[@left: !struct.type<@Cell>, @right: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %x = struct.readm %first[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %second[@value] : !struct.type<@Cell>, !felt.type
+      %again = struct.readm %same[@value] : !struct.type<@Cell>, !felt.type
+      constrain.eq %x, %a : !felt.type
+      constrain.eq %y, %b : !felt.type
+      constrain.eq %again, %shared : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @ReturnedPodStructHandles ConstraintDependencyGraph {
+// CHECK-NEXT:      { a, shared, <call @make #0>::<%[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Cell>>.value },
+// CHECK-NEXT:      { b, <call @make #1>::<%[[VAL_0]] = llzk.nondet : !struct.type<@Cell>>.value }
+// CHECK-NEXT:  }

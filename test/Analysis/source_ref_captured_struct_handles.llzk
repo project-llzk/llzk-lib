@@ -1,0 +1,239 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// An array read captures the struct identity, not its replaceable array slot.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  struct.def @ArrayCapturedHandleRead {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@ArrayCapturedHandleRead> {
+      %self = struct.new : !struct.type<@ArrayCapturedHandleRead>
+      function.return %self : !struct.type<@ArrayCapturedHandleRead>
+    }
+    function.def @constrain(%self: !struct.type<@ArrayCapturedHandleRead>,
+        %first: !struct.type<@Cell> {function.arg_name = "first"},
+        %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %source = array.new %first : !array.type<1 x !struct.type<@Cell>>
+      %c0 = arith.constant 0 : index
+      %captured = array.read %source[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %source[%c0] = %second : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %observed = struct.readm %captured[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @ArrayCapturedHandleRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// A POD read also preserves the captured handle when its record is overwritten.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  struct.def @PodCapturedHandleRead {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@PodCapturedHandleRead> {
+      %self = struct.new : !struct.type<@PodCapturedHandleRead>
+      function.return %self : !struct.type<@PodCapturedHandleRead>
+    }
+    function.def @constrain(%self: !struct.type<@PodCapturedHandleRead>,
+        %first: !struct.type<@Cell> {function.arg_name = "first"},
+        %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %source = pod.new { @cell = %first } : !pod.type<[@cell: !struct.type<@Cell>]>
+      %captured = pod.read %source[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      pod.write %source[@cell] = %second : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %observed = struct.readm %captured[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @PodCapturedHandleRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// Copying a POD preserves its nested struct handle, including after a local overwrite.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  struct.def @NestedCapturedHandleRead {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@NestedCapturedHandleRead> {
+      %self = struct.new : !struct.type<@NestedCapturedHandleRead>
+      function.return %self : !struct.type<@NestedCapturedHandleRead>
+    }
+    function.def @constrain(%self: !struct.type<@NestedCapturedHandleRead>,
+        %first: !struct.type<@Cell> {function.arg_name = "first"},
+        %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %record = pod.new { @cell = %first } : !pod.type<[@cell: !struct.type<@Cell>]>
+      %source = array.new %record : !array.type<1 x !pod.type<[@cell: !struct.type<@Cell>]>>
+      %c0 = arith.constant 0 : index
+      %copy = array.read %source[%c0] : !array.type<1 x !pod.type<[@cell: !struct.type<@Cell>]>>, !pod.type<[@cell: !struct.type<@Cell>]>
+      %captured = pod.read %copy[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      pod.write %copy[@cell] = %second : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %observed = struct.readm %captured[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @NestedCapturedHandleRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// A helper defined later supplies the captured identity through its storage summary.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  struct.def @ForwardCapturedHandleRead {
+    function.def @compute(%first: !struct.type<@Cell>, %second: !struct.type<@Cell>) -> !struct.type<@ForwardCapturedHandleRead> {
+      %self = struct.new : !struct.type<@ForwardCapturedHandleRead>
+      function.return %self : !struct.type<@ForwardCapturedHandleRead>
+    }
+    function.def @constrain(%self: !struct.type<@ForwardCapturedHandleRead>,
+        %first: !struct.type<@Cell> {function.arg_name = "first"},
+        %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %source = function.call @make(%first) : (!struct.type<@Cell>) -> !array.type<1 x !struct.type<@Cell>>
+      %c0 = arith.constant 0 : index
+      %captured = array.read %source[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %source[%c0] = %second : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %observed = struct.readm %captured[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+  function.def @make(%cell: !struct.type<@Cell>) -> !array.type<1 x !struct.type<@Cell>> {
+    %array = array.new %cell : !array.type<1 x !struct.type<@Cell>>
+    function.return %array : !array.type<1 x !struct.type<@Cell>>
+  }
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @ForwardCapturedHandleRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { first.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+// A locally-created handle stays independent of the array slot after capture.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  struct.def @NondetArrayCapturedHandleRead {
+    function.def @compute(%second: !struct.type<@Cell>) -> !struct.type<@NondetArrayCapturedHandleRead> {
+      %self = struct.new : !struct.type<@NondetArrayCapturedHandleRead>
+      function.return %self : !struct.type<@NondetArrayCapturedHandleRead>
+    }
+    function.def @constrain(%self: !struct.type<@NondetArrayCapturedHandleRead>,
+        %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %first = llzk.nondet : !struct.type<@Cell>
+      %source = array.new %first : !array.type<1 x !struct.type<@Cell>>
+      %c0 = arith.constant 0 : index
+      %captured = array.read %source[%c0] : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %source[%c0] = %second : !array.type<1 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %observed = struct.readm %captured[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @NondetArrayCapturedHandleRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { <%[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@Cell>>.value, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+
+// -----
+
+// An external-call handle stays independent of the POD slot after capture.
+module attributes {llzk.lang} {
+  function.def private @external() -> !struct.type<@Cell>
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) { function.return }
+  }
+  struct.def @ExternalPodCapturedHandleRead {
+    function.def @compute(%second: !struct.type<@Cell>) -> !struct.type<@ExternalPodCapturedHandleRead> {
+      %self = struct.new : !struct.type<@ExternalPodCapturedHandleRead>
+      function.return %self : !struct.type<@ExternalPodCapturedHandleRead>
+    }
+    function.def @constrain(%self: !struct.type<@ExternalPodCapturedHandleRead>,
+        %second: !struct.type<@Cell> {function.arg_name = "second"}) {
+      %first = function.call @external() : () -> !struct.type<@Cell>
+      %source = pod.new { @cell = %first } : !pod.type<[@cell: !struct.type<@Cell>]>
+      %captured = pod.read %source[@cell] : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      pod.write %source[@cell] = %second : !pod.type<[@cell: !struct.type<@Cell>]>, !struct.type<@Cell>
+      %observed = struct.readm %captured[@value] : !struct.type<@Cell>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %observed, %zero : !felt.type
+      function.return
+    }
+  }
+
+}
+
+// CHECK-LABEL: @Cell ConstraintDependencyGraph { }
+
+// CHECK-LABEL: @ExternalPodCapturedHandleRead ConstraintDependencyGraph {
+// CHECK-NEXT:      { <call @external %[[VAL_0:[0-9a-zA-Z_.-]+]]>.value, <felt.const: 0> }
+// CHECK-NEXT:  }

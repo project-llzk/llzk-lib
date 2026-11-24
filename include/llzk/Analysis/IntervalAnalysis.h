@@ -351,6 +351,12 @@ private:
   /// A location may have several independent values across intervening writes.
   llvm::DenseMap<SourceRef, llvm::SmallVector<mlir::Value, 1>> concreteReadRepresentatives;
 
+  /// Unknown copied fields share an observation symbol only across proven equal reads.
+  /// The first observation retains the source symbol for public input-constraint attribution.
+  llvm::DenseMap<SourceRef, llvm::SmallVector<std::pair<mlir::Operation *, llvm::SMTExprRef>, 1>>
+      storageObservationSymbols;
+  size_t nextStorageObservationSymbol = 0;
+
   /// Cached inverse symbols keyed by operation identity, separate from value and ref symbols.
   mlir::DenseMap<mlir::Operation *, llvm::SMTExprRef> inverseSymbols;
 
@@ -387,6 +393,10 @@ private:
   /// Values before backward refinement, restored when a storage read expands.
   llvm::DenseMap<Lattice *, ExpressionValue> refinementBases;
 
+  /// Candidate read aliases grouped by their common access-chain operand, independent of
+  /// captured storage identities. Sharing still requires the structured-path proof.
+  llvm::DenseMap<mlir::Value, llvm::DenseSet<Lattice *>> readAliasCandidates;
+
   /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
@@ -397,7 +407,7 @@ private:
   };
 
   /// Keep recomputed publications separate from actual writes to the same location.
-  /// The null key accumulates ordinary writes; operation keys hold replaceable publications.
+  /// Operation keys retain write sites so copies can exclude writes after their observation.
   llvm::DenseMap<SourceRef, llvm::DenseMap<mlir::Operation *, WriteContribution>>
       writeContributions;
 
@@ -496,10 +506,8 @@ private:
   /// @brief Recursively applies the new interval to the val's lattice value and to that value's
   /// operands, if possible. For example, if we know that X*Y is non-zero, then we know X and Y are
   /// non-zero, and can update X and Y's intervals accordingly.
-  /// @param after The current lattice state. Assumes that this has already been joined with the
-  /// `before` lattice in `visitOperation`, so lookups and updates can be performed on the `after`
-  /// lattice alone.
-  void applyInterval(mlir::Operation *originalOp, mlir::Value val, Interval newInterval);
+  /// @param valUser The operation imposing the interval constraint on @p val.
+  void applyInterval(mlir::Operation *valUser, mlir::Value val, Interval newInterval);
 
   /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
   /// Factors must reuse one SSA value or reads proven equal across intervening operations.
@@ -522,7 +530,7 @@ private:
   /// @brief Convert an array access op's indices into SourceRef path components.
   /// Constant indices are tracked precisely, while dynamic indices are widened to
   /// the full valid range for that array dimension.
-  std::vector<SourceRefIndex>
+  SourceRef::Path
   getArrayAccessIndices(mlir::Operation *baseOp, array::ArrayAccessOpInterface arrayAccessOp);
 
   /// @brief Build the SourceRef addressed by an array access op when its base is a
@@ -537,15 +545,23 @@ private:
   /// @brief Resolve a selection from all overlapping stored values, retaining a default
   /// when concrete writes do not cover the selection. Ranged selections use the caller's
   /// symbol because matching ranges do not establish equality of independent reads.
-  ExpressionValue getRefValue(const SourceRef &ref, llvm::SMTExprRef selectionSymbol);
+  /// A non-null observation excludes writes that cannot precede that copy.
+  ExpressionValue getRefValue(
+      const SourceRef &ref, llvm::SMTExprRef selectionSymbol, mlir::Operation *observation = nullptr
+  );
+
+  /// Join stored alternatives without equating different value expressions.
+  ExpressionValue
+  joinStoredValues(const SourceRef &ref, const ExpressionValue &lhs, const ExpressionValue &rhs);
 
   /// Resolve a scalar value and subscribe reads to changes in the selected storage.
   ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
 
   /// @brief Resolve and translate stored descendants of an aggregate selection, including
   /// overlapping concrete and ranged writes, once per destination leaf.
-  llvm::SmallVector<std::pair<SourceRef, ExpressionValue>>
-  getAggregateWrites(const SourceRef &source, const SourceRef &destination);
+  llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> getAggregateWrites(
+      const SourceRef &source, const SourceRef &destination, mlir::Operation *observation
+  );
 
   /// @brief Record a write to the given SourceRef and revisit reads of that location
   /// when its stored value changes, including when new contributions expand it.
@@ -554,9 +570,10 @@ private:
   /// of unconditional, so the stored value also keeps the prior/no-write state.
   /// Retain that default only until a guaranteed write to this location is analyzed.
   /// A non-null publisher replaces its previous contribution when a copy is recomputed.
+  /// Otherwise, writeSite identifies an actual write whose repeated visits are joined.
   void recordRefWrite(
       const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false,
-      mlir::Operation *publisher = nullptr
+      mlir::Operation *publisher = nullptr, mlir::Operation *writeSite = nullptr
   );
 
   /// Merge every live conditional aggregate alternative, including unwritten fields.

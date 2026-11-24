@@ -1,0 +1,281 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// Fresh aggregate returns have call-specific storage, even if their contents
+// depend on the same values. Returned arguments and slices also have independent storage.
+module attributes {llzk.lang} {
+  function.def @make(%input: !felt.type) -> !array.type<1 x !felt.type> {
+    %result = array.new %input : !array.type<1 x !felt.type>
+    function.return %result : !array.type<1 x !felt.type>
+  }
+  struct.def @ReturnedArraysHaveDistinctStorage {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ReturnedArraysHaveDistinctStorage> {
+      %self = struct.new : !struct.type<@ReturnedArraysHaveDistinctStorage>
+      function.return %self : !struct.type<@ReturnedArraysHaveDistinctStorage>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ReturnedArraysHaveDistinctStorage>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %first = function.call @make(%initial) : (!felt.type) -> !array.type<1 x !felt.type>
+      %second = function.call @make(%initial) : (!felt.type) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      array.write %first[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %observed = array.read %second[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedArraysHaveDistinctStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @make(%input: !felt.type) -> !array.type<1 x !felt.type> {
+    %seven = felt.const 7
+    %result = array.new %seven : !array.type<1 x !felt.type>
+    function.return %result : !array.type<1 x !felt.type>
+  }
+  struct.def @ReturnedConstantArrayCanBeWritten {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ReturnedConstantArrayCanBeWritten> {
+      %self = struct.new : !struct.type<@ReturnedConstantArrayCanBeWritten>
+      function.return %self : !struct.type<@ReturnedConstantArrayCanBeWritten>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ReturnedConstantArrayCanBeWritten>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %first = function.call @make(%initial) : (!felt.type) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      array.write %first[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %observed = array.read %first[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedConstantArrayCanBeWritten ConstraintDependencyGraph {
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @make(%input: !felt.type) -> !array.type<2 x !felt.type> {
+    %result = array.new %input, %input : !array.type<2 x !felt.type>
+    function.return %result : !array.type<2 x !felt.type>
+  }
+  struct.def @ReturnedArrayElementsHaveDistinctStorage {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ReturnedArrayElementsHaveDistinctStorage> {
+      %self = struct.new : !struct.type<@ReturnedArrayElementsHaveDistinctStorage>
+      function.return %self : !struct.type<@ReturnedArrayElementsHaveDistinctStorage>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ReturnedArrayElementsHaveDistinctStorage>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %first = function.call @make(%initial) : (!felt.type) -> !array.type<2 x !felt.type>
+      %c0 = arith.constant 0 : index
+      array.write %first[%c0] = %replacement : !array.type<2 x !felt.type>, !felt.type
+      %c1 = arith.constant 1 : index
+      %observed = array.read %first[%c1] : !array.type<2 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedArrayElementsHaveDistinctStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @identity(%array: !array.type<1 x !felt.type>) -> !array.type<1 x !felt.type> {
+    function.return %array : !array.type<1 x !felt.type>
+  }
+  struct.def @ReturnedArgumentCopiesStorage {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ReturnedArgumentCopiesStorage> {
+      %self = struct.new : !struct.type<@ReturnedArgumentCopiesStorage>
+      function.return %self : !struct.type<@ReturnedArgumentCopiesStorage>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ReturnedArgumentCopiesStorage>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %source = array.new %initial : !array.type<1 x !felt.type>
+      %copy = function.call @identity(%source) : (!array.type<1 x !felt.type>) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      array.write %copy[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %observed = array.read %source[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedArgumentCopiesStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @slice(%matrix: !array.type<2,1 x !felt.type>) -> !array.type<1 x !felt.type> {
+    %c1 = arith.constant 1 : index
+    %row = array.extract %matrix[%c1] : !array.type<2,1 x !felt.type>
+    function.return %row : !array.type<1 x !felt.type>
+  }
+  struct.def @ReturnedSliceCopiesStorage {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ReturnedSliceCopiesStorage> {
+      %self = struct.new : !struct.type<@ReturnedSliceCopiesStorage>
+      function.return %self : !struct.type<@ReturnedSliceCopiesStorage>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ReturnedSliceCopiesStorage>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = array.new %initial, %bonus : !array.type<2,1 x !felt.type>
+      %row = function.call @slice(%source) : (!array.type<2,1 x !felt.type>) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      array.write %row[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %observed = array.read %source[%c1, %c0] : !array.type<2,1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedSliceCopiesStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { bonus, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @slice(%matrix: !array.type<2,1 x !felt.type>) -> !array.type<1 x !felt.type> {
+    %c1 = arith.constant 1 : index
+    %row = array.extract %matrix[%c1] : !array.type<2,1 x !felt.type>
+    function.return %row : !array.type<1 x !felt.type>
+  }
+  struct.def @ReturnedSlicePreservesOtherRows {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type, %bonus: !felt.type)
+        -> !struct.type<@ReturnedSlicePreservesOtherRows> {
+      %self = struct.new : !struct.type<@ReturnedSlicePreservesOtherRows>
+      function.return %self : !struct.type<@ReturnedSlicePreservesOtherRows>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ReturnedSlicePreservesOtherRows>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"},
+        %bonus: !felt.type {function.arg_name = "bonus"}
+    ) {
+      %source = array.new %initial, %bonus : !array.type<2,1 x !felt.type>
+      %row = function.call @slice(%source) : (!array.type<2,1 x !felt.type>) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      array.write %row[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %observed = array.read %source[%c0, %c0] : !array.type<2,1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedSlicePreservesOtherRows ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @make(%input: !felt.type) -> !array.type<1 x !felt.type> {
+    %result = array.new %input : !array.type<1 x !felt.type>
+    function.return %result : !array.type<1 x !felt.type>
+  }
+  function.def @forward(%input: !felt.type) -> !array.type<1 x !felt.type> {
+    %result = function.call @make(%input) : (!felt.type) -> !array.type<1 x !felt.type>
+    function.return %result : !array.type<1 x !felt.type>
+  }
+  struct.def @ForwardedReturnsHaveDistinctStorage {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ForwardedReturnsHaveDistinctStorage> {
+      %self = struct.new : !struct.type<@ForwardedReturnsHaveDistinctStorage>
+      function.return %self : !struct.type<@ForwardedReturnsHaveDistinctStorage>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ForwardedReturnsHaveDistinctStorage>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %first = function.call @forward(%initial) : (!felt.type) -> !array.type<1 x !felt.type>
+      %second = function.call @forward(%initial) : (!felt.type) -> !array.type<1 x !felt.type>
+      %c0 = arith.constant 0 : index
+      array.write %first[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+      %observed = array.read %second[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ForwardedReturnsHaveDistinctStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @make(%input: !felt.type) -> !pod.type<[@value: !felt.type]> {
+    %result = pod.new { @value = %input } : !pod.type<[@value: !felt.type]>
+    function.return %result : !pod.type<[@value: !felt.type]>
+  }
+  struct.def @ReturnedPodsHaveDistinctStorage {
+    function.def @compute(%initial: !felt.type, %replacement: !felt.type)
+        -> !struct.type<@ReturnedPodsHaveDistinctStorage> {
+      %self = struct.new : !struct.type<@ReturnedPodsHaveDistinctStorage>
+      function.return %self : !struct.type<@ReturnedPodsHaveDistinctStorage>
+    }
+    function.def @constrain(
+        %self: !struct.type<@ReturnedPodsHaveDistinctStorage>,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}
+    ) {
+      %first = function.call @make(%initial) : (!felt.type) -> !pod.type<[@value: !felt.type]>
+      %second = function.call @make(%initial) : (!felt.type) -> !pod.type<[@value: !felt.type]>
+      pod.write %first[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+      %observed = pod.read %second[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %expected = felt.const 0
+      constrain.eq %observed, %expected : !felt.type
+      function.return
+    }
+  }
+}
+
+// CHECK-LABEL: @ReturnedPodsHaveDistinctStorage ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, <felt.const: 0> }
+// CHECK-NEXT:  }

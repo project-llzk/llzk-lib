@@ -1,0 +1,64 @@
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+// RUN: llzk-opt -split-input-file -llzk-print-constraint-dependency-graphs="intraprocedural" %s -o /dev/null 2>&1 | FileCheck --match-full-lines %s
+
+// The unknown bound permits zero iterations, so the original value remains possible.
+// CHECK-LABEL: @ParallelPod ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, replacement },
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @ParallelPod {
+    function.def @compute(%limit: index, %initial: !felt.type, %replacement: !felt.type) -> !struct.type<@ParallelPod> {
+      %self = struct.new : !struct.type<@ParallelPod>
+      function.return %self : !struct.type<@ParallelPod>
+    }
+    function.def @constrain(%self: !struct.type<@ParallelPod>, %limit: index,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %storage = pod.new { @value = %initial } : !pod.type<[@value: !felt.type]>
+      scf.parallel (%i) = (%c0) to (%limit) step (%c1) {
+        pod.write %storage[@value] = %replacement : !pod.type<[@value: !felt.type]>, !felt.type
+        scf.reduce
+      }
+      %read = pod.read %storage[@value] : !pod.type<[@value: !felt.type]>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %read, %zero : !felt.type
+      function.return
+    }
+  }
+}
+
+// -----
+
+// The unknown bound permits zero iterations, so the original value remains possible.
+// CHECK-LABEL: @ForallArray ConstraintDependencyGraph {
+// CHECK-NEXT:      { initial, replacement },
+// CHECK-NEXT:      { initial, <felt.const: 0> },
+// CHECK-NEXT:      { replacement, <felt.const: 0> }
+// CHECK-NEXT:  }
+module attributes {llzk.lang} {
+  struct.def @ForallArray {
+    function.def @compute(%limit: index, %initial: !felt.type, %replacement: !felt.type) -> !struct.type<@ForallArray> {
+      %self = struct.new : !struct.type<@ForallArray>
+      function.return %self : !struct.type<@ForallArray>
+    }
+    function.def @constrain(%self: !struct.type<@ForallArray>, %limit: index,
+        %initial: !felt.type {function.arg_name = "initial"},
+        %replacement: !felt.type {function.arg_name = "replacement"}) {
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %storage = array.new %initial : !array.type<1 x !felt.type>
+      scf.forall (%i) in (%limit) {
+        array.write %storage[%c0] = %replacement : !array.type<1 x !felt.type>, !felt.type
+        scf.forall.in_parallel {}
+      }
+      %read = array.read %storage[%c0] : !array.type<1 x !felt.type>, !felt.type
+      %zero = felt.const 0
+      constrain.eq %read, %zero : !felt.type
+      function.return
+    }
+  }
+}
