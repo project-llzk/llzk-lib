@@ -129,6 +129,55 @@ static std::vector<SourceRefIndex> getArrayAccessIndices(
   return indices;
 }
 
+/// Extract array selections in the dimension order used by SourceRef::narrowRanges.
+static SmallVector<SourceRefIndex> getReferenceArrayIndices(const SourceRef &ref) {
+  SmallVector<SourceRefIndex> indices;
+  llvm::copy_if(ref.getPath(), std::back_inserter(indices), [](const SourceRefIndex &index) {
+    return index.isIndex() || index.isIndexRange();
+  });
+  return indices;
+}
+
+/// Match a descendant's prefix by overlap, allowing concrete indices inside queried ranges.
+static bool hasOverlappingPrefix(const SourceRef &candidate, const SourceRef &prefix) {
+  auto ancestor = FailureOr<SourceRef>(candidate);
+  while (succeeded(ancestor) && ancestor->getPath().size() > prefix.getPath().size()) {
+    ancestor = ancestor->getParentPrefix();
+  }
+  return succeeded(ancestor) && ancestor->overlaps(prefix);
+}
+
+/// Prove correspondence only for single-source reads of the same SSA indices. Matching ranges
+/// alone do not prove correspondence: independent loop variables can have identical bounds.
+static bool haveCorrespondingArrayIndices(Operation *emitOp, DataFlowSolver &solver) {
+  if (!llvm::isa<EmitEqualityOp>(emitOp) || emitOp->getNumOperands() != 2) {
+    return false;
+  }
+  auto lhs = emitOp->getOperand(0).getDefiningOp<ReadArrayOp>();
+  auto rhs = emitOp->getOperand(1).getDefiningOp<ReadArrayOp>();
+  if (!lhs || !rhs || !llvm::equal(lhs.getIndices(), rhs.getIndices())) {
+    return false;
+  }
+  for (ReadArrayOp read : {lhs, rhs}) {
+    auto value = SourceRefAnalysis::getValueState(solver, read.getResult());
+    if (!value.isSingleValue()) {
+      return false;
+    }
+    llvm::SmallDenseMap<Value, SourceRefLatticeValue> indexStates;
+    for (Value index : read.getIndices()) {
+      indexStates.try_emplace(index, SourceRefAnalysis::getValueState(solver, index));
+    }
+    auto indices =
+        getArrayAccessIndices(read, [&indexStates](Value index) -> const SourceRefLatticeValue & {
+      return indexStates.find(index)->second;
+    });
+    if (!llvm::equal(indices, getReferenceArrayIndices(value.getSingleValue()))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -590,6 +639,11 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
         signalSets.unionSets(leader, member);
       }
     }
+    for (const auto &[source, targets] : translatedCDG.dependencyEdges) {
+      for (const auto &[target, elementwise] : targets) {
+        addDependencyEdge(source, target, elementwise);
+      }
+    }
     // And update the constant sets
     for (auto &[ref, constSet] : translatedCDG.constantSets) {
       constantSets[ref].insert(constSet.begin(), constSet.end());
@@ -600,6 +654,15 @@ mlir::LogicalResult ConstraintDependencyGraph::computeConstraints(
   }
 
   return mlir::success();
+}
+
+void ConstraintDependencyGraph::addDependencyEdge(
+    const SourceRef &source, const SourceRef &target, bool elementwise
+) {
+  auto [it, inserted] = dependencyEdges[source].try_emplace(target, elementwise);
+  if (!inserted) {
+    it->second &= elementwise;
+  }
 }
 
 void ConstraintDependencyGraph::walkConstrainOp(
@@ -620,6 +683,14 @@ void ConstraintDependencyGraph::walkConstrainOp(
 
   // Compute a transitive closure over the signals.
   if (!signalUsages.empty()) {
+    const bool elementwise = haveCorrespondingArrayIndices(emitOp, solver);
+    for (const SourceRef &lhs : signalUsages) {
+      for (const SourceRef &rhs : signalUsages) {
+        if (lhs != rhs) {
+          addDependencyEdge(lhs, rhs, elementwise);
+        }
+      }
+    }
     auto leader = signalSets.getOrInsertLeaderValue(signalUsages.front());
     for (const SourceRef &signal : llvm::drop_begin(signalUsages)) {
       signalSets.unionSets(leader, signal);
@@ -712,6 +783,54 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
     }
   }
 
+  // Contract untranslated vertices, retaining paths between caller-visible endpoints.
+  auto translateEdges = [&translate, &res](const auto &edges) {
+    for (const auto &[source, targets] : edges) {
+      auto translatedSources = translate(source);
+      if (failed(translatedSources)) {
+        continue;
+      }
+      SourceRefSet visitedInternal;
+      SmallVector<std::pair<SourceRef, bool>> pending;
+      for (const auto &[target, elementwise] : targets) {
+        pending.emplace_back(target, elementwise);
+      }
+      while (!pending.empty()) {
+        auto [target, elementwise] = pending.pop_back_val();
+        auto translatedTargets = translate(target);
+        if (failed(translatedTargets)) {
+          if (!visitedInternal.insert(target).second) {
+            continue;
+          }
+          if (auto it = edges.find(target); it != edges.end()) {
+            for (const auto &[next, _] : it->second) {
+              // A contracted path carries connectivity, without assuming index correlation.
+              pending.emplace_back(next, false);
+            }
+          }
+          continue;
+        }
+        for (const SourceRef &translatedSource : *translatedSources) {
+          for (const SourceRef &translatedTarget : *translatedTargets) {
+            if (!translatedSource.isConstant() && !translatedTarget.isConstant() &&
+                translatedSource != translatedTarget) {
+              // Prefix translation may add or remove array dimensions. Preserve the proof
+              // only when both endpoints retain their original array selections.
+              res.addDependencyEdge(
+                  translatedSource, translatedTarget,
+                  elementwise &&
+                      getReferenceArrayIndices(source) ==
+                          getReferenceArrayIndices(translatedSource) &&
+                      getReferenceArrayIndices(target) == getReferenceArrayIndices(translatedTarget)
+              );
+            }
+          }
+        }
+      }
+    }
+  };
+  translateEdges(dependencyEdges);
+
   // Translate ref2Val as well
   for (const auto &[ref, vals] : ref2Val) {
     auto translationRes = translate(ref);
@@ -727,28 +846,58 @@ ConstraintDependencyGraph::translate(SourceRefRemappings translation) const {
 
 SourceRefSet ConstraintDependencyGraph::getConstrainingValues(const SourceRef &ref) const {
   SourceRefSet res;
-  auto currRef = mlir::FailureOr<SourceRef>(ref);
-  while (mlir::succeeded(currRef)) {
-    // A dynamic access is represented by a half-open range. Match every concrete element and
-    // range that overlaps the queried path, as well as exact references.
-    for (const auto *candidate : signalSets) {
-      const SourceRef &candidateRef = candidate->getData();
-      if (!candidateRef.overlaps(*currRef)) {
-        continue;
-      }
-      for (const SourceRef &member : signalSets.members(candidateRef)) {
-        if (!member.overlaps(ref)) {
-          res.insert(member);
+  SourceRefSet visited;
+  SmallVector<SourceRef> worklist = {ref};
+
+  // Overlapping aggregate ranges can bridge otherwise distinct equivalence sets. Follow those
+  // bridges transitively so that, for example, `out[2] == child.out[2]` and a child constraint on
+  // `child.out[0:N]` connect `out[2]` to the child's inputs.
+  while (!worklist.empty()) {
+    const SourceRef selection = worklist.pop_back_val();
+    if (!visited.insert(selection).second) {
+      continue;
+    }
+    const bool includeDescendants = llvm::isa<ArrayType, StructType, PodType>(selection.getType());
+    auto currRef = FailureOr<SourceRef>(selection);
+    while (succeeded(currRef)) {
+      // Visiting a parent for its constraints does not select its other descendants.
+      // Keep parents out of visited so a later edge can still select the whole aggregate.
+      const bool expandDescendants = includeDescendants && *currRef == selection;
+
+      for (const auto &[source, targets] : dependencyEdges) {
+        if ((!source.overlaps(*currRef) &&
+             !(expandDescendants && hasOverlappingPrefix(source, *currRef)))) {
+          continue;
+        }
+        if (auto constIt = constantSets.find(source); constIt != constantSets.end()) {
+          res.insert(constIt->second.begin(), constIt->second.end());
+        }
+        for (const auto &[target, elementwise] : targets) {
+          SourceRef narrowed = elementwise ? target.narrowRanges(*currRef) : target;
+          if (!visited.contains(narrowed)) {
+            worklist.push_back(narrowed);
+          }
+          if (!narrowed.overlaps(ref)) {
+            res.insert(narrowed);
+          }
+          auto constIt = constantSets.find(target);
+          if (constIt != constantSets.end()) {
+            res.insert(constIt->second.begin(), constIt->second.end());
+          }
         }
       }
-      auto constIt = constantSets.find(candidateRef);
-      if (constIt != constantSets.end()) {
-        res.insert(constIt->second.begin(), constIt->second.end());
+
+      for (const auto &[constantSource, constants] : constantSets) {
+        if ((constantSource.overlaps(*currRef) ||
+             (expandDescendants && hasOverlappingPrefix(constantSource, *currRef)))) {
+          res.insert(constants.begin(), constants.end());
+        }
       }
+      // Constraints on a parent also constrain aggregate-valued and scalar descendants.
+      currRef = currRef->getParentPrefix();
     }
-    // Go to parent
-    currRef = currRef->getParentPrefix();
   }
+
   return res;
 }
 
