@@ -32,7 +32,6 @@
 #include <llvm/ADT/TypeSwitch.h>
 
 #include <compare>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -493,8 +492,8 @@ mlir::raw_ostream &operator<<(mlir::raw_ostream &os, const SourceRef &rhs);
 
 /* SourceRefSet */
 
-class SourceRefSet : public std::unordered_set<SourceRef, SourceRef::Hash> {
-  using Base = std::unordered_set<SourceRef, SourceRef::Hash>;
+class SourceRefSet : public llvm::DenseSet<SourceRef> {
+  using Base = llvm::DenseSet<SourceRef>;
 
 public:
   using Base::Base;
