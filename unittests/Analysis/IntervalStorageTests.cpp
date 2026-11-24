@@ -582,4 +582,56 @@ module attributes {llzk.lang} {
   }
 }
 
+// Equal extractions retain equal contents only until a write changes either observed copy.
+TEST_F(IntervalStorageTests, EquivalentSubarrayReadsShareConstraints) {
+  for (unsigned selection : {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U}) {
+    // Equal extractions, one row SSA value, independent row/column indices, or writes
+    // between extractions, before both scalar reads (to either copy), or between scalar reads.
+    SCOPED_TRACE(selection);
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%matrix: !array.type<2,2 x !felt.type>, %i: index, %j: index, %k: index, %input: !felt.type) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %row1 = array.extract %matrix[%i] : !array.type<2,2 x !felt.type>
+    // BETWEEN_COPIES
+    %row2 = array.extract %matrix[ROW_INDEX] : !array.type<2,2 x !felt.type>
+    // BEFORE_READS
+    %left = array.read %row1[%j] : !array.type<2 x !felt.type>, !felt.type
+    // BETWEEN_READS
+    %right = array.read ROW_VALUE[COLUMN_INDEX] : !array.type<2 x !felt.type>, !felt.type
+    // CONSTRAINTS
+    function.return %left, %right : !felt.type, !felt.type
+  }
+}
+)mlir";
+    source.replace(
+        source.find("ROW_INDEX"), StringRef("ROW_INDEX").size(), selection == 2 ? "%k" : "%i"
+    );
+    source.replace(
+        source.find("ROW_VALUE"), StringRef("ROW_VALUE").size(), selection == 1 ? "%row1" : "%row2"
+    );
+    source.replace(
+        source.find("COLUMN_INDEX"), StringRef("COLUMN_INDEX").size(), selection == 3 ? "%k" : "%j"
+    );
+    if (selection == 4) {
+      source.replace(
+          source.find("// BETWEEN_COPIES"), StringRef("// BETWEEN_COPIES").size(),
+          "array.write %matrix[%i, %j] = %input : !array.type<2,2 x !felt.type>, !felt.type"
+      );
+    } else if (selection >= 5) {
+      StringRef location = selection == 7 ? "// BETWEEN_READS" : "// BEFORE_READS";
+      source.replace(
+          source.find(location.str()), location.size(),
+          selection == 5
+              ? "array.write %row1[%j] = %input : !array.type<2 x !felt.type>, !felt.type"
+              : "array.write %row2[%j] = %input : !array.type<2 x !felt.type>, !felt.type"
+      );
+    }
+    for (bool constants : {false, true}) {
+      checkReadConstraints(source, constants, selection < 2);
+    }
+  }
+}
+
 } // namespace

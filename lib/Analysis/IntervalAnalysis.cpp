@@ -74,31 +74,12 @@ bool hasRangedSelection(const SourceRef &ref) {
   });
 }
 
-/// Prove same-block reads equivalent using their SSA indices, without crossing possible writes.
-bool haveSameReadValue(Value lhs, Value rhs) {
-  if (lhs == rhs) {
-    return true;
-  }
-  Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
-  if (!llvm::isa_and_present<ReadArrayOp, MemberReadOp>(left) ||
-      !llvm::isa_and_present<ReadArrayOp, MemberReadOp>(right) ||
-      left->getBlock() != right->getBlock()) {
+/// Exclude storage mutations between two ordered operations in the same block.
+bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
+  if (first->getBlock() != second->getBlock() || !first->isBeforeInBlock(second)) {
     return false;
   }
-  auto sameOperand = [](Value a, Value b) {
-    return success(
-        a == b || (llvm::isa<ArrayType, StructType>(a.getType()) && haveSameReadValue(a, b))
-    );
-  };
-  if (!OperationEquivalence::isEquivalentTo(
-          left, right, sameOperand, nullptr, OperationEquivalence::IgnoreLocations
-      )) {
-    return false;
-  }
-  if (right->isBeforeInBlock(left)) {
-    std::swap(left, right);
-  }
-  for (Operation *between = left->getNextNode(); between != right;
+  for (Operation *between = first->getNextNode(); between != second;
        between = between->getNextNode()) {
     auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(between);
     if (arrayAccess && arrayAccess.isRead()) {
@@ -113,6 +94,40 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     }
   }
   return true;
+}
+
+/// Prove same-block reads equivalent using their SSA indices, without crossing possible writes.
+bool haveSameReadValue(Value lhs, Value rhs) {
+  if (lhs == rhs) {
+    return true;
+  }
+  Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
+  if (!llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(left) ||
+      !llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(right) ||
+      left->getBlock() != right->getBlock()) {
+    return false;
+  }
+  auto sameOperand = [left, right](Value a, Value b) {
+    if (a == b) {
+      return success();
+    }
+    if (!llvm::isa<ArrayType, StructType>(a.getType()) || !haveSameReadValue(a, b)) {
+      return failure();
+    }
+    // Equal array copies can diverge before either scalar read. Protect each copy from
+    // its creation through its use, in addition to the interval between the scalar reads.
+    return success(
+        !llvm::isa<ArrayType>(a.getType()) ||
+        (hasReadPreservingSameBlockPath(a.getDefiningOp(), left) &&
+         hasReadPreservingSameBlockPath(b.getDefiningOp(), right))
+    );
+  };
+  if (!OperationEquivalence::isEquivalentTo(
+          left, right, sameOperand, nullptr, OperationEquivalence::IgnoreLocations
+      )) {
+    return false;
+  }
+  return hasReadPreservingSameBlockPath(left, right) || hasReadPreservingSameBlockPath(right, left);
 }
 
 template <typename Fn>
@@ -1863,6 +1878,10 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
+    // Equivalent aggregate copies have different SSA roots but the same resolved selection.
+    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
+      propagateRangedRead(sourceRefVal.getSingleValue());
+    }
     if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
