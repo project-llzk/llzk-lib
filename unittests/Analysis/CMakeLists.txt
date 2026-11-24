@@ -7,4 +7,10 @@ target_link_libraries(
   ${GTEST_EXE_TARGET} ${LLZK_DEP_DIALECT_LIBS} MLIRParser
   LLZK::LLZKAnalysis)
 
-llzk_gtest_suite(LLZK_Analysis_Tests)
+llzk_gtest_suite(LLZK_Analysis_Tests
+                TEST_FILTER "-IntervalStorageTests.Large*AggregateCopies")
+# Bound regressions that scan all stored writes for each copied leaf.
+gtest_discover_tests(LLZK_Analysis_Tests
+                    TEST_FILTER "IntervalStorageTests.Large*AggregateCopies"
+                    DISCOVERY_TIMEOUT 30
+                    PROPERTIES TIMEOUT 60)

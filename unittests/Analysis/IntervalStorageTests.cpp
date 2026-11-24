@@ -23,8 +23,11 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
+#include <llvm/Support/raw_ostream.h>
+
 #include <functional>
 #include <gtest/gtest.h>
+#include <string>
 #include <tuple>
 #include <utility>
 
@@ -1356,6 +1359,117 @@ module attributes {llzk.lang} {
       }
     });
   }
+}
+
+// Large copies must avoid scanning all stored writes separately for each concrete leaf.
+TEST_F(IntervalStorageTests, LargeConcreteAggregateCopies) {
+  constexpr unsigned count = 65536;
+  std::string source;
+  llvm::raw_string_ostream os(source);
+  os << "!A = !array.type<" << count << R"mlir( x !felt.type>
+!W = !pod.type<[@array: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !A) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+)mlir";
+  for (unsigned i = 0; i < count; ++i) {
+    os << "    %c" << i << " = arith.constant " << i << " : index\n"
+       << "    array.write %array[%c" << i << "] = " << (i % 2 == 0 ? "%seven" : "%nine")
+       << " : !A, !felt.type\n";
+  }
+  os << R"mlir(
+    %copy = pod.new { @array = %array } : !W
+    %copied = pod.read %copy[@array] : !W, !A
+    %first = array.read %copied[%c0] : !A, !felt.type
+    %last = array.read %copied[%c)mlir"
+     << count - 1 << R"mlir(] : !A, !felt.type
+    function.return %first, %last : !felt.type, !felt.type
+  }
+}
+)mlir";
+  auto mod = parseModule(source);
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto copy = *fn.getOps<pod::NewPodOp>().begin();
+  SourceRefIndex array(StringAttr::get(&ctx, "array"));
+  // Match the other overlap regressions: initialize writes before copying their values.
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
+    for (Operation &op : fn.getBody().front()) {
+      ASSERT_TRUE(succeeded(visit(&op)));
+    }
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+    for (unsigned i = 0; i < count; ++i) {
+      SCOPED_TRACE(i);
+      ASSERT_NO_FATAL_FAILURE(expectStored(
+          analysis, SourceRef(copy->getResult(0), {array, SourceRefIndex(i)}),
+          Interval::Degenerate(field, field.felt(i % 2 == 0 ? 7 : 9))
+      ));
+    }
+    auto returned = fn.getBody().front().getTerminator()->getOperands();
+    expectValue(solver, returned[0], UnreducedInterval(7, 7));
+    expectValue(solver, returned[1], UnreducedInterval(9, 9));
+  });
+}
+
+// Ranged copies should inspect only overlapping writes for each named POD field.
+TEST_F(IntervalStorageTests, LargeRangedAggregateCopies) {
+  constexpr unsigned count = 1024;
+  std::string source;
+  llvm::raw_string_ostream os(source);
+  os << "!P = !pod.type<[";
+  for (unsigned i = 0; i < count; ++i) {
+    os << (i == 0 ? "" : ", ") << "@field" << i << ": !felt.type";
+  }
+  os << R"mlir(]>
+!A = !array.type<2 x !P>
+!W = !pod.type<[@pod: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !A, %index: index) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %left = array.read %array[%zero] : !A, !P
+    %right = array.read %array[%one] : !A, !P
+)mlir";
+  for (unsigned i = 0; i < count; ++i) {
+    os << "    pod.write %left[@field" << i << "] = %seven : !P, !felt.type\n"
+       << "    pod.write %right[@field" << i << "] = %nine : !P, !felt.type\n";
+  }
+  os << R"mlir(
+    %selected = array.read %array[%index] : !A, !P
+    %copy = pod.new { @pod = %selected } : !W
+    %copied = pod.read %copy[@pod] : !W, !P
+    %first = pod.read %copied[@field0] : !P, !felt.type
+    %last = pod.read %copied[@field)mlir"
+     << count - 1 << R"mlir(] : !P, !felt.type
+    function.return %first, %last : !felt.type, !felt.type
+  }
+}
+)mlir";
+  auto mod = parseModule(source);
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto copy = *fn.getOps<pod::NewPodOp>().begin();
+  SourceRefIndex pod(StringAttr::get(&ctx, "pod"));
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
+    for (Operation &op : fn.getBody().front()) {
+      ASSERT_TRUE(succeeded(visit(&op)));
+    }
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+    for (unsigned i = 0; i < count; ++i) {
+      SCOPED_TRACE(i);
+      SourceRefIndex member(StringAttr::get(&ctx, "field" + std::to_string(i)));
+      ASSERT_NO_FATAL_FAILURE(expectStored(
+          analysis, SourceRef(copy->getResult(0), {pod, member}),
+          UnreducedInterval(7, 9).reduce(field)
+      ));
+    }
+    for (Value returned : fn.getBody().front().getTerminator()->getOperands()) {
+      expectValue(solver, returned, UnreducedInterval(7, 9));
+    }
+  });
 }
 
 // Copying two independent dynamic selections must preserve their separate value identities.
