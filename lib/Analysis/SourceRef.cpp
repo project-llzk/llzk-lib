@@ -34,6 +34,16 @@ using namespace string;
 
 namespace {
 
+/// Compare storage paths using overlapping selections at each prefix component.
+bool hasOverlappingPathPrefix(
+    llvm::ArrayRef<SourceRefIndex> path, llvm::ArrayRef<SourceRefIndex> prefix
+) {
+  return path.size() >= prefix.size() &&
+         llvm::all_of(llvm::zip(path.take_front(prefix.size()), prefix), [](const auto &indices) {
+    return std::get<0>(indices).overlaps(std::get<1>(indices));
+  });
+}
+
 /// Compare opaque pointers using the standard library's strict total pointer order.
 static inline std::strong_ordering comparePointers(const void *lhs, const void *rhs) {
   return std::compare_three_way {}(lhs, rhs);
@@ -402,6 +412,11 @@ bool SourceRef::isValidPrefix(const SourceRef &prefix) const {
   return true;
 }
 
+bool SourceRef::hasOverlappingPrefix(const SourceRef &prefix) const {
+  return isRooted() && prefix.isRooted() && value == prefix.value &&
+         hasOverlappingPathPrefix(path, prefix.path);
+}
+
 bool SourceRef::overlaps(const SourceRef &rhs) const {
   auto getSelfStruct = [](const SourceRef &ref) -> StructDefOp {
     if (auto createOp = dyn_cast_if_present<CreateStructOp>(ref.value.getDefiningOp())) {
@@ -429,9 +444,7 @@ bool SourceRef::overlaps(const SourceRef &rhs) const {
   if (isConstant() || rhs.isConstant() || !sameRoot || path.size() != rhs.path.size()) {
     return false;
   }
-  return llvm::all_of(llvm::zip(path, rhs.path), [](const auto &indices) {
-    return std::get<0>(indices).overlaps(std::get<1>(indices));
-  });
+  return hasOverlappingPathPrefix(path, rhs.path);
 }
 
 SourceRef SourceRef::narrowRanges(const SourceRef &rhs) const {

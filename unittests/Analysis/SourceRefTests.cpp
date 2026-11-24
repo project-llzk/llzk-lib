@@ -287,6 +287,45 @@ TEST_F(SourceRefTests, LatticeWritesPointsSubarraysAndRanges) {
   );
 }
 
+// Prefix overlap permits descendants without merging distinct roots or constant references.
+TEST_F(SourceRefTests, OverlappingPrefixesPreserveStorageIdentity) {
+  auto mod = parseSourceString<ModuleOp>(
+      R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<3 x !P>, %other: !array.type<3 x !P>) {
+    %zero = arith.constant 0 : index
+    function.return
+  }
+}
+)mlir",
+      ParserConfig(&ctx)
+  );
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<llzk::function::FuncDefOp>().begin();
+  auto value = SourceRefIndex(StringAttr::get(&ctx, "value"));
+  auto range = SourceRefIndex::forArrayDimension(2);
+  SourceRef root(fn.getArgument(0));
+  SourceRef ranged(fn.getArgument(0), {range});
+  SourceRef concrete(fn.getArgument(0), {SourceRefIndex(1)});
+  SourceRef rangedField(fn.getArgument(0), {range, value});
+  SourceRef concreteField(fn.getArgument(0), {SourceRefIndex(1), value});
+  SourceRef disjoint(fn.getArgument(0), {SourceRefIndex(2)});
+  SourceRef constant(*fn.getOps<arith::ConstantIndexOp>().begin());
+
+  EXPECT_TRUE(rangedField.hasOverlappingPrefix(root));
+  EXPECT_TRUE(rangedField.hasOverlappingPrefix(concrete));
+  EXPECT_TRUE(concreteField.hasOverlappingPrefix(ranged));
+  EXPECT_TRUE(concreteField.overlaps(rangedField));
+  EXPECT_FALSE(concrete.hasOverlappingPrefix(rangedField));
+  EXPECT_FALSE(rangedField.overlaps(concrete));
+  EXPECT_FALSE(rangedField.hasOverlappingPrefix(disjoint));
+  EXPECT_FALSE(rangedField.hasOverlappingPrefix(SourceRef(fn.getArgument(1))));
+  EXPECT_FALSE(constant.hasOverlappingPrefix(constant));
+  EXPECT_FALSE(constant.hasOverlappingPrefix(root));
+  EXPECT_FALSE(root.hasOverlappingPrefix(constant));
+}
+
 TEST_F(SourceRefTests, OnlyReturnedComputeStructOverlapsConstrainSelf) {
   auto mod = parseSourceString<ModuleOp>(kModule, ParserConfig(&ctx));
   ASSERT_TRUE(mod);
@@ -308,6 +347,8 @@ TEST_F(SourceRefTests, OnlyReturnedComputeStructOverlapsConstrainSelf) {
 
   EXPECT_TRUE(computeMember.overlaps(constrainMember));
   EXPECT_TRUE(constrainMember.overlaps(computeMember));
+  EXPECT_FALSE(computeMember.hasOverlappingPrefix(constrainMember));
+  EXPECT_FALSE(constrainMember.hasOverlappingPrefix(computeMember));
   EXPECT_FALSE(temporaryMember.overlaps(computeMember));
   EXPECT_FALSE(computeMember.overlaps(temporaryMember));
   EXPECT_FALSE(temporaryMember.overlaps(constrainMember));

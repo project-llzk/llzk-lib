@@ -67,18 +67,6 @@ std::optional<UnreducedInterval> mergeUnreducedIntervals(
   return lhs->doUnion(*rhs);
 }
 
-/// Match a storage prefix using overlapping array selections in either direction.
-bool hasOverlappingPrefix(const SourceRef &ref, const SourceRef &prefix) {
-  if (!ref.isRooted() || !prefix.isRooted() || *ref.getRoot() != *prefix.getRoot() ||
-      ref.getPath().size() < prefix.getPath().size()) {
-    return false;
-  }
-  return llvm::all_of(
-      llvm::zip(ref.getPath().take_front(prefix.getPath().size()), prefix.getPath()),
-      [](const auto &indices) { return std::get<0>(indices).overlaps(std::get<1>(indices)); }
-  );
-}
-
 /// Ranges describe possible locations rather than one concrete storage identity.
 bool hasRangedSelection(const SourceRef &ref) {
   return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
@@ -978,7 +966,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
     auto concreteWrites = llvm::count_if(writeResults, [&](const auto &entry) {
       const SourceRef &written = entry.first;
       return written.getPath().size() == ref.getPath().size() &&
-             hasOverlappingPrefix(written, ref) &&
+             written.hasOverlappingPrefix(ref) &&
              llvm::none_of(written.getPath(), [](const SourceRefIndex &index) {
         return index.isIndexRange();
       });
@@ -1012,7 +1000,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
   for (const auto &[writtenRef, writtenVal] : writeResults) {
     if ((writtenRef == ref && !rangedSelection) ||
         writtenRef.getPath().size() != ref.getPath().size() ||
-        !hasOverlappingPrefix(writtenRef, ref)) {
+        !writtenRef.hasOverlappingPrefix(ref)) {
       continue;
     }
     // Concrete entries retain their own no-write alternatives. Ranged entries contribute
@@ -1032,7 +1020,7 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
 ) {
   SourceRefSet selections;
   for (const auto &[writtenRef, writtenVal] : writeResults) {
-    if (!hasOverlappingPrefix(writtenRef, source)) {
+    if (!writtenRef.hasOverlappingPrefix(source)) {
       continue;
     }
     SourceRef selected = source;
@@ -1101,7 +1089,7 @@ void IntervalDataFlowAnalysis::recordRefWrite(
   // Recompute from every possible source instead of intersecting with stale read bounds.
   for (const auto &[source, readers] : storageReaders) {
     if (writtenRef.getPath().size() == source.getPath().size() &&
-        hasOverlappingPrefix(writtenRef, source)) {
+        writtenRef.hasOverlappingPrefix(source)) {
       for (Operation *reader : readers) {
         _dataflowSolver.enqueue({getProgramPointAfter(reader), this});
       }
