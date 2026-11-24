@@ -195,8 +195,9 @@ public:
 
   ConstraintDependencyGraph(const ConstraintDependencyGraph &other)
       : mod(other.mod), structDef(other.structDef), ctx(other.ctx), signalSets(other.signalSets),
-        dependencyEdges(other.dependencyEdges), constantSets(other.constantSets),
-        ref2Val(other.ref2Val), tables() {}
+        dependencyEdges(other.dependencyEdges),
+        conditionalDependencyEdges(other.conditionalDependencyEdges),
+        constantSets(other.constantSets), ref2Val(other.ref2Val), tables() {}
 
   ConstraintDependencyGraph &operator=(const ConstraintDependencyGraph &other) {
     mod = other.mod;
@@ -204,6 +205,7 @@ public:
     ctx = other.ctx;
     signalSets = other.signalSets;
     dependencyEdges = other.dependencyEdges;
+    conditionalDependencyEdges = other.conditionalDependencyEdges;
     constantSets = other.constantSets;
     ref2Val = other.ref2Val;
     return *this;
@@ -226,6 +228,9 @@ private:
   // and target array indices correspond, permitting per-element range narrowing.
   using DependencyTargets = std::unordered_map<SourceRef, bool, SourceRef::Hash>;
   std::unordered_map<SourceRef, DependencyTargets, SourceRef::Hash> dependencyEdges;
+  // Dependencies recovered from empty conditional markers are weaker than emitted constraints.
+  // Queries use them only when the selected output is itself constrained to both boolean values.
+  std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> conditionalDependencyEdges;
   // A simple set mapping of constants, as we do not want to compute a transitive closure over
   // constants.
   std::unordered_map<SourceRef, SourceRefSet, SourceRef::Hash> constantSets;
