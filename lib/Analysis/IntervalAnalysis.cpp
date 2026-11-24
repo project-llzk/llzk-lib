@@ -351,7 +351,7 @@ translateRef(const SourceRef &ref, const SourceRefRemappings &translations) {
       auto suffix = ref.getSuffix(prefix);
       ensure(succeeded(suffix), "prefix checked before SourceRef suffix extraction");
 
-      std::vector<SourceRefIndex> arraySuffix, remainingSuffix;
+      SourceRef::Path arraySuffix, remainingSuffix;
       bool suffixIsPastArray = false;
       for (const SourceRefIndex &idx : *suffix) {
         if (!suffixIsPastArray && arraySuffix.size() < vals.getNumArrayDims() &&
