@@ -1,4 +1,4 @@
 fixed:
   - Interval Analysis:
     - Prevent false contradictions between independently indexed array elements and component members.
-    - Detect contradictory interval and relational constraints on repeated dynamic reads with the same SSA indices in the same block when no possible write intervenes.
+    - Detect contradictory interval and relational constraints on equivalent reads within a block, including repeated subarray extractions and singleton dimensions, while respecting intervening storage writes.

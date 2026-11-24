@@ -96,7 +96,7 @@ bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
   return true;
 }
 
-/// Prove same-block reads equivalent using their SSA indices, without crossing possible writes.
+/// Prove same-block reads equivalent using matching or singleton indices and write-free paths.
 bool haveSameReadValue(Value lhs, Value rhs) {
   if (lhs == rhs) {
     return true;
@@ -107,8 +107,26 @@ bool haveSameReadValue(Value lhs, Value rhs) {
       left->getBlock() != right->getBlock()) {
     return false;
   }
-  auto sameOperand = [left, right](Value a, Value b) {
-    if (a == b) {
+  bool equivalentArrayIndices = false;
+  if (auto leftAccess = llvm::dyn_cast<ArrayAccessOpInterface>(left)) {
+    auto rightAccess = llvm::dyn_cast<ArrayAccessOpInterface>(right);
+    if (!rightAccess || leftAccess.getArrRef().getType() != rightAccess.getArrRef().getType() ||
+        leftAccess.getIndices().size() != rightAccess.getIndices().size()) {
+      return false;
+    }
+    // A successful access to a singleton dimension can only select index zero. Check
+    // every dimension before allowing the index operands to differ in operation equivalence.
+    auto shape = leftAccess.getArrRef().getType().getShape();
+    for (auto [dim, indices] :
+         llvm::enumerate(llvm::zip(leftAccess.getIndices(), rightAccess.getIndices()))) {
+      if (std::get<0>(indices) != std::get<1>(indices) && shape[dim] != 1) {
+        return false;
+      }
+    }
+    equivalentArrayIndices = true;
+  }
+  auto sameOperand = [left, right, equivalentArrayIndices](Value a, Value b) {
+    if (a == b || (equivalentArrayIndices && a.getType().isIndex() && b.getType().isIndex())) {
       return success();
     }
     if (!llvm::isa<ArrayType, StructType>(a.getType()) || !haveSameReadValue(a, b)) {

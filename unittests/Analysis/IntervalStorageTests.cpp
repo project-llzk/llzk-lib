@@ -20,6 +20,8 @@
 #include <mlir/Parser/Parser.h>
 
 #include <gtest/gtest.h>
+#include <tuple>
+#include <utility>
 
 using namespace mlir;
 using namespace llzk;
@@ -630,6 +632,80 @@ module attributes {llzk.lang} {
     }
     for (bool constants : {false, true}) {
       checkReadConstraints(source, constants, selection < 2);
+    }
+  }
+}
+
+// Independent valid indices select the same element only along singleton dimensions.
+TEST_F(IntervalStorageTests, SingletonDimensionsPreserveReadAliases) {
+  const std::tuple<StringRef, StringRef, StringRef, bool> cases[] = {
+      {"1", "%i", "%j", true},           {"2", "%i", "%j", false},
+      {"1,2", "%i, %j", "%k, %j", true}, {"1,2", "%i, %j", "%k, %l", false},
+      {"2,1", "%i, %j", "%i, %k", true}, {"2,1", "%i, %j", "%k, %l", false},
+      {"1,1", "%i, %j", "%k, %l", true}
+  };
+  for (auto [shape, leftIndices, rightIndices, sameElement] : cases) {
+    SCOPED_TRACE(shape.str() + ": " + leftIndices.str() + " vs " + rightIndices.str());
+    for (bool write : {false, true}) {
+      SCOPED_TRACE(write ? "intervening write" : "no write");
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<SHAPE x !felt.type>, %i: index, %j: index, %k: index, %l: index, %input: !felt.type) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = array.read %array[LEFT_INDICES] : !array.type<SHAPE x !felt.type>, !felt.type
+    // WRITE
+    %right = array.read %array[RIGHT_INDICES] : !array.type<SHAPE x !felt.type>, !felt.type
+    // CONSTRAINTS
+    function.return %left, %right : !felt.type, !felt.type
+  }
+}
+)mlir";
+      if (write) {
+        source.replace(
+            source.find("// WRITE"), StringRef("// WRITE").size(),
+            "array.write %array[LEFT_INDICES] = %input : !array.type<SHAPE x !felt.type>, "
+            "!felt.type"
+        );
+      }
+      for (auto [token, replacement] :
+           {std::pair<StringRef, StringRef> {"SHAPE", shape},
+            {"LEFT_INDICES", leftIndices},
+            {"RIGHT_INDICES", rightIndices}}) {
+        while (source.find(token.str()) != std::string::npos) {
+          source.replace(source.find(token.str()), token.size(), replacement.str());
+        }
+      }
+      for (bool constants : {false, true}) {
+        checkReadConstraints(source, constants, sameElement && !write);
+      }
+    }
+  }
+}
+
+// The singleton-index proof also applies to the prefix selected by an extraction.
+TEST_F(IntervalStorageTests, SingletonSubarrayIndicesShareConstraints) {
+  for (bool singleton : {false, true}) {
+    SCOPED_TRACE(singleton ? "one row" : "independent rows");
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%matrix: !array.type<ROWS,2 x !felt.type>, %i: index, %j: index, %k: index) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %row1 = array.extract %matrix[%i] : !array.type<ROWS,2 x !felt.type>
+    %row2 = array.extract %matrix[%k] : !array.type<ROWS,2 x !felt.type>
+    %left = array.read %row1[%j] : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %row2[%j] : !array.type<2 x !felt.type>, !felt.type
+    // CONSTRAINTS
+    function.return %left, %right : !felt.type, !felt.type
+  }
+}
+)mlir";
+    while (source.find("ROWS") != std::string::npos) {
+      source.replace(source.find("ROWS"), StringRef("ROWS").size(), singleton ? "1" : "2");
+    }
+    for (bool constants : {false, true}) {
+      checkReadConstraints(source, constants, singleton);
     }
   }
 }
