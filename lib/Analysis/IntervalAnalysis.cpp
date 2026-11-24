@@ -1007,10 +1007,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
     }
     auto concreteWrites = llvm::count_if(candidates, [&](const SourceRef &written) {
       return written.getPath().size() == ref.getPath().size() &&
-             written.hasOverlappingPrefix(ref) &&
-             llvm::none_of(written.getPath(), [](const SourceRefIndex &index) {
-        return index.isIndexRange();
-      });
+             written.hasOverlappingPrefix(ref) && !hasRangedSelection(written);
     });
     if (concreteWrites == 0 || required != llvm::DynamicAPInt(concreteWrites)) {
       // Exact singleton ranges can be guaranteed writes, so retain read-order checks.
@@ -1039,8 +1036,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
     );
   };
   for (const SourceRef &writtenRef : candidates) {
-    if ((writtenRef == ref && !rangedSelection) ||
-        writtenRef.getPath().size() != ref.getPath().size() ||
+    if (writtenRef.getPath().size() != ref.getPath().size() ||
         !writtenRef.hasOverlappingPrefix(ref)) {
       continue;
     }

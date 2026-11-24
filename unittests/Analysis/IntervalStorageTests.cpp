@@ -140,8 +140,7 @@ protected:
   /// Initialize references, seed interval visits, then drain their real queued dependencies.
   void runOrdered(
       ModuleOp mod,
-      const std::function<void(IntervalDataFlowAnalysis &, const Visit &, DataFlowSolver &)>
-          &initialize,
+      const std::function<void(IntervalDataFlowAnalysis &, const Visit &)> &initialize,
       const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check
   ) {
     auto smt = llvm::CreateZ3Solver();
@@ -164,11 +163,23 @@ protected:
       return analysis->visitOperation(op, operands, results);
     };
     auto *driver =
-        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit, solver); });
+        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit); });
     ASSERT_TRUE(succeeded(solver.initializeAndRun(mod, [&](DataFlowAnalysis &candidate) {
       return &candidate == driver;
     })));
     check(*analysis, solver);
+  }
+
+  /// Visit a function in source order before checking its stored intervals.
+  void runOrdered(
+      ModuleOp mod, function::FuncDefOp fn,
+      const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check
+  ) {
+    runOrdered(mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }, check);
   }
 
   /// Complete references, then initialize interval analysis normally through the solver.
@@ -884,7 +895,7 @@ module attributes {llzk.lang} {
     auto conditional = *fn.getOps<scf::IfOp>().begin();
     auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
     auto copiedRead = llvm::to_vector(fn.getOps<array::ReadArrayOp>()).back();
-    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
       for (Operation &op : fn.getBody().front()) {
         if (&op == writes.front().getOperation()) {
           break;
@@ -1346,11 +1357,7 @@ module attributes {llzk.lang} {
             {SourceRefIndex(member)}
         )
     };
-    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
-      for (Operation &op : fn.getBody().front()) {
-        ASSERT_TRUE(succeeded(visit(&op)));
-      }
-    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+    runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
       for (const SourceRef &copy : copies) {
         expectStored(analysis, *copy.createChild(value), UnreducedInterval(7, 9).reduce(field));
         expectStored(
@@ -1393,12 +1400,7 @@ module attributes {llzk.lang} {
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
   auto copy = *fn.getOps<pod::NewPodOp>().begin();
   SourceRefIndex array(StringAttr::get(&ctx, "array"));
-  // Match the other overlap regressions: initialize writes before copying their values.
-  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
-    for (Operation &op : fn.getBody().front()) {
-      ASSERT_TRUE(succeeded(visit(&op)));
-    }
-  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
     for (unsigned i = 0; i < count; ++i) {
       SCOPED_TRACE(i);
       ASSERT_NO_FATAL_FAILURE(expectStored(
@@ -1453,11 +1455,7 @@ module attributes {llzk.lang} {
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
   auto copy = *fn.getOps<pod::NewPodOp>().begin();
   SourceRefIndex pod(StringAttr::get(&ctx, "pod"));
-  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
-    for (Operation &op : fn.getBody().front()) {
-      ASSERT_TRUE(succeeded(visit(&op)));
-    }
-  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
     for (unsigned i = 0; i < count; ++i) {
       SCOPED_TRACE(i);
       SourceRefIndex member(StringAttr::get(&ctx, "field" + std::to_string(i)));
@@ -1494,11 +1492,7 @@ module attributes {llzk.lang} {
   SourceRef::Path path {
       SourceRefIndex(StringAttr::get(&ctx, "child")), SourceRefIndex(StringAttr::get(&ctx, "value"))
   };
-  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
-    for (Operation &op : fn.getBody().front()) {
-      ASSERT_TRUE(succeeded(visit(&op)));
-    }
-  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
     SmallVector<llvm::SMTExprRef> expressions;
     for (auto copy : copies) {
       SourceRef ref(copy->getResult(0), path);
@@ -1562,8 +1556,7 @@ module attributes {llzk.lang} {
       SourceRefIndex value(StringAttr::get(&ctx, "value"));
       SourceRefIndex other(StringAttr::get(&ctx, "other"));
       SmallVector<llvm::SMTExprRef> initial;
-      runOrdered(
-          *mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &) {
+      runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit) {
         for (Operation &op : fn.getBody().front()) {
           if (!llvm::isa<pod::NewPodOp>(op)) {
             ASSERT_TRUE(succeeded(visit(&op)));
@@ -1603,8 +1596,7 @@ module attributes {llzk.lang} {
         }
         const bool sameValue = selection < 2;
         EXPECT_EQ(*expressions[0] == *expressions[1], sameValue);
-      }
-      );
+      });
     }
   }
 }
@@ -1632,11 +1624,7 @@ module attributes {llzk.lang} {
 )mlir");
   ASSERT_TRUE(mod);
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
-  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
-    for (Operation &op : fn.getBody().front()) {
-      ASSERT_TRUE(succeeded(visit(&op)));
-    }
-  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
     for (auto copy : fn.getOps<pod::NewPodOp>()) {
       expectStored(
           analysis,
