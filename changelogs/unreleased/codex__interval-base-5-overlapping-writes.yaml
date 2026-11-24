@@ -3,3 +3,4 @@ fixed:
   - Interval Analysis: Remove no-write defaults only when concrete writes fully cover a selection.
   - Interval Analysis: Preserve independent symbols for dynamic aggregate copies.
   - Interval Analysis: Preserve symbols when copying the same ranged aggregate value without intervening mutations.
+  - Interval Analysis: Index overlapping write candidates to avoid rescanning all storage for each copied leaf.

@@ -397,6 +397,14 @@ private:
   /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
+  /// Writes with the same root and field path, ignoring concrete array indices and ranges.
+  struct WriteGroup {
+    llvm::SmallVector<SourceRef> all;
+    llvm::SmallVector<SourceRef> ranged;
+  };
+  /// Concrete lookups need only their exact entry and ranged candidates in the same group.
+  llvm::DenseMap<SourceRef, WriteGroup> writeGroups;
+
   /// Actual writes, excluding the default for executions that perform no write.
   struct WriteContribution {
     ExpressionValue value;

@@ -85,6 +85,23 @@ bool hasNonSingletonRange(const SourceRef &ref) {
   });
 }
 
+/// Group potentially overlapping leaves by root and field path, independent of array indices.
+SourceRef getWriteGroupKey(const SourceRef &ref) {
+  if (ref.isConstant()) {
+    return ref;
+  }
+  SourceRef::Path path;
+  path.reserve(ref.getPath().size());
+  for (const SourceRefIndex &index : ref.getPath()) {
+    path.push_back(index.isIndex() || index.isIndexRange() ? SourceRefIndex(0) : index);
+  }
+  Value root = *ref.getRoot();
+  if (auto argument = llvm::dyn_cast<BlockArgument>(root)) {
+    return SourceRef(argument, std::move(path));
+  }
+  return SourceRef(llvm::cast<OpResult>(root), std::move(path));
+}
+
 /// Recognize operations that cannot mutate existing array or component storage.
 bool preservesReadStorage(Operation *op) {
   auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
@@ -966,6 +983,10 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
     return writtenVal;
   };
   const bool rangedSelection = hasRangedSelection(ref);
+  llvm::ArrayRef<SourceRef> candidates;
+  if (auto it = writeGroups.find(getWriteGroupKey(ref)); it != writeGroups.end()) {
+    candidates = rangedSelection ? it->second.all : it->second.ranged;
+  }
   std::optional<ExpressionValue> result;
   // Exact ranged entries also need coverage checks before discarding their no-write default.
   if (auto it = writeResults.find(ref); it != writeResults.end() && !rangedSelection) {
@@ -984,8 +1005,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
         required *= high - low;
       }
     }
-    auto concreteWrites = llvm::count_if(writeResults, [&](const auto &entry) {
-      const SourceRef &written = entry.first;
+    auto concreteWrites = llvm::count_if(candidates, [&](const SourceRef &written) {
       return written.getPath().size() == ref.getPath().size() &&
              written.hasOverlappingPrefix(ref) &&
              llvm::none_of(written.getPath(), [](const SourceRefIndex &index) {
@@ -1018,7 +1038,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
         )
     );
   };
-  for (const auto &[writtenRef, writtenVal] : writeResults) {
+  for (const SourceRef &writtenRef : candidates) {
     if ((writtenRef == ref && !rangedSelection) ||
         writtenRef.getPath().size() != ref.getPath().size() ||
         !writtenRef.hasOverlappingPrefix(ref)) {
@@ -1028,7 +1048,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
     // only actual writes; uncovered selections already received a fallback above.
     joinWrite(
         hasRangedSelection(writtenRef) ? writeContributions.at(writtenRef).value
-                                       : getStoredValue(writtenRef, writtenVal)
+                                       : getStoredValue(writtenRef, writeResults.at(writtenRef))
     );
   }
   ensure(result.has_value(), "covered storage selection must have a value");
@@ -1141,6 +1161,13 @@ void IntervalDataFlowAnalysis::recordRefWrite(
   auto previous = writeResults.find(writtenRef);
   if (previous != writeResults.end() && previous->second == stored && !newGuaranteedWrite) {
     return;
+  }
+  if (previous == writeResults.end()) {
+    auto &group = writeGroups[getWriteGroupKey(writtenRef)];
+    group.all.push_back(writtenRef);
+    if (hasRangedSelection(writtenRef)) {
+      group.ranged.push_back(writtenRef);
+    }
   }
   writeResults[writtenRef] = std::move(stored);
   // Recompute from every possible source instead of intersecting with stale read bounds.

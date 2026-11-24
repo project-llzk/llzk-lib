@@ -1,0 +1,30 @@
+// RUN: python3 %S/Inputs/generate_large_aggregate_copy.py concrete 65536 > %t.concrete.llzk
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals" %t.concrete.llzk -o /dev/null 2>&1 | sed '/^[[:space:]]*%arg/d' | FileCheck %s --check-prefix=CONCRETE --match-full-lines --implicit-check-not=error:
+// RUN: python3 %S/Inputs/generate_large_aggregate_copy.py ranged 1024 > %t.ranged.llzk
+// RUN: llzk-opt -llzk-print-interval-analysis="field=babybear print-compute-intervals" %t.ranged.llzk -o /dev/null 2>&1 | sed '/^[[:space:]]*%arg/d' | FileCheck %s --check-prefix=RANGED --match-full-lines --implicit-check-not=error:
+
+// Copy many concrete elements, then many distinct fields selected through a dynamic index.
+// The normal lit timeout bounds regressions that scan all stored writes for every copied leaf.
+// Only the copied results are printed below; generated input-argument intervals are filtered out.
+
+// CONCRETE-LABEL: @ConcreteCopyScale StructIntervals {
+// CONCRETE-NEXT:      compute {
+// CONCRETE-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Degenerate(7)
+// CONCRETE-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Degenerate(7)
+// CONCRETE-NEXT:      }
+// CONCRETE-NEXT:      constrain {
+// CONCRETE-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CONCRETE-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// CONCRETE-NEXT:      }
+// CONCRETE-NEXT:  }
+
+// RANGED-LABEL: @RangedCopyScale StructIntervals {
+// RANGED-NEXT:      compute {
+// RANGED-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in TypeA:[ 7, 9 ]
+// RANGED-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in TypeA:[ 7, 9 ]
+// RANGED-NEXT:      }
+// RANGED-NEXT:      constrain {
+// RANGED-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// RANGED-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire
+// RANGED-NEXT:      }
+// RANGED-NEXT:  }
