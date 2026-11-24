@@ -1500,7 +1500,66 @@ module attributes {llzk.lang} {
   });
 }
 
-// Large copies must avoid scanning all stored writes separately for each concrete leaf.
+// Writes must revisit initialized concrete and ranged readers in the same storage group.
+TEST_F(IntervalStorageTests, IndexedWritesNotifyOverlappingReaders) {
+  for (bool rangedWrite : {false, true}) {
+    SCOPED_TRACE(rangedWrite ? "ranged write" : "concrete write");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !P>, %unrelated: !P, %index: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %eleven = felt.const 11
+    %left = array.read %array[%zero] : !array.type<2 x !P>, !P
+    %right = array.read %array[%one] : !array.type<2 x !P>, !P
+    %selected = array.read %array[%index] : !array.type<2 x !P>, !P
+    pod.write %left[@value] = %seven : !P, !felt.type
+    pod.write %right[@value] = %seven : !P, !felt.type
+    pod.write %left[@other] = %eleven : !P, !felt.type
+    pod.write %unrelated[@value] = %eleven : !P, !felt.type
+    pod.write %selected[@value] = %nine : !P, !felt.type
+    %first = pod.read %left[@value] : !P, !felt.type
+    %second = pod.read %right[@value] : !P, !felt.type
+    %dynamic = pod.read %selected[@value] : !P, !felt.type
+    %duplicate = pod.read %left[@value] : !P, !felt.type
+    %other = pod.read %left[@other] : !P, !felt.type
+    %independent = pod.read %unrelated[@value] : !P, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto lateWrite = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+    if (!rangedWrite) {
+      auto left = *fn.getOps<array::ReadArrayOp>().begin();
+      lateWrite.setOperand(0, left.getResult());
+    }
+    auto reads = llvm::to_vector(fn.getOps<pod::ReadPodOp>());
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op != lateWrite.getOperation()) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      ASSERT_TRUE(succeeded(visit(lateWrite)));
+    }, [&](IntervalDataFlowAnalysis &, DataFlowSolver &solver) {
+      SmallVector<UnreducedInterval> expected {{7, 9},   {7, rangedWrite ? 9 : 7},
+                                               {7, 9},   {7, 9},
+                                               {11, 11}, {11, 11}};
+      ASSERT_EQ(reads.size(), expected.size());
+      for (auto [read, bounds] : llvm::zip(reads, expected)) {
+        SCOPED_TRACE(debug::toStringOne(*read));
+        expectValue(solver, read.getResult(), bounds);
+      }
+    });
+  }
+}
+
+// Large copies and concrete writes must avoid scanning every stored write or reader per leaf.
 TEST_F(IntervalStorageTests, LargeConcreteAggregateCopies) {
   constexpr unsigned count = 65536;
   std::string source;
@@ -1515,7 +1574,8 @@ module attributes {llzk.lang} {
   for (unsigned i = 0; i < count; ++i) {
     os << "    %c" << i << " = arith.constant " << i << " : index\n"
        << "    array.write %array[%c" << i << "] = " << (i % 2 == 0 ? "%seven" : "%nine")
-       << " : !A, !felt.type\n";
+       << " : !A, !felt.type\n"
+       << "    %read" << i << " = array.read %array[%c" << i << "] : !A, !felt.type\n";
   }
   os << R"mlir(
     %copy = pod.new { @array = %array } : !W
@@ -1532,13 +1592,32 @@ module attributes {llzk.lang} {
   auto fn = *mod->getOps<function::FuncDefOp>().begin();
   auto copy = *fn.getOps<pod::NewPodOp>().begin();
   SourceRefIndex array(StringAttr::get(&ctx, "array"));
-  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+  auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+    // Register every source reader before any write is analyzed.
+    for (Operation &op : fn.getBody().front()) {
+      if (&op == copy.getOperation()) {
+        break;
+      }
+      if (!isa<array::WriteArrayOp>(op)) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+    for (auto write : fn.getOps<array::WriteArrayOp>()) {
+      ASSERT_TRUE(succeeded(visit(write)));
+    }
+    for (Operation *op = copy; op; op = op->getNextNode()) {
+      ASSERT_TRUE(succeeded(visit(op)));
+    }
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
     for (unsigned i = 0; i < count; ++i) {
       SCOPED_TRACE(i);
       ASSERT_NO_FATAL_FAILURE(expectStored(
           analysis, SourceRef(copy->getResult(0), {array, SourceRefIndex(i)}),
           Interval::Degenerate(field, field.felt(i % 2 == 0 ? 7 : 9))
       ));
+      const int expected = i % 2 == 0 ? 7 : 9;
+      expectValue(solver, reads[i].getResult(), UnreducedInterval(expected, expected));
     }
     auto returned = fn.getBody().front().getTerminator()->getOperands();
     expectValue(solver, returned[0], UnreducedInterval(7, 7));

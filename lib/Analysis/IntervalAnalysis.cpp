@@ -86,7 +86,7 @@ bool hasNonSingletonRange(const SourceRef &ref, size_t prefixLength = 0) {
 }
 
 /// Group potentially overlapping leaves by root and field path, independent of array indices.
-SourceRef getWriteGroupKey(const SourceRef &ref) {
+SourceRef getStorageGroupKey(const SourceRef &ref) {
   if (ref.isConstant()) {
     return ref;
   }
@@ -945,7 +945,15 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
   Operation *definition = val.getDefiningOp();
   const bool storageRead = definition && isReadOp(definition);
   if (storageRead) {
-    storageReaders[ref].insert(definition);
+    auto [it, inserted] = storageReaders.try_emplace(ref);
+    it->second.insert(definition);
+    if (inserted) {
+      auto &group = storageReaderGroups[getStorageGroupKey(ref)];
+      group.all.push_back(ref);
+      if (hasRangedSelection(ref)) {
+        group.ranged.push_back(ref);
+      }
+    }
   }
   return getRefValue(ref, getOrCreateSymbol(val), storageRead ? definition : nullptr);
 }
@@ -984,7 +992,7 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
   };
   const bool rangedSelection = hasRangedSelection(ref);
   llvm::ArrayRef<SourceRef> candidates;
-  if (auto it = writeGroups.find(getWriteGroupKey(ref)); it != writeGroups.end()) {
+  if (auto it = writeGroups.find(getStorageGroupKey(ref)); it != writeGroups.end()) {
     candidates = rangedSelection ? it->second.all : it->second.ranged;
   }
   std::optional<ExpressionValue> result;
@@ -1202,7 +1210,7 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     return;
   }
   if (previous == writeResults.end()) {
-    auto &group = writeGroups[getWriteGroupKey(writtenRef)];
+    auto &group = writeGroups[getStorageGroupKey(writtenRef)];
     group.all.push_back(writtenRef);
     if (hasRangedSelection(writtenRef)) {
       group.ranged.push_back(writtenRef);
@@ -1210,12 +1218,22 @@ void IntervalDataFlowAnalysis::recordRefWrite(
   }
   writeResults[writtenRef] = std::move(stored);
   // Recompute from every possible source instead of intersecting with stale read bounds.
-  for (const auto &[source, readers] : storageReaders) {
+  auto notifyReaders = [&](const SourceRef &source) {
     if (writtenRef.getPath().size() == source.getPath().size() &&
         writtenRef.hasOverlappingPrefix(source)) {
-      for (Operation *reader : readers) {
+      for (Operation *reader : storageReaders.at(source)) {
         _dataflowSolver.enqueue({getProgramPointAfter(reader), this});
       }
+    }
+  };
+  const bool rangedWrite = hasRangedSelection(writtenRef);
+  if (!rangedWrite && storageReaders.contains(writtenRef)) {
+    notifyReaders(writtenRef);
+  }
+  if (auto group = storageReaderGroups.find(getStorageGroupKey(writtenRef));
+      group != storageReaderGroups.end()) {
+    for (const SourceRef &source : rangedWrite ? group->second.all : group->second.ranged) {
+      notifyReaders(source);
     }
   }
 }

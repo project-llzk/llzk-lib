@@ -4,3 +4,4 @@ fixed:
     - Keep copied range defaults separate from actual writes so known copied elements retain precise intervals.
     - Preserve symbols for repeated or proven-equal dynamic aggregate copies across unchanged storage, while keeping independent selections distinct.
     - Avoid scanning unrelated writes for each copied aggregate field.
+    - Revisit overlapping readers without scanning unrelated storage references for each write.
