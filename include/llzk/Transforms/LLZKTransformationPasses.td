@@ -12,6 +12,18 @@
 
 include "llzk/Pass/PassBase.td"
 
+def InferDeterminismAttributePass : LLZKPass<"infer-determinism-attribute"> {
+  let summary = "Infer the llzk.deterministic function attribute";
+  let description = [{
+    Infer and preserve `llzk.deterministic` on function definitions without
+    non-constant global reads, non-local struct member reads, or RAM loads.
+    Remove existing annotations on functions containing these reads, emitting
+    a warning with a note identifying the offending operation. Unannotated
+    functions containing these reads remain unannotated without warnings.
+    External declarations are left unchanged.
+  }];
+}
+
 def RedundantReadAndWriteEliminationPass
     : LLZKPass<"llzk-duplicate-read-write-elim"> {
   let summary = "Remove redundant reads and writes";
