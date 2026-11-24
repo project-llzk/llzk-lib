@@ -104,6 +104,10 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     if (arrayAccess && arrayAccess.isRead()) {
       continue;
     }
+    // Emitting constraints is observable, but cannot mutate array or component storage.
+    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(between)) {
+      continue;
+    }
     if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
       return false;
     }

@@ -34,6 +34,51 @@ protected:
   OwningOpRef<ModuleOp> parseModule(llvm::StringRef source) {
     return parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
   }
+
+  /// Check asserted inequality or conflicting constants on the two returned reads.
+  void checkReadConstraints(std::string source, bool constants, bool shouldAlias) {
+    SCOPED_TRACE(constants ? "conflicting constants" : "inequality");
+    source.replace(
+        source.find("// CONSTRAINTS"), StringRef("// CONSTRAINTS").size(),
+        constants ? R"mlir(
+    %leftCheck = bool.cmp eq(%left, %seven)
+    bool.assert %leftCheck
+    %rightCheck = bool.cmp eq(%right, %nine)
+    bool.assert %rightCheck
+)mlir"
+                  : R"mlir(
+    %different = bool.cmp ne(%left, %right)
+    bool.assert %different
+)mlir"
+    );
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    for (auto comparison : fn.getOps<boolean::CmpOp>()) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(comparison.getResult());
+      ASSERT_NE(lattice, nullptr);
+      ASSERT_FALSE(lattice->getConstraints().empty());
+      for (const ExpressionValue &constraint : lattice->getConstraints()) {
+        smt->addConstraint(constraint.getExpr());
+      }
+    }
+    if (constants) {
+      for (auto [i, value] : llvm::enumerate(fn.getBody().front().getTerminator()->getOperands())) {
+        const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+        ASSERT_NE(lattice, nullptr);
+        auto expected = shouldAlias ? Interval::Empty(field)
+                                    : Interval::Degenerate(field, field.felt(i == 0 ? 7 : 9));
+        EXPECT_EQ(lattice->getValue().getScalarValue().getInterval(), expected);
+      }
+    }
+    EXPECT_EQ(smt->check(), std::optional<bool>(!shouldAlias));
+  }
 };
 
 // A ranged write does not make independent selections equal to its stored expression.
@@ -491,6 +536,47 @@ module attributes {llzk.lang} {
         EXPECT_EQ(
             lattice->getValue().getScalarValue().getExpr(), analysis->getOrCreateSymbol(value)
         );
+      }
+    }
+  }
+}
+
+// Emitting equality or containment constraints cannot change a previously read element.
+TEST_F(IntervalStorageTests, ConstraintEmissionsPreserveReadAliases) {
+  for (bool containment : {false, true}) {
+    SCOPED_TRACE(containment ? "constrain.in" : "constrain.eq");
+    for (unsigned selection : {0U, 1U, 2U}) {
+      SCOPED_TRACE(selection); // Same index, independent indices, or an intervening write.
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %i: index, %j: index, %input: !felt.type) -> (!felt.type, !felt.type) attributes {function.allow_constraint} {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    // EMISSION
+    // WRITE
+    %right = array.read %array[RIGHT_INDEX] : !array.type<2 x !felt.type>, !felt.type
+    // CONSTRAINTS
+    function.return %left, %right : !felt.type, !felt.type
+  }
+}
+)mlir";
+      source.replace(
+          source.find("// EMISSION"), StringRef("// EMISSION").size(),
+          containment ? "constrain.in %array, %left : !array.type<2 x !felt.type>, !felt.type"
+                      : "constrain.eq %left, %seven : !felt.type"
+      );
+      source.replace(
+          source.find("RIGHT_INDEX"), StringRef("RIGHT_INDEX").size(), selection == 1 ? "%j" : "%i"
+      );
+      if (selection == 2) {
+        source.replace(
+            source.find("// WRITE"), StringRef("// WRITE").size(),
+            "array.write %array[%i] = %input : !array.type<2 x !felt.type>, !felt.type"
+        );
+      }
+      for (bool constants : {false, true}) {
+        checkReadConstraints(source, constants, selection == 0);
       }
     }
   }
