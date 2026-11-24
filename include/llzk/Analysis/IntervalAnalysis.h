@@ -460,6 +460,7 @@ private:
   void applyInterval(mlir::Operation *originalOp, mlir::Value val, Interval newInterval);
 
   /// @brief Special handling for generalized (s - c0) * (s - c1) * ... * (s - cN) = 0 patterns.
+  /// Factors must reuse one SSA value or reads proven equal across intervening operations.
   mlir::FailureOr<std::pair<llvm::DenseSet<mlir::Value>, Interval>>
   getGeneralizedDecompInterval(mlir::Operation *baseOp, mlir::Value lhs, mlir::Value rhs);
 

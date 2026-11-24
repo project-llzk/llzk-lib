@@ -96,7 +96,7 @@ bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
   return true;
 }
 
-/// Prove same-block reads equivalent using matching or singleton indices and write-free paths.
+/// Prove same-block reads equivalent using equal or singleton indices and write-free paths.
 bool haveSameReadValue(Value lhs, Value rhs) {
   if (lhs == rhs) {
     return true;
@@ -120,7 +120,12 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     for (auto [dim, indices] :
          llvm::enumerate(llvm::zip(leftAccess.getIndices(), rightAccess.getIndices()))) {
       if (std::get<0>(indices) != std::get<1>(indices) && shape[dim] != 1) {
-        return false;
+        llvm::APInt leftIndex, rightIndex;
+        if (!matchPattern(std::get<0>(indices), m_ConstantInt(&leftIndex)) ||
+            !matchPattern(std::get<1>(indices), m_ConstantInt(&rightIndex)) ||
+            leftIndex != rightIndex) {
+          return false;
+        }
       }
     }
     equivalentArrayIndices = true;
@@ -1990,7 +1995,10 @@ IntervalDataFlowAnalysis::getGeneralizedDecompInterval(
         return failure();
       }
       SourceRef r = refSet.getSingleValue();
-      if (signalRef.has_value() && signalRef.value() != r) {
+      // Even a concrete address can hold different values across a write.
+      // Require SSA identity or a proven read alias for every selection.
+      if (signalRef.has_value() &&
+          (signalRef.value() != r || !haveSameReadValue(signalVal, *signalVals.begin()))) {
         return failure();
       } else if (!signalRef.has_value()) {
         signalRef = r;
