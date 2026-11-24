@@ -2375,3 +2375,75 @@ TEST_F(IntervalTests, HashIgnoresIntegerRepresentation) {
   EXPECT_EQ(x, y);
   EXPECT_EQ(Interval::Hash {}(x), Interval::Hash {}(y));
 }
+// Reads must bound both reduced and unreduced intervals even while storage summaries are broad.
+TEST_F(IntervalAnalysisAPITests, BooleanStorageReadsBoundBroadSummaries) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%first: !array.type<1 x i1>, %second: !array.type<1 x i1>,
+                     %value: i1, %condition: i1) -> (i1, i1) {
+    %zero = arith.constant 0 : index
+    array.write %first[%zero] = %value : !array.type<1 x i1>, i1
+    array.write %second[%zero] = %value : !array.type<1 x i1>, i1
+    %selected = scf.while (%array = %first) : (!array.type<1 x i1>) -> !array.type<1 x i1> {
+      scf.condition(%condition) %array : !array.type<1 x i1>
+    } do {
+    ^bb0(%array: !array.type<1 x i1>):
+      scf.yield %second : !array.type<1 x i1>
+    }
+    %single = array.read %first[%zero] : !array.type<1 x i1>, i1
+    %merged = array.read %selected[%zero] : !array.type<1 x i1>, i1
+    function.return %single, %merged : i1, i1
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  Value value = fn.getArgument(2);
+  (void)solver.getOrCreateState<IntervalAnalysisLattice>(value)->setValue(
+      ExpressionValue(field, analysis->getOrCreateSymbol(value))
+          .withUnreducedInterval(UnreducedInterval(field.zero(), field.maxVal()))
+  );
+  auto visit = [&](Operation *op) {
+    SmallVector<const IntervalAnalysisLattice *> operands;
+    SmallVector<IntervalAnalysisLattice *> results;
+    for (Value operand : op->getOperands()) {
+      operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(operand));
+    }
+    for (Value result : op->getResults()) {
+      results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(result));
+    }
+    return analysis->visitOperation(op, operands, results);
+  };
+  auto *driver = solver.load<llzk::test::IntervalTestInitialization>([&] {
+    for (Operation &op : fn.getBody().front()) {
+      if (isa<arith::ConstantIndexOp, array::WriteArrayOp, array::ReadArrayOp>(op)) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+  });
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+    return &candidate == driver;
+  })));
+  auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+  ASSERT_EQ(reads.size(), 2U);
+  EXPECT_EQ(
+      SourceRefAnalysis::getValueState(solver, reads[0].getResult()).foldToScalar().size(), 1U
+  );
+  EXPECT_EQ(
+      SourceRefAnalysis::getValueState(solver, reads[1].getResult()).foldToScalar().size(), 2U
+  );
+  for (auto read : reads) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(read.getResult());
+    ASSERT_NE(lattice, nullptr);
+    const auto &expr = lattice->getValue().getScalarValue();
+    EXPECT_EQ(expr.getInterval(), Interval::Boolean(field));
+    EXPECT_EQ(expr.getOptionalUnreducedInterval(), std::make_optional<UnreducedInterval>(0, 1));
+  }
+}
