@@ -170,6 +170,9 @@ module attributes {llzk.lang} {
     %leftMember = struct.readm %leftCell[@value] : !struct.type<@Cell>, !felt.type
     %rightMember = struct.readm %rightCell[@value] : !struct.type<@Cell>, !felt.type
     %different = bool.cmp ne(%left, %right)
+    // Revisit both reads in opposite directions without changing their intervals.
+    bool.assert %different
+    bool.assert %different
     bool.assert %different
     function.return
   }
@@ -212,6 +215,18 @@ module attributes {llzk.lang} {
       const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(comparison.getResult());
       ASSERT_NE(lattice, nullptr);
       ASSERT_FALSE(lattice->getConstraints().empty());
+      if (selection == 0) {
+        for (Value read : comparison->getOperands()) {
+          const auto *readLattice = solver.lookupState<IntervalAnalysisLattice>(read);
+          ASSERT_NE(readLattice, nullptr);
+          EXPECT_EQ(
+              readLattice->getValue().getScalarValue().getInterval(), Interval::Entire(field)
+          );
+        }
+      }
+      // Inspect before check(), which may simplify duplicate solver assertions.
+      std::string assertions = buildStringViaPrint(*smt);
+      EXPECT_EQ(StringRef(assertions).count("(assert "), selection == 0 ? 1U : 0U) << assertions;
       for (const ExpressionValue &constraint : lattice->getConstraints()) {
         smt->addConstraint(constraint.getExpr());
       }
@@ -321,7 +336,7 @@ module attributes {llzk.lang} {
       function.return
     }
   }
-  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index) -> (!felt.type, !felt.type, !felt.type, !felt.type) {
+  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index) -> (!felt.type, !felt.type, !felt.type, !felt.type) attributes {function.allow_constraint} {
     %zero = arith.constant 0 : index
     %seven = felt.const 7
     %nine = felt.const 9
@@ -331,6 +346,11 @@ module attributes {llzk.lang} {
     %rightCell = array.read %cells[%j] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
     %leftMember = struct.readm %leftCell[@value] : !struct.type<@Cell>, !felt.type
     %rightMember = struct.readm %rightCell[@value] : !struct.type<@Cell>, !felt.type
+    // Register aliases with entire intervals before narrowing either read.
+    constrain.eq %left, %left : !felt.type
+    constrain.eq %right, %right : !felt.type
+    constrain.eq %leftMember, %leftMember : !felt.type
+    constrain.eq %rightMember, %rightMember : !felt.type
     %leftCheck = bool.cmp eq(%left, %seven)
     bool.assert %leftCheck
     %rightCheck = bool.cmp eq(%right, %nine)

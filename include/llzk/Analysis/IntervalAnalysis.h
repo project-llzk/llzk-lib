@@ -31,6 +31,7 @@
 #include <mlir/Pass/AnalysisManager.h>
 #include <mlir/Support/LLVM.h>
 
+#include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/DynamicAPInt.h>
 #include <llvm/ADT/MapVector.h>
 #include <llvm/ADT/ScopeExit.h>
@@ -40,6 +41,7 @@
 #include <mutex>
 #include <optional>
 #include <unordered_set>
+#include <utility>
 
 namespace llzk {
 
@@ -364,11 +366,17 @@ private:
   /// Cached symbol tables used to resolve struct member definitions.
   mlir::SymbolTableCollection tables;
 
-  // Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
+  /// Track SourceRef-indexed reads so writes to rooted storage can update existing readers.
   llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> readResults;
+
   /// Candidate dynamic reads; restrictions are shared only for proven equal SSA accesses.
   llvm::DenseMap<SourceRef, llvm::DenseSet<Lattice *>> rangedReadResults;
-  // Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
+
+  /// Unordered pairs of stable read symbols whose equality is already asserted (to avoid
+  /// adding redundant assertions to the solver).
+  llvm::DenseSet<std::pair<llvm::SMTExprRef, llvm::SMTExprRef>> assertedReadAliases;
+
+  /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
   void setToEntryState(Lattice *lattice) override {
