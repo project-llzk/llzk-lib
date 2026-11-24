@@ -14,12 +14,14 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/Dominance.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/Interfaces/LoopLikeInterface.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
@@ -87,31 +89,86 @@ bool hasRangedSelection(const SourceRef &ref) {
   });
 }
 
-/// Recognize operations that preserve storage, including nested reads and assertion checks.
-bool hasNoStorageWrites(Operation *op) {
-  if (auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
-    return arrayAccess.isRead();
+/// Recognize operations that allocate independent aggregate storage.
+bool isFreshStorage(Value value) {
+  return llvm::isa_and_present<CreateArrayOp, CreateStructOp, pod::NewPodOp>(value.getDefiningOp());
+}
+
+/// Prove distinct allocations or storage that predates a fresh allocation disjoint.
+/// Different arguments and handles loaded after an allocation may still alias it.
+bool haveDisjointStorage(Value lhs, Value rhs) {
+  if (lhs == rhs) {
+    return false;
   }
-  // Assertions and constraint emissions are observable, but cannot change read values.
-  if (llvm::isa<boolean::AssertOp, EmitEqualityOp, EmitContainmentOp>(op)) {
+  if (isFreshStorage(lhs) && isFreshStorage(rhs)) {
     return true;
   }
-  const bool recursive = op->hasTrait<OpTrait::HasRecursiveMemoryEffects>();
-  if (auto effectInterface = llvm::dyn_cast<MemoryEffectOpInterface>(op)) {
-    SmallVector<MemoryEffects::EffectInstance> effects;
-    effectInterface.getEffects(effects);
-    if (llvm::any_of(effects, [](const auto &effect) {
-      return !llvm::isa<MemoryEffects::Read>(effect.getEffect());
-    })) {
+  DominanceInfo dominance;
+  auto predatesAllocation = [&](Value existing, Value fresh) {
+    Operation *allocation = fresh.getDefiningOp();
+    return isFreshStorage(fresh) && dominance.hasSSADominance(allocation->getBlock()) &&
+           dominance.properlyDominates(existing, allocation);
+  };
+  return predatesAllocation(lhs, rhs) || predatesAllocation(rhs, lhs);
+}
+
+/// Check whether an operation leaves the direct storage of an array/member read unchanged.
+/// Aggregate writes copy values: replacing an array/POD element does not mutate a component
+/// handle stored there, and replacing a component member does not mutate an earlier array copy.
+bool preservesReadStorage(Operation *op, Operation *read) {
+  if (auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op)) {
+    if (arrayAccess.isRead()) {
+      return true;
+    }
+    auto arrayRead = llvm::dyn_cast<ArrayAccessOpInterface>(read);
+    if (!arrayRead || haveDisjointStorage(arrayAccess.getArrRef(), arrayRead.getArrRef())) {
+      return true;
+    }
+    if (arrayAccess.getArrRef() == arrayRead.getArrRef()) {
+      // One unequal constant dimension separates elements and subarray insertion prefixes.
+      for (auto [written, observed] : llvm::zip(arrayAccess.getIndices(), arrayRead.getIndices())) {
+        llvm::APInt writtenIndex, observedIndex;
+        if (matchPattern(written, m_ConstantInt(&writtenIndex)) &&
+            matchPattern(observed, m_ConstantInt(&observedIndex)) &&
+            writtenIndex != observedIndex) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  if (auto memberWrite = llvm::dyn_cast<MemberWriteOp>(op)) {
+    auto memberRead = llvm::dyn_cast<MemberReadOp>(read);
+    return !memberRead || memberWrite.getMemberNameAttr() != memberRead.getMemberNameAttr() ||
+           haveDisjointStorage(memberWrite.getComponent(), memberRead.getComponent());
+  }
+  if (llvm::isa<CreateArrayOp, CreateStructOp, pod::NewPodOp, pod::WritePodOp>(op)) {
+    return true;
+  }
+  // These checks may terminate execution, but their direct effects cannot change read values.
+  // Keep inspecting regions below, even when the operation itself only performs a check.
+  if (!llvm::isa<
+          boolean::AssertOp, EmitEqualityOp, EmitContainmentOp, IntToFeltOp, FeltToIndexOp,
+          verif::ConditionOpInterface, verif::AssumeDetOp>(op)) {
+    const bool recursive = op->hasTrait<OpTrait::HasRecursiveMemoryEffects>();
+    if (auto effectInterface = llvm::dyn_cast<MemoryEffectOpInterface>(op)) {
+      SmallVector<MemoryEffects::EffectInstance> effects;
+      effectInterface.getEffects(effects);
+      if (llvm::any_of(effects, [](const auto &effect) {
+        return !llvm::isa<MemoryEffects::Read>(effect.getEffect());
+      })) {
+        return false;
+      }
+    } else if (!recursive) {
       return false;
     }
-  } else if (!recursive) {
-    return false;
   }
   // Direct effects can be empty even when an operation's regions contain writes.
   for (Region &region : op->getRegions()) {
     for (Block &block : region) {
-      if (!llvm::all_of(block, [](Operation &nested) { return hasNoStorageWrites(&nested); })) {
+      if (!llvm::all_of(block, [&](Operation &nested) {
+        return preservesReadStorage(&nested, read);
+      })) {
         return false;
       }
     }
@@ -119,16 +176,20 @@ bool hasNoStorageWrites(Operation *op) {
   return true;
 }
 
-/// Check an ordered outer-to-inner SCF path, including backedges of crossed loops.
-bool hasReadOnlyPath(Operation *first, Operation *second) {
+/// Exclude potentially overlapping writes along an SCF path and crossed loop backedges.
+bool hasReadPreservingPath(Operation *first, Operation *second) {
   Operation *enclosing = first->getBlock()->findAncestorOpInBlock(*second);
   // Preceding the enclosing operation establishes dominance of the nested read.
   if (!enclosing || first == enclosing || !first->isBeforeInBlock(enclosing)) {
     return false;
   }
+  // Equivalent operands can be separate value copies; protect both read sources.
+  auto preservesReads = [&](Operation *op) {
+    return preservesReadStorage(op, first) && preservesReadStorage(op, second);
+  };
   for (Operation *between = first->getNextNode(); between != enclosing;
        between = between->getNextNode()) {
-    if (!hasNoStorageWrites(between)) {
+    if (!preservesReads(between)) {
       return false;
     }
   }
@@ -140,7 +201,7 @@ bool hasReadOnlyPath(Operation *first, Operation *second) {
     Operation *parent = region->getParentOp();
     if (llvm::isa<LoopLikeOpInterface>(parent)) {
       // Writes after this read, including in another while region, can affect a later iteration.
-      if (!hasNoStorageWrites(parent)) {
+      if (!preservesReads(parent)) {
         return false;
       }
       continue;
@@ -150,7 +211,7 @@ bool hasReadOnlyPath(Operation *first, Operation *second) {
     }
     // Only this branch's prefix executes between the reads; sibling regions do not.
     for (Operation &before : llvm::make_range(region->front().begin(), cursor->getIterator())) {
-      if (!hasNoStorageWrites(&before)) {
+      if (!preservesReads(&before)) {
         return false;
       }
     }
@@ -201,8 +262,8 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     // Equal array copies can diverge before either scalar read. Protect each copy from
     // its creation through its use, in addition to the interval between the scalar reads.
     return success(
-        !llvm::isa<ArrayType>(a.getType()) ||
-        (hasReadOnlyPath(a.getDefiningOp(), left) && hasReadOnlyPath(b.getDefiningOp(), right))
+        !llvm::isa<ArrayType>(a.getType()) || (hasReadPreservingPath(a.getDefiningOp(), left) &&
+                                               hasReadPreservingPath(b.getDefiningOp(), right))
     );
   };
   if (!OperationEquivalence::isEquivalentTo(
@@ -210,7 +271,7 @@ bool haveSameReadValue(Value lhs, Value rhs) {
       )) {
     return false;
   }
-  return hasReadOnlyPath(left, right) || hasReadOnlyPath(right, left);
+  return hasReadPreservingPath(left, right) || hasReadPreservingPath(right, left);
 }
 
 template <typename Fn>

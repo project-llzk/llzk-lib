@@ -1,0 +1,3 @@
+fixed:
+  - Interval Analysis: Preserve proven read aliases and product decomposition bounds across writes to disjoint aggregate storage, including nested control flow and loop backedges.
+  - Interval Analysis: Preserve read aliases across assert-mode casts, verification conditions, and determinism assumptions that cannot mutate storage.
