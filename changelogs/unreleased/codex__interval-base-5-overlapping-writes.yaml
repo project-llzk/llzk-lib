@@ -1,8 +1,5 @@
 fixed:
-  - Interval Analysis: >-
-      Include overlapping writes in storage reads and aggregate copies, retaining
-      defaults for uncovered selections.
-  - Interval Analysis: >-
-      Preserve symbols for repeated or proven-equal dynamic aggregate copies across
-      unchanged storage, while keeping independent selections distinct.
-  - Interval Analysis: Avoid scanning unrelated writes for each copied aggregate field.
+  - Interval Analysis:
+    - Include overlapping writes in storage reads and aggregate copies, retaining defaults for uncovered selections.
+    - Preserve symbols for repeated or proven-equal dynamic aggregate copies across unchanged storage, while keeping independent selections distinct.
+    - Avoid scanning unrelated writes for each copied aggregate field.
