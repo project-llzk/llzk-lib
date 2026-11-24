@@ -93,7 +93,7 @@ public:
 
   /// @brief Replace matching SourceRef prefixes and leave unmatched references unchanged.
   std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-  replacePrefixes(const TranslationMap &translation) const;
+  replacePrefixes(const TranslationMap &translation, bool preserveCaptures = false) const;
 
   /// @brief Update the element or subarray selected by `indices`.
   ///
@@ -131,7 +131,8 @@ protected:
   mlir::ChangeResult translateScalar(const TranslationMap &translation);
 
   /// @brief Replace matching prefixes in a scalar value without dropping unmatched references.
-  mlir::ChangeResult replacePrefixesScalar(const TranslationMap &translation);
+  mlir::ChangeResult
+  replacePrefixesScalar(const TranslationMap &translation, bool preserveCaptures);
 
   /// @brief Perform a recursive transformation over all elements of this value and
   /// return a new value with the modifications.

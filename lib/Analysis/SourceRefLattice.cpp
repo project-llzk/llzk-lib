@@ -78,15 +78,16 @@ SourceRefLatticeValue::translate(const TranslationMap &translation) const {
   return {newVal, res};
 }
 
-std::pair<SourceRefLatticeValue, mlir::ChangeResult>
-SourceRefLatticeValue::replacePrefixes(const TranslationMap &translation) const {
+std::pair<SourceRefLatticeValue, mlir::ChangeResult> SourceRefLatticeValue::replacePrefixes(
+    const TranslationMap &translation, bool preserveCaptures
+) const {
   auto newVal = *this;
   auto res = mlir::ChangeResult::NoChange;
   if (newVal.isScalar()) {
-    res = newVal.replacePrefixesScalar(translation);
+    res = newVal.replacePrefixesScalar(translation, preserveCaptures);
   } else {
     for (auto &elem : newVal.getArrayValue()) {
-      auto [newElem, elemRes] = elem->replacePrefixes(translation);
+      auto [newElem, elemRes] = elem->replacePrefixes(translation, preserveCaptures);
       *elem = std::move(newElem);
       res |= elemRes;
     }
@@ -265,14 +266,17 @@ mlir::ChangeResult SourceRefLatticeValue::translateScalar(const TranslationMap &
   return res;
 }
 
-mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(const TranslationMap &translation) {
+mlir::ChangeResult SourceRefLatticeValue::replacePrefixesScalar(
+    const TranslationMap &translation, bool preserveCaptures
+) {
   const ScalarTy &current = getScalarValue();
   ScalarTy replaced;
   replaced.reserve(current.size());
   for (const SourceRef &currentRef : current) {
     bool matched = false;
     for (const auto &[prefix, replacementVal] : translation) {
-      if (!currentRef.isValidPrefix(prefix)) {
+      if ((preserveCaptures && currentRef.protectsCapturedComponent(prefix)) ||
+          !currentRef.isValidPrefix(prefix)) {
         continue;
       }
       matched = true;
