@@ -1,5 +1,6 @@
 fixed:
   - Interval Analysis:
     - Include overlapping writes in storage reads and aggregate copies, retaining defaults for uncovered selections.
+    - Keep copied range defaults separate from actual writes so known copied elements retain precise intervals.
     - Preserve symbols for repeated or proven-equal dynamic aggregate copies across unchanged storage, while keeping independent selections distinct.
     - Avoid scanning unrelated writes for each copied aggregate field.

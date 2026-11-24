@@ -74,9 +74,9 @@ bool hasRangedSelection(const SourceRef &ref) {
   });
 }
 
-/// Only ranges with more than one possible index can miss a candidate write target.
-bool hasNonSingletonRange(const SourceRef &ref) {
-  return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
+/// Only non-singleton ranges in the selected suffix can miss a candidate write target.
+bool hasNonSingletonRange(const SourceRef &ref, size_t prefixLength = 0) {
+  return llvm::any_of(ref.getPath().drop_front(prefixLength), [](const SourceRefIndex &index) {
     if (!index.isIndexRange()) {
       return false;
     }
@@ -1089,17 +1089,55 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
     const SourceRef &source, const SourceRef &destination, Value sourceValue, Operation *copySite
 ) {
   SourceRefSet selections;
-  for (const auto &[writtenRef, writtenVal] : writeResults) {
-    if (!writtenRef.hasOverlappingPrefix(source)) {
-      continue;
-    }
+  llvm::DenseMap<SourceRef, ExpressionValue> rangedContributions;
+  auto executeRegion = llvm::dyn_cast<scf::ExecuteRegionOp>(copySite->getParentOp());
+  const bool mergesAlternatives =
+      llvm::isa<scf::YieldOp>(copySite) &&
+      (!executeRegion || !llvm::hasSingleElement(executeRegion.getRegion()));
+  // Retain the selected source prefix when translating either source or destination leaves.
+  auto selectSourceLeaf = [&](llvm::ArrayRef<SourceRefIndex> suffix) {
     SourceRef selected = source;
-    for (const SourceRefIndex &index : writtenRef.getPath().drop_front(source.getPath().size())) {
+    for (const SourceRefIndex &index : suffix) {
       auto child = selected.createChild(index);
       ensure(succeeded(child), "could not select aggregate descendant");
       selected = *child;
     }
+    return selected;
+  };
+  for (const auto &[writtenRef, writtenVal] : writeResults) {
+    if (!writtenRef.hasOverlappingPrefix(source)) {
+      continue;
+    }
+    SourceRef selected = selectSourceLeaf(writtenRef.getPath().drop_front(source.getPath().size()));
     selections.insert(selected);
+    // A retained range contributes actual writes, not defaults for its unwritten elements.
+    // Singleton suffixes still resolve source-prefix uncertainty. Branch and loop yields
+    // retain complete alternatives because each may leave different elements unwritten.
+    if (!mergesAlternatives && hasNonSingletonRange(writtenRef, source.getPath().size())) {
+      const auto &contribution = writeContributions.at(writtenRef).value;
+      auto [it, inserted] = rangedContributions.try_emplace(selected, contribution);
+      if (!inserted) {
+        it->second = ExpressionValue(
+            nullptr, it->second.getInterval().join(contribution.getInterval()),
+            mergeUnreducedIntervals(
+                it->second.getOptionalUnreducedInterval(),
+                contribution.getOptionalUnreducedInterval()
+            )
+        );
+      }
+    }
+  }
+  if (!rangedContributions.empty()) {
+    // An unwritten source element also overwrites an already known destination element.
+    // Materialize its default separately, including guaranteed singleton-range entries.
+    for (const auto &[writtenRef, writtenVal] : writeResults) {
+      if (writtenRef.hasOverlappingPrefix(destination) &&
+          !hasNonSingletonRange(writtenRef, destination.getPath().size())) {
+        selections.insert(
+            selectSourceLeaf(writtenRef.getPath().drop_front(destination.getPath().size()))
+        );
+      }
+    }
   }
   SmallVector<std::pair<SourceRef, ExpressionValue>> writes;
   for (const SourceRef &selected : selections) {
@@ -1109,7 +1147,12 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
     const auto *symbol = hasRangedSelection(selected)
                              ? getAggregateCopySymbol(selected, sourceValue, copySite)
                              : getOrCreateSymbol(*translated);
-    writes.emplace_back(*translated, getRefValue(selected, symbol));
+    auto contribution = rangedContributions.find(selected);
+    writes.emplace_back(
+        *translated, contribution == rangedContributions.end()
+                         ? getRefValue(selected, symbol)
+                         : contribution->second.withExpression(symbol)
+    );
   }
   return writes;
 }

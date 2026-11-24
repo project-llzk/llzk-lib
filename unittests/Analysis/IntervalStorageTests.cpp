@@ -1368,6 +1368,138 @@ module attributes {llzk.lang} {
   }
 }
 
+// A copied range's unwritten alternatives must not pollute its known concrete elements.
+TEST_F(IntervalStorageTests, AggregateCopiesKeepRangedContributionsSeparate) {
+  auto mod = parseModule(R"mlir(
+!A = !array.type<3 x !felt.type>
+!W = !pod.type<[@values: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%source: !A, %assigned: !W, %i: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %two = arith.constant 2 : index
+    %three = felt.const 3
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %source[%zero] = %seven : !A, !felt.type
+    array.write %source[%two] = %three : !A, !felt.type
+    array.write %source[%i] = %nine : !A, !felt.type
+    %old = pod.read %assigned[@values] : !W, !A
+    array.write %old[%one] = %seven : !A, !felt.type
+    %copy = pod.new { @values = %source } : !W
+    %copied = pod.read %copy[@values] : !W, !A
+    %chain = pod.new { @values = %copied } : !W
+    %chained = pod.read %chain[@values] : !W, !A
+    pod.write %assigned[@values] = %source : !W, !A
+    %assignedArray = pod.read %assigned[@values] : !W, !A
+    %first = array.read %copied[%zero] : !A, !felt.type
+    %unwritten = array.read %copied[%one] : !A, !felt.type
+    %last = array.read %copied[%two] : !A, !felt.type
+    %dynamic = array.read %copied[%i] : !A, !felt.type
+    %chainFirst = array.read %chained[%zero] : !A, !felt.type
+    %chainUnwritten = array.read %chained[%one] : !A, !felt.type
+    %assignedFirst = array.read %assignedArray[%zero] : !A, !felt.type
+    %assignedUnwritten = array.read %assignedArray[%one] : !A, !felt.type
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &, DataFlowSolver &solver) {
+    SmallVector<UnreducedInterval> expected {{7, 9}, {field.zero(), field.maxVal()},
+                                             {3, 9}, {field.zero(), field.maxVal()},
+                                             {7, 9}, {field.zero(), field.maxVal()},
+                                             {7, 9}, {field.zero(), field.maxVal()}};
+    auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+    ASSERT_EQ(reads.size(), expected.size());
+    for (auto [i, read] : llvm::enumerate(reads)) {
+      SCOPED_TRACE(i);
+      expectValue(solver, read.getResult(), expected[i]);
+    }
+  });
+}
+
+// Removing a retained range's fallback must preserve uncertainty in a selected source prefix.
+TEST_F(IntervalStorageTests, CopiedDynamicPrefixesKeepUnwrittenDefaults) {
+  for (StringRef size : {"1", "2"}) {
+    SCOPED_TRACE(size.str());
+    std::string source = R"mlir(
+!M = !array.type<2,SIZE x !felt.type>
+!A = !array.type<SIZE x !felt.type>
+!W = !pod.type<[@values: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%matrix: !M, %assigned: !W, %i: index, %j: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %matrix[%zero, %zero] = %seven : !M, !felt.type
+    array.write %matrix[%zero, %j] = %nine : !M, !felt.type
+    %old = pod.read %assigned[@values] : !W, !A
+    array.write %old[%j] = %seven : !A, !felt.type
+    %row = array.extract %matrix[%i] : !M
+    %copy = pod.new { @values = %row } : !W
+    %copied = pod.read %copy[@values] : !W, !A
+    pod.write %assigned[@values] = %row : !W, !A
+    %assignedArray = pod.read %assigned[@values] : !W, !A
+    %first = array.read %copied[%zero] : !A, !felt.type
+    %dynamic = array.read %copied[%j] : !A, !felt.type
+    %assignedFirst = array.read %assignedArray[%zero] : !A, !felt.type
+    %assignedDynamic = array.read %assignedArray[%j] : !A, !felt.type
+    function.return
+  }
+}
+)mlir";
+    while (source.find("SIZE") != std::string::npos) {
+      source.replace(source.find("SIZE"), StringRef("SIZE").size(), size);
+    }
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &, DataFlowSolver &solver) {
+      for (auto read : fn.getOps<array::ReadArrayOp>()) {
+        expectValue(solver, read.getResult(), UnreducedInterval(field.zero(), field.maxVal()));
+      }
+    });
+  }
+}
+
+// A copied unknown must overwrite a known destination tracked through a singleton range.
+TEST_F(IntervalStorageTests, AggregateAssignmentsPreserveSingletonDefaults) {
+  auto mod = parseModule(R"mlir(
+!A = !array.type<1,2 x !felt.type>
+!W = !pod.type<[@values: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%source: !A, %assigned: !W, %i: index, %j: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %source[%i, %j] = %nine : !A, !felt.type
+    %old = pod.read %assigned[@values] : !W, !A
+    array.write %old[%i, %zero] = %seven : !A, !felt.type
+    pod.write %assigned[@values] = %source : !W, !A
+    %copied = pod.read %assigned[@values] : !W, !A
+    %value = array.read %copied[%i, %zero] : !A, !felt.type
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+    SourceRefIndex values(StringAttr::get(&ctx, "values"));
+    expectStored(
+        analysis,
+        SourceRef(
+            fn.getArgument(1), {values, SourceRefIndex::forArrayDimension(1), SourceRefIndex(0)}
+        ),
+        Interval::Entire(field)
+    );
+    auto read = *fn.getOps<array::ReadArrayOp>().begin();
+    expectValue(solver, read.getResult(), UnreducedInterval(field.zero(), field.maxVal()));
+  });
+}
+
 // Large copies must avoid scanning all stored writes separately for each concrete leaf.
 TEST_F(IntervalStorageTests, LargeConcreteAggregateCopies) {
   constexpr unsigned count = 65536;

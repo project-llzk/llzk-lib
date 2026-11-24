@@ -558,6 +558,7 @@ private:
   /// @brief Resolve and translate stored descendants of an aggregate selection, including
   /// overlapping concrete and ranged writes, once per destination leaf. Preserve the
   /// identity of sourceValue at copySite rather than assigning each destination a new value.
+  /// Keep retained range contributions separate from defaults for unwritten copied elements.
   llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> getAggregateWrites(
       const SourceRef &source, const SourceRef &destination, mlir::Value sourceValue,
       mlir::Operation *copySite
