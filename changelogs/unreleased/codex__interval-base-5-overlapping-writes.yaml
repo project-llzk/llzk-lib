@@ -1,0 +1,2 @@
+fixed:
+  - Interval Analysis: Include overlapping ranged writes when resolving stored intervals and copying aggregate fields, dropping no-write defaults for fully covered selections while preserving unwritten alternatives and independent dynamic selections.
