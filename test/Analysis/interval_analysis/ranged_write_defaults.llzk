@@ -19,6 +19,19 @@ module attributes {llzk.lang} {
   }
 }
 
+
+// CHECK-LABEL: @RangedWritesKeepDefaults StructIntervals { }
+
 // CHECK-LABEL: @RangedWritesKeepDefaults SSAIntervals {
-// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
-// CHECK:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

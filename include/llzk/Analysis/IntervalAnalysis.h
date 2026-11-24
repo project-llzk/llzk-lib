@@ -380,8 +380,10 @@ private:
   llvm::DenseMap<SourceRef, llvm::DenseSet<mlir::Operation *>> storageReaders;
   /// Forward-computed bounds before constraint refinement, used to detect expansion.
   llvm::DenseMap<Lattice *, Interval> computedIntervals;
-  /// Values before backward refinement, restored when a storage read expands.
+  /// Pre-refinement input bounds. Derived bounds are invalidated and recomputed on expansion.
   llvm::DenseMap<Lattice *, ExpressionValue> refinementBases;
+  /// Backward dependencies, including aliases and constrain-to-compute input propagation.
+  llvm::DenseMap<mlir::Operation *, llvm::DenseSet<Lattice *>> refinementTargets;
   /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
@@ -389,6 +391,8 @@ private:
   struct WriteContribution {
     ExpressionValue value;
     bool mayBeSkipped;
+    /// Unconditional sites used to prove initialization before each individual read.
+    llvm::DenseSet<mlir::Operation *> guaranteedWrites;
   };
   /// Keep the no-write alternative separate so a guaranteed write can remove it later.
   llvm::DenseMap<SourceRef, WriteContribution> writeContributions;
@@ -465,12 +469,15 @@ private:
 
   ExpressionValue performUnaryArithmetic(mlir::Operation *op, const LatticeValue &a);
 
-  /// Recompute backward refinements when a read expands; otherwise preserve prior
-  /// arithmetic refinements only while the forward-computed interval does not expand.
-  void updateComputedValue(Lattice *lattice, ExpressionValue value, bool storageRead = false);
+  /// Refresh forward bounds and preserve refinements unless those bounds expand.
+  void updateComputedValue(Lattice *lattice, ExpressionValue value);
+
+  /// Restore inputs and invalidate derived bounds reachable through refinement dependencies.
+  void restoreRefinements(Lattice *expanded);
 
   /// Save the pre-refinement value before applying a constraint-derived update.
-  mlir::ChangeResult setRefinedValue(Lattice *lattice, const ExpressionValue &value);
+  mlir::ChangeResult
+  setRefinedValue(mlir::Operation *cause, Lattice *lattice, const ExpressionValue &value);
 
   /// @brief Recursively applies the new interval to the val's lattice value and to that value's
   /// operands, if possible. For example, if we know that X*Y is non-zero, then we know X and Y are
@@ -525,9 +532,10 @@ private:
   ///
   /// When `mayBeSkipped` is true, handle the write as control-dependent instead
   /// of unconditional, so the stored value also keeps the prior/no-write state.
-  /// Retain that default only until a guaranteed write to this location is analyzed.
+  /// Reads retain their default unless a guaranteed write precedes them in program order.
   void recordRefWrite(
-      const SourceRef &writtenRef, const ExpressionValue &writeVal, bool mayBeSkipped = false
+      const SourceRef &writtenRef, const ExpressionValue &writeVal, mlir::Operation *writeSite,
+      bool mayBeSkipped = false
   );
 
   /// @brief Get the SourceRef state that defines `val`.
