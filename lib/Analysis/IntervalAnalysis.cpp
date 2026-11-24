@@ -74,15 +74,43 @@ bool hasRangedSelection(const SourceRef &ref) {
   });
 }
 
-/// Only ranges with more than one possible index can miss a candidate write target.
-bool hasNonSingletonRange(const SourceRef &ref) {
-  return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
+/// Only non-singleton ranges in the selected suffix can miss a candidate write target.
+bool hasNonSingletonRange(const SourceRef &ref, size_t prefixLength = 0) {
+  return llvm::any_of(ref.getPath().drop_front(prefixLength), [](const SourceRefIndex &index) {
     if (!index.isIndexRange()) {
       return false;
     }
     auto [low, high] = index.getIndexRange();
     return index.hasUnboundedUpperBound() || high - low != 1;
   });
+}
+
+/// Group potentially overlapping leaves by root and field path, independent of array indices.
+SourceRef getStorageGroupKey(const SourceRef &ref) {
+  if (ref.isConstant()) {
+    return ref;
+  }
+  SourceRef::Path path;
+  path.reserve(ref.getPath().size());
+  for (const SourceRefIndex &index : ref.getPath()) {
+    path.push_back(index.isIndex() || index.isIndexRange() ? SourceRefIndex(0) : index);
+  }
+  Value root = *ref.getRoot();
+  if (auto argument = llvm::dyn_cast<BlockArgument>(root)) {
+    return SourceRef(argument, std::move(path));
+  }
+  return SourceRef(llvm::cast<OpResult>(root), std::move(path));
+}
+
+/// Recognize operations that cannot mutate existing array or component storage.
+bool preservesReadStorage(Operation *op) {
+  auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
+  if (arrayAccess && arrayAccess.isRead()) {
+    return true;
+  }
+  // Emitting constraints is observable, but cannot mutate array or component storage.
+  return llvm::isa<EmitEqualityOp, EmitContainmentOp>(op) || isMemoryEffectFree(op) ||
+         hasSingleEffect<MemoryEffects::Read>(op);
 }
 
 /// Exclude storage mutations between two ordered operations in the same block.
@@ -92,15 +120,25 @@ bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
   }
   for (Operation *between = first->getNextNode(); between != second;
        between = between->getNextNode()) {
-    auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(between);
-    if (arrayAccess && arrayAccess.isRead()) {
-      continue;
+    if (!preservesReadStorage(between)) {
+      return false;
     }
-    // Emitting constraints is observable, but cannot mutate array or component storage.
-    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(between)) {
-      continue;
-    }
-    if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
+  }
+  return true;
+}
+
+/// Prove equal source observations across copies, allowing fresh aggregate allocations.
+/// Include the earlier endpoint because an aggregate assignment can itself mutate storage.
+bool hasCopyPreservingSameBlockPath(Operation *first, Operation *second) {
+  if (first == second) {
+    return true;
+  }
+  if (first->getBlock() != second->getBlock() || !first->isBeforeInBlock(second)) {
+    return false;
+  }
+  for (Operation *between = first; between != second; between = between->getNextNode()) {
+    if (!llvm::isa<pod::NewPodOp, CreateArrayOp, CreateStructOp>(between) &&
+        !preservesReadStorage(between)) {
       return false;
     }
   }
@@ -907,15 +945,29 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
   Operation *definition = val.getDefiningOp();
   const bool storageRead = definition && isReadOp(definition);
   if (storageRead) {
-    storageReaders[ref].insert(definition);
+    auto [it, inserted] = storageReaders.try_emplace(ref);
+    it->second.insert(definition);
+    if (inserted) {
+      auto &group = storageReaderGroups[getStorageGroupKey(ref)];
+      group.all.push_back(ref);
+      if (hasRangedSelection(ref)) {
+        group.ranged.push_back(ref);
+      }
+    }
   }
-  if (auto it = writeResults.find(ref); it != writeResults.end()) {
-    const auto &contribution = writeContributions.at(ref);
-    if (storageRead && !contribution.mayBeSkipped &&
+  return getRefValue(ref, getOrCreateSymbol(val), storageRead ? definition : nullptr);
+}
+
+ExpressionValue IntervalDataFlowAnalysis::getRefValue(
+    const SourceRef &ref, llvm::SMTExprRef selectionSymbol, Operation *readSite
+) {
+  auto getStoredValue = [&](const SourceRef &writtenRef, const ExpressionValue &writtenVal) {
+    const auto &contribution = writeContributions.at(writtenRef);
+    if (readSite && !contribution.mayBeSkipped &&
         llvm::none_of(contribution.guaranteedWrites, [&](Operation *writer) {
       // A later write cannot initialize an earlier read. This conservative proof also
       // handles reads nested inside an operation after the write's block position.
-      Operation *enclosing = writer->getBlock()->findAncestorOpInBlock(*definition);
+      Operation *enclosing = writer->getBlock()->findAncestorOpInBlock(*readSite);
       while (!enclosing) {
         // A single-block execute region runs every contained operation before returning.
         // Multi-block regions may bypass the writer, so do not lift through them.
@@ -924,25 +976,193 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Valu
           return false;
         }
         writer = executeRegion;
-        enclosing = writer->getBlock()->findAncestorOpInBlock(*definition);
+        enclosing = writer->getBlock()->findAncestorOpInBlock(*readSite);
       }
       return enclosing != writer && writer->isBeforeInBlock(enclosing);
     })) {
       return ExpressionValue(
-          getOrCreateSymbol(val),
-          it->second.getInterval().join(getDefaultIntervalForType(ref.getType())),
+          selectionSymbol, writtenVal.getInterval().join(getDefaultIntervalForType(ref.getType())),
           mergeUnreducedIntervals(
-              it->second.getOptionalUnreducedInterval(),
+              writtenVal.getOptionalUnreducedInterval(),
               getDefaultUnreducedIntervalForType(ref.getType())
           )
       );
     }
-    // Independent indices can select different elements of the same range.
-    return hasRangedSelection(ref) ? it->second.withExpression(getOrCreateSymbol(val)) : it->second;
+    return writtenVal;
+  };
+  const bool rangedSelection = hasRangedSelection(ref);
+  llvm::ArrayRef<SourceRef> candidates;
+  if (auto it = writeGroups.find(getStorageGroupKey(ref)); it != writeGroups.end()) {
+    candidates = rangedSelection ? it->second.all : it->second.ranged;
   }
-  return createUnknownValue(val)
-      .withInterval(getRefInterval(ref))
-      .withOptionalUnreducedInterval(getRefUnreducedInterval(ref));
+  std::optional<ExpressionValue> result;
+  // Exact ranged entries also need coverage checks before discarding their no-write default.
+  if (auto it = writeResults.find(ref); it != writeResults.end() && !rangedSelection) {
+    result = getStoredValue(ref, it->second);
+  } else {
+    // A bounded selection needs no default if every concrete element has a stored value.
+    // Count existing entries instead of enumerating potentially huge array dimensions.
+    llvm::DynamicAPInt required(1);
+    for (const SourceRefIndex &index : ref.getPath()) {
+      if (index.isIndexRange()) {
+        if (index.hasUnboundedUpperBound()) {
+          required = -1;
+          break;
+        }
+        auto [low, high] = index.getIndexRange();
+        required *= high - low;
+      }
+    }
+    auto concreteWrites = llvm::count_if(candidates, [&](const SourceRef &written) {
+      return written.getPath().size() == ref.getPath().size() &&
+             written.hasOverlappingPrefix(ref) && !hasRangedSelection(written);
+    });
+    if (concreteWrites == 0 || required != llvm::DynamicAPInt(concreteWrites)) {
+      // Exact singleton ranges can be guaranteed writes, so retain read-order checks.
+      if (it != writeResults.end()) {
+        result = getStoredValue(ref, it->second);
+      } else {
+        result =
+            ExpressionValue(selectionSymbol, getRefInterval(ref), getRefUnreducedInterval(ref));
+      }
+    }
+  }
+  auto joinWrite = [&](const ExpressionValue &writtenVal) {
+    if (!result) {
+      result = writtenVal;
+      return;
+    }
+    const auto *expr = result->getExpr();
+    if (!expr || !writtenVal.getExpr() || *expr != *writtenVal.getExpr()) {
+      expr = getOrCreateSymbol(ref);
+    }
+    result = ExpressionValue(
+        expr, result->getInterval().join(writtenVal.getInterval()),
+        mergeUnreducedIntervals(
+            result->getOptionalUnreducedInterval(), writtenVal.getOptionalUnreducedInterval()
+        )
+    );
+  };
+  for (const SourceRef &writtenRef : candidates) {
+    if (writtenRef.getPath().size() != ref.getPath().size() ||
+        !writtenRef.hasOverlappingPrefix(ref)) {
+      continue;
+    }
+    // Concrete entries retain their own no-write alternatives. Ranged entries contribute
+    // only actual writes; uncovered selections already received a fallback above.
+    joinWrite(
+        hasRangedSelection(writtenRef) ? writeContributions.at(writtenRef).value
+                                       : getStoredValue(writtenRef, writeResults.at(writtenRef))
+    );
+  }
+  ensure(result.has_value(), "covered storage selection must have a value");
+  // Equal ranges describe possible locations, not equality of independently selected values.
+  return rangedSelection ? result->withExpression(selectionSymbol) : *result;
+}
+
+llvm::SMTExprRef IntervalDataFlowAnalysis::getAggregateCopySymbol(
+    const SourceRef &selected, Value sourceValue, Operation *copySite
+) {
+  auto &observations = aggregateCopySymbols[selected];
+  for (const auto &prior : observations) {
+    if (prior.sourceValue == sourceValue && prior.copySite == copySite) {
+      return prior.symbol;
+    }
+  }
+  llvm::SMTExprRef symbol = nullptr;
+  for (const auto &prior : observations) {
+    if (!haveSameReadValue(prior.sourceValue, sourceValue) ||
+        (!hasCopyPreservingSameBlockPath(prior.copySite, copySite) &&
+         !hasCopyPreservingSameBlockPath(copySite, prior.copySite))) {
+      continue;
+    }
+    // Equal reads can be mutated separately after their creation and before either copy.
+    if (prior.sourceValue != sourceValue &&
+        (!hasCopyPreservingSameBlockPath(prior.sourceValue.getDefiningOp(), prior.copySite) ||
+         !hasCopyPreservingSameBlockPath(sourceValue.getDefiningOp(), copySite))) {
+      continue;
+    }
+    symbol = prior.symbol;
+    break;
+  }
+  if (!symbol) {
+    std::string name = symbolNamespace + "copy." + std::to_string(nextAggregateCopySymbol++);
+    symbol = createSymbol(selected.getType(), name.c_str());
+  }
+  observations.push_back({sourceValue, copySite, symbol});
+  return symbol;
+}
+
+SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::getAggregateWrites(
+    const SourceRef &source, const SourceRef &destination, Value sourceValue, Operation *copySite
+) {
+  SourceRefSet selections;
+  llvm::DenseMap<SourceRef, ExpressionValue> rangedContributions;
+  auto executeRegion = llvm::dyn_cast<scf::ExecuteRegionOp>(copySite->getParentOp());
+  const bool mergesAlternatives =
+      llvm::isa<scf::YieldOp>(copySite) &&
+      (!executeRegion || !llvm::hasSingleElement(executeRegion.getRegion()));
+  // Retain the selected source prefix when translating either source or destination leaves.
+  auto selectSourceLeaf = [&](llvm::ArrayRef<SourceRefIndex> suffix) {
+    SourceRef selected = source;
+    for (const SourceRefIndex &index : suffix) {
+      auto child = selected.createChild(index);
+      ensure(succeeded(child), "could not select aggregate descendant");
+      selected = *child;
+    }
+    return selected;
+  };
+  for (const auto &[writtenRef, writtenVal] : writeResults) {
+    if (!writtenRef.hasOverlappingPrefix(source)) {
+      continue;
+    }
+    SourceRef selected = selectSourceLeaf(writtenRef.getPath().drop_front(source.getPath().size()));
+    selections.insert(selected);
+    // A retained range contributes actual writes, not defaults for its unwritten elements.
+    // Singleton suffixes still resolve source-prefix uncertainty. Branch and loop yields
+    // retain complete alternatives because each may leave different elements unwritten.
+    if (!mergesAlternatives && hasNonSingletonRange(writtenRef, source.getPath().size())) {
+      const auto &contribution = writeContributions.at(writtenRef).value;
+      auto [it, inserted] = rangedContributions.try_emplace(selected, contribution);
+      if (!inserted) {
+        it->second = ExpressionValue(
+            nullptr, it->second.getInterval().join(contribution.getInterval()),
+            mergeUnreducedIntervals(
+                it->second.getOptionalUnreducedInterval(),
+                contribution.getOptionalUnreducedInterval()
+            )
+        );
+      }
+    }
+  }
+  if (!rangedContributions.empty()) {
+    // An unwritten source element also overwrites an already known destination element.
+    // Materialize its default separately, including guaranteed singleton-range entries.
+    for (const auto &[writtenRef, writtenVal] : writeResults) {
+      if (writtenRef.hasOverlappingPrefix(destination) &&
+          !hasNonSingletonRange(writtenRef, destination.getPath().size())) {
+        selections.insert(
+            selectSourceLeaf(writtenRef.getPath().drop_front(destination.getPath().size()))
+        );
+      }
+    }
+  }
+  SmallVector<std::pair<SourceRef, ExpressionValue>> writes;
+  for (const SourceRef &selected : selections) {
+    auto translated = selected.translate(source, destination);
+    ensure(succeeded(translated), "could not translate aggregate descendant");
+    // Resolve the complete selection once for each destination leaf.
+    const auto *symbol = hasRangedSelection(selected)
+                             ? getAggregateCopySymbol(selected, sourceValue, copySite)
+                             : getOrCreateSymbol(*translated);
+    auto contribution = rangedContributions.find(selected);
+    writes.emplace_back(
+        *translated, contribution == rangedContributions.end()
+                         ? getRefValue(selected, symbol)
+                         : contribution->second.withExpression(symbol)
+    );
+  }
+  return writes;
 }
 
 void IntervalDataFlowAnalysis::recordRefWrite(
@@ -989,10 +1209,32 @@ void IntervalDataFlowAnalysis::recordRefWrite(
   if (previous != writeResults.end() && previous->second == stored && !newGuaranteedWrite) {
     return;
   }
+  if (previous == writeResults.end()) {
+    auto &group = writeGroups[getStorageGroupKey(writtenRef)];
+    group.all.push_back(writtenRef);
+    if (hasRangedSelection(writtenRef)) {
+      group.ranged.push_back(writtenRef);
+    }
+  }
   writeResults[writtenRef] = std::move(stored);
   // Recompute from every possible source instead of intersecting with stale read bounds.
-  for (Operation *reader : storageReaders[writtenRef]) {
-    _dataflowSolver.enqueue({getProgramPointAfter(reader), this});
+  auto notifyReaders = [&](const SourceRef &source) {
+    if (writtenRef.getPath().size() == source.getPath().size() &&
+        writtenRef.hasOverlappingPrefix(source)) {
+      for (Operation *reader : storageReaders.at(source)) {
+        _dataflowSolver.enqueue({getProgramPointAfter(reader), this});
+      }
+    }
+  };
+  const bool rangedWrite = hasRangedSelection(writtenRef);
+  if (!rangedWrite && storageReaders.contains(writtenRef)) {
+    notifyReaders(writtenRef);
+  }
+  if (auto group = storageReaderGroups.find(getStorageGroupKey(writtenRef));
+      group != storageReaderGroups.end()) {
+    for (const SourceRef &source : rangedWrite ? group->second.all : group->second.ranged) {
+      notifyReaders(source);
+    }
   }
 }
 
@@ -1289,13 +1531,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       } else if (operandRefs[1].has_value()) {
         llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
         for (const SourceRef &recordRef : recordRefs.getScalarValue()) {
-          for (const auto &[writtenRef, writtenVal] : writeResults) {
-            if (writtenRef.isValidPrefix(*operandRefs[1])) {
-              auto translated = writtenRef.translate(*operandRefs[1], recordRef);
-              ensure(succeeded(translated), "could not translate aggregate pod write");
-              remappedWrites.emplace_back(*translated, writtenVal);
-            }
-          }
+          llvm::append_range(
+              remappedWrites,
+              getAggregateWrites(*operandRefs[1], recordRef, writePod.getValue(), op)
+          );
         }
         for (const auto &[translatedRef, translatedVal] : remappedWrites) {
           recordRefWrite(translatedRef, translatedVal, op, maySkipWrite);
@@ -1332,18 +1571,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           }
 
           if (rhsPrefix.has_value()) {
-            llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
-            for (const auto &[writtenRef, writtenVal] : writeResults) {
-              if (!writtenRef.isValidPrefix(*rhsPrefix)) {
-                continue;
-              }
-
-              auto translatedRef = writtenRef.translate(*rhsPrefix, memberRef);
-              ensure(succeeded(translatedRef), "could not translate composite member write");
-              remappedWrites.emplace_back(*translatedRef, writtenVal);
-            }
-
-            for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+            for (const auto &[translatedRef, translatedVal] :
+                 getAggregateWrites(*rhsPrefix, memberRef, writem.getVal(), op)) {
               recordRefWrite(translatedRef, translatedVal, op, maySkipWrite);
             }
           }
@@ -1422,13 +1651,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           ensure(succeeded(child), "could not create aggregate array element SourceRef");
           elementTarget = *child;
         }
-        for (const auto &[writtenRef, writtenVal] : writeResults) {
-          if (writtenRef.isValidPrefix(elementRefs.getSingleValue())) {
-            auto translated = writtenRef.translate(elementRefs.getSingleValue(), elementTarget);
-            ensure(succeeded(translated), "could not translate aggregate array initializer");
-            remappedWrites.emplace_back(*translated, writtenVal);
-          }
-        }
+        llvm::append_range(
+            remappedWrites,
+            getAggregateWrites(elementRefs.getSingleValue(), elementTarget, element, op)
+        );
       }
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
         recordRefWrite(translatedRef, translatedVal, op);
@@ -1449,15 +1675,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       if (!sourceRefs.isSingleValue()) {
         continue;
       }
-      llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
-      for (const auto &[writtenRef, writtenVal] : writeResults) {
-        if (writtenRef.isValidPrefix(sourceRefs.getSingleValue())) {
-          auto translated = writtenRef.translate(sourceRefs.getSingleValue(), *recordRef);
-          ensure(succeeded(translated), "could not translate aggregate pod initializer");
-          remappedWrites.emplace_back(*translated, writtenVal);
-        }
-      }
-      for (const auto &[translatedRef, translatedVal] : remappedWrites) {
+      for (const auto &[translatedRef, translatedVal] :
+           getAggregateWrites(sourceRefs.getSingleValue(), *recordRef, record.value, op)) {
         recordRefWrite(translatedRef, translatedVal, op);
       }
     }
@@ -1533,14 +1752,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       SourceRef resultRef(llvm::cast<OpResult>(parentRes));
       llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
       for (const SourceRef &yieldedRef : yieldedRefs.getScalarValue()) {
-        for (const auto &[writtenRef, writtenVal] : writeResults) {
-          if (!writtenRef.isValidPrefix(yieldedRef)) {
-            continue;
-          }
-          auto translatedRef = writtenRef.translate(yieldedRef, resultRef);
-          ensure(succeeded(translatedRef), "could not translate aggregate loop yield");
-          remappedWrites.emplace_back(*translatedRef, writtenVal);
-        }
+        llvm::append_range(
+            remappedWrites, getAggregateWrites(yieldedRef, resultRef, yieldOp.getOperand(idx), op)
+        );
       }
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
         recordRefWrite(translatedRef, translatedVal, op);

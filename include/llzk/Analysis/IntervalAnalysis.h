@@ -350,6 +350,16 @@ private:
   /// Cached inverse symbols keyed by operation identity, separate from value and ref symbols.
   mlir::DenseMap<mlir::Operation *, llvm::SMTExprRef> inverseSymbols;
 
+  /// A stable observation of a selected aggregate leaf by a copying operation.
+  struct AggregateCopySymbol {
+    mlir::Value sourceValue;
+    mlir::Operation *copySite;
+    llvm::SMTExprRef symbol;
+  };
+  /// Equal source values share symbols only across storage-preserving copy paths.
+  llvm::DenseMap<SourceRef, llvm::SmallVector<AggregateCopySymbol>> aggregateCopySymbols;
+  uint64_t nextAggregateCopySymbol = 0;
+
   /// Symbol-name prefix unique to this analysis within `smtSolver`.
   /// Reserved for the solver's entire lifetime, even after this analysis is destroyed.
   std::string symbolNamespace;
@@ -386,6 +396,16 @@ private:
   llvm::DenseMap<mlir::Operation *, llvm::DenseSet<Lattice *>> refinementTargets;
   /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
+
+  /// Storage references with the same root and field path, ignoring array indices and ranges.
+  struct StorageRefGroup {
+    llvm::SmallVector<SourceRef> all;
+    llvm::SmallVector<SourceRef> ranged;
+  };
+  /// Concrete lookups need only their exact entry and ranged candidates in the same group.
+  llvm::DenseMap<SourceRef, StorageRefGroup> writeGroups;
+  /// Match changed writes to readers without scanning unrelated storage references.
+  llvm::DenseMap<SourceRef, StorageRefGroup> storageReaderGroups;
 
   /// Actual writes, excluding the default for executions that perform no write.
   struct WriteContribution {
@@ -520,12 +540,31 @@ private:
   /// or an already-initialized root lattice value.
   Interval getRefInterval(const SourceRef &ref);
 
-  /// @brief Return the best known ExpressionValue for a SourceRef, reusing an exact
-  /// written value when available and otherwise pairing a fresh SSA symbol with the
-  /// SourceRef's current interval.
-  /// Ranged selections always retain the read's SSA symbol because matching ranges
-  /// do not establish equality between independently selected values.
+  /// @brief Resolve a selection from all overlapping stored values, retaining a default
+  /// when concrete writes do not cover the selection. Ranged selections use the caller's
+  /// symbol because matching ranges do not establish equality of independent reads.
+  /// When readSite is provided, only preceding guaranteed writes can remove its default.
+  ExpressionValue getRefValue(
+      const SourceRef &ref, llvm::SMTExprRef selectionSymbol, mlir::Operation *readSite = nullptr
+  );
+
+  /// Resolve a scalar value and subscribe reads to changes in the selected storage.
   ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
+
+  /// Reuse a ranged leaf's symbol for repeated or proven-equal source values only when
+  /// the copy sites cannot observe intervening mutations. Keep revisits stable.
+  llvm::SMTExprRef getAggregateCopySymbol(
+      const SourceRef &selected, mlir::Value sourceValue, mlir::Operation *copySite
+  );
+
+  /// @brief Resolve and translate stored descendants of an aggregate selection, including
+  /// overlapping concrete and ranged writes, once per destination leaf. Preserve the
+  /// identity of sourceValue at copySite rather than assigning each destination a new value.
+  /// Keep retained range contributions separate from defaults for unwritten copied elements.
+  llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> getAggregateWrites(
+      const SourceRef &source, const SourceRef &destination, mlir::Value sourceValue,
+      mlir::Operation *copySite
+  );
 
   /// @brief Record a write to the given SourceRef and revisit reads of that location
   /// when its stored value changes, including when new contributions expand it.

@@ -341,6 +341,10 @@ public:
   /// @brief Returns true iff `prefix` is a valid prefix of this reference.
   bool isValidPrefix(const SourceRef &prefix) const;
 
+  /// Return whether `prefix` overlaps the beginning of this reference's path.
+  /// Roots must be identical; compute/constrain self references remain distinct.
+  bool hasOverlappingPrefix(const SourceRef &prefix) const;
+
   /// Return true when both references select overlapping storage at the same path depth.
   bool overlaps(const SourceRef &rhs) const;
 

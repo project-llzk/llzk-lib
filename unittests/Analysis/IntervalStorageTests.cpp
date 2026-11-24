@@ -23,8 +23,11 @@
 #include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
+#include <llvm/Support/raw_ostream.h>
+
 #include <functional>
 #include <gtest/gtest.h>
+#include <string>
 #include <tuple>
 #include <utility>
 
@@ -32,6 +35,24 @@ using namespace mlir;
 using namespace llzk;
 
 namespace {
+
+/// Establish an ordered initial visit sequence while the real dataflow solver is running.
+class IntervalStorageInitialization : public DataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalStorageInitialization)
+
+  IntervalStorageInitialization(DataFlowSolver &dataflowSolver, std::function<void()> callback)
+      : DataFlowAnalysis(dataflowSolver), initializeCallback(std::move(callback)) {}
+
+  LogicalResult initialize(Operation *) override {
+    initializeCallback();
+    return success(!testing::Test::HasFatalFailure());
+  }
+  LogicalResult visit(ProgramPoint *) override { return success(); }
+
+private:
+  std::function<void()> initializeCallback;
+};
 
 /// Observe real solver visits without changing their order, operands, or results.
 class ObservedIntervalAnalysis : public IntervalDataFlowAnalysis {
@@ -112,6 +133,53 @@ protected:
       }
     }
     EXPECT_EQ(smt->check(), std::optional<bool>(!shouldAlias));
+  }
+
+  using Visit = std::function<LogicalResult(Operation *)>;
+
+  /// Initialize references, seed interval visits, then drain their real queued dependencies.
+  void runOrdered(
+      ModuleOp mod,
+      const std::function<void(IntervalDataFlowAnalysis &, const Visit &)> &initialize,
+      const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check
+  ) {
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod)));
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    Visit visit = [&](Operation *op) {
+      SmallVector<const IntervalAnalysisLattice *> operands;
+      SmallVector<IntervalAnalysisLattice *> results;
+      for (Value value : op->getOperands()) {
+        auto *lattice = solver.getOrCreateState<IntervalAnalysisLattice>(value);
+        lattice->useDefSubscribe(analysis);
+        operands.push_back(lattice);
+      }
+      for (Value value : op->getResults()) {
+        results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+      }
+      return analysis->visitOperation(op, operands, results);
+    };
+    auto *driver =
+        solver.load<IntervalStorageInitialization>([&] { initialize(*analysis, visit); });
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod, [&](DataFlowAnalysis &candidate) {
+      return &candidate == driver;
+    })));
+    check(*analysis, solver);
+  }
+
+  /// Visit a function in source order before checking its stored intervals.
+  void runOrdered(
+      ModuleOp mod, function::FuncDefOp fn,
+      const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check
+  ) {
+    runOrdered(mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }, check);
   }
 
   /// Complete references, then initialize interval analysis normally through the solver.
@@ -783,6 +851,90 @@ module attributes {llzk.lang} {
   }
 }
 
+// Exact ranged writes lose their defaults only when concrete writes cover every candidate.
+TEST_F(IntervalStorageTests, ExactRangedWritesRecomputeDefaultsFromConcreteCoverage) {
+  for (bool rangedFirst : {false, true}) {
+    SCOPED_TRACE(rangedFirst ? "ranged writes first" : "concrete writes first");
+    auto mod = parseModule(R"mlir(
+!Arrays = !pod.type<[@full: !array.type<2 x !felt.type>, @partial: !array.type<2 x !felt.type>, @optional: !array.type<2 x !felt.type>, @unbounded: !array.type<? x !felt.type>]>
+!Values = !pod.type<[@full: !felt.type, @partial: !felt.type, @optional: !felt.type, @unbounded: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%full: !array.type<2 x !felt.type>, %partial: !array.type<2 x !felt.type>, %optional: !array.type<2 x !felt.type>, %unbounded: !array.type<? x !felt.type>, %i: index, %condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %full[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %partial[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %optional[%i] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %unbounded[%i] = %nine : !array.type<? x !felt.type>, !felt.type
+    array.write %full[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %full[%one] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %partial[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %optional[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    array.write %unbounded[%zero] = %seven : !array.type<? x !felt.type>, !felt.type
+    array.write %unbounded[%one] = %seven : !array.type<? x !felt.type>, !felt.type
+    scf.if %condition {
+      array.write %optional[%one] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    %fullRead = array.read %full[%i] : !array.type<2 x !felt.type>, !felt.type
+    %partialRead = array.read %partial[%i] : !array.type<2 x !felt.type>, !felt.type
+    %optionalRead = array.read %optional[%i] : !array.type<2 x !felt.type>, !felt.type
+    %unboundedRead = array.read %unbounded[%i] : !array.type<? x !felt.type>, !felt.type
+    %reads = pod.new { @full = %fullRead, @partial = %partialRead, @optional = %optionalRead, @unbounded = %unboundedRead } : !Values
+    %copies = pod.new { @full = %full, @partial = %partial, @optional = %optional, @unbounded = %unbounded } : !Arrays
+    %copiedFull = pod.read %copies[@full] : !Arrays, !array.type<2 x !felt.type>
+    %copiedFullRead = array.read %copiedFull[%i] : !array.type<2 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto writes = llvm::to_vector(fn.getOps<array::WriteArrayOp>());
+    auto conditional = *fn.getOps<scf::IfOp>().begin();
+    auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+    auto copiedRead = llvm::to_vector(fn.getOps<array::ReadArrayOp>()).back();
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op == writes.front().getOperation()) {
+          break;
+        }
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+      auto visitWrites = [&](bool ranged) {
+        for (auto [i, write] : llvm::enumerate(writes)) {
+          if ((i < 4) == ranged) {
+            ASSERT_TRUE(succeeded(visit(write)));
+          }
+        }
+        if (!ranged) {
+          ASSERT_TRUE(succeeded(visit(&conditional.thenBlock()->front())));
+        }
+      };
+      visitWrites(rangedFirst);
+      visitWrites(!rangedFirst);
+      // Read and copy only after all writes, independently of storage notifications.
+      for (Operation *op = conditional->getNextNode(); op; op = op->getNextNode()) {
+        ASSERT_TRUE(succeeded(visit(op)));
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+      llvm::StringRef names[] = {"full", "partial", "optional", "unbounded"};
+      for (auto [i, name] : llvm::enumerate(names)) {
+        SourceRefIndex record(StringAttr::get(&ctx, name));
+        auto range = SourceRefIndex::forArrayDimension(i == 3 ? ShapedType::kDynamic : 2);
+        auto expected = i == 0 ? UnreducedInterval(7, 9).reduce(field) : Interval::Entire(field);
+        expectStored(analysis, SourceRef(pods[0]->getResult(0), {record}), expected);
+        // Stored ranges retain defaults; reads use concrete coverage to remove them.
+        expectStored(
+            analysis, SourceRef(pods[1]->getResult(0), {record, range}), Interval::Entire(field)
+        );
+      }
+      expectValue(solver, copiedRead.getResult(), UnreducedInterval(7, 9));
+    });
+  }
+}
+
 // Neither a ranged target nor one of several possible aliases is guaranteed to be written.
 TEST_F(IntervalStorageTests, AmbiguousArrayWritesKeepNoWriteDefaults) {
   for (bool optionalFirst : {false, true}) {
@@ -1143,6 +1295,558 @@ module attributes {llzk.lang} {
   }
   ASSERT_EQ(unrelatedVisits.size(), 2U);
   EXPECT_EQ(unrelatedVisits[0], unrelatedVisits[1]);
+}
+
+// Analyze every write first to isolate overlap matching from dependency notifications.
+TEST_F(IntervalStorageTests, AggregateCopiesIncludeOverlappingWrites) {
+  for (bool rangedSource : {false, true}) {
+    SCOPED_TRACE(rangedSource ? "ranged source" : "concrete source");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @stored : !P
+    function.def @compute(%array: !array.type<2 x !P>, %i: index, %j: index) -> !struct.type<@Box> {
+      %box = struct.new : !struct.type<@Box>
+      %zero = arith.constant 0 : index
+      %one = arith.constant 1 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %first = array.read %array[%zero] : !array.type<2 x !P>, !P
+      %second = array.read %array[%one] : !array.type<2 x !P>, !P
+      %dynamic = array.read %array[%i] : !array.type<2 x !P>, !P
+      pod.write %first[@value] = %seven : !P, !felt.type
+      pod.write %second[@value] = %seven : !P, !felt.type
+      pod.write %first[@other] = %seven : !P, !felt.type
+      pod.write %second[@other] = %seven : !P, !felt.type
+      pod.write %dynamic[@value] = %nine : !P, !felt.type
+      %source = array.read %array[%j] : !array.type<2 x !P>, !P
+      %podCopy = pod.new { @child = %source } : !W
+      %arrayCopy = array.new %source : !array.type<1 x !P>
+      %assigned = pod.new : !W
+      pod.write %assigned[@child] = %source : !W, !P
+      struct.writem %box[@stored] = %source : !struct.type<@Box>, !P
+      function.return %box : !struct.type<@Box>
+    }
+    function.def @constrain(%self: !struct.type<@Box>, %array: !array.type<2 x !P>, %i: index, %j: index) {
+      function.return
+    }
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto box = *mod->getOps<component::StructDefOp>().begin();
+    auto fn = *box.getOps<function::FuncDefOp>().begin();
+    auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+    if (!rangedSource) {
+      reads.back()->setOperand(1, reads[1].getIndices().front());
+    }
+    auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+    auto arrayCopy = *fn.getOps<array::CreateArrayOp>().begin();
+    auto member = *box.getOps<component::MemberDefOp>().begin();
+    SourceRefIndex child(StringAttr::get(&ctx, "child"));
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    SourceRefIndex other(StringAttr::get(&ctx, "other"));
+    SmallVector<SourceRef> copies {
+        SourceRef(pods[0]->getResult(0), {child}),
+        SourceRef(arrayCopy->getResult(0), {SourceRefIndex(0)}),
+        SourceRef(pods[1]->getResult(0), {child}),
+        SourceRef(
+            (*fn.getOps<component::CreateStructOp>().begin())->getResult(0),
+            {SourceRefIndex(member)}
+        )
+    };
+    runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+      for (const SourceRef &copy : copies) {
+        expectStored(analysis, *copy.createChild(value), UnreducedInterval(7, 9).reduce(field));
+        expectStored(
+            analysis, *copy.createChild(other), Interval::Degenerate(field, field.felt(7))
+        );
+      }
+    });
+  }
+}
+
+// A copied range's unwritten alternatives must not pollute its known concrete elements.
+TEST_F(IntervalStorageTests, AggregateCopiesKeepRangedContributionsSeparate) {
+  auto mod = parseModule(R"mlir(
+!A = !array.type<3 x !felt.type>
+!W = !pod.type<[@values: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%source: !A, %assigned: !W, %i: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %two = arith.constant 2 : index
+    %three = felt.const 3
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %source[%zero] = %seven : !A, !felt.type
+    array.write %source[%two] = %three : !A, !felt.type
+    array.write %source[%i] = %nine : !A, !felt.type
+    %old = pod.read %assigned[@values] : !W, !A
+    array.write %old[%one] = %seven : !A, !felt.type
+    %copy = pod.new { @values = %source } : !W
+    %copied = pod.read %copy[@values] : !W, !A
+    %chain = pod.new { @values = %copied } : !W
+    %chained = pod.read %chain[@values] : !W, !A
+    pod.write %assigned[@values] = %source : !W, !A
+    %assignedArray = pod.read %assigned[@values] : !W, !A
+    %first = array.read %copied[%zero] : !A, !felt.type
+    %unwritten = array.read %copied[%one] : !A, !felt.type
+    %last = array.read %copied[%two] : !A, !felt.type
+    %dynamic = array.read %copied[%i] : !A, !felt.type
+    %chainFirst = array.read %chained[%zero] : !A, !felt.type
+    %chainUnwritten = array.read %chained[%one] : !A, !felt.type
+    %assignedFirst = array.read %assignedArray[%zero] : !A, !felt.type
+    %assignedUnwritten = array.read %assignedArray[%one] : !A, !felt.type
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &, DataFlowSolver &solver) {
+    SmallVector<UnreducedInterval> expected {{7, 9}, {field.zero(), field.maxVal()},
+                                             {3, 9}, {field.zero(), field.maxVal()},
+                                             {7, 9}, {field.zero(), field.maxVal()},
+                                             {7, 9}, {field.zero(), field.maxVal()}};
+    auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+    ASSERT_EQ(reads.size(), expected.size());
+    for (auto [i, read] : llvm::enumerate(reads)) {
+      SCOPED_TRACE(i);
+      expectValue(solver, read.getResult(), expected[i]);
+    }
+  });
+}
+
+// Removing a retained range's fallback must preserve uncertainty in a selected source prefix.
+TEST_F(IntervalStorageTests, CopiedDynamicPrefixesKeepUnwrittenDefaults) {
+  for (StringRef size : {"1", "2"}) {
+    SCOPED_TRACE(size.str());
+    std::string source = R"mlir(
+!M = !array.type<2,SIZE x !felt.type>
+!A = !array.type<SIZE x !felt.type>
+!W = !pod.type<[@values: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%matrix: !M, %assigned: !W, %i: index, %j: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %matrix[%zero, %zero] = %seven : !M, !felt.type
+    array.write %matrix[%zero, %j] = %nine : !M, !felt.type
+    %old = pod.read %assigned[@values] : !W, !A
+    array.write %old[%j] = %seven : !A, !felt.type
+    %row = array.extract %matrix[%i] : !M
+    %copy = pod.new { @values = %row } : !W
+    %copied = pod.read %copy[@values] : !W, !A
+    pod.write %assigned[@values] = %row : !W, !A
+    %assignedArray = pod.read %assigned[@values] : !W, !A
+    %first = array.read %copied[%zero] : !A, !felt.type
+    %dynamic = array.read %copied[%j] : !A, !felt.type
+    %assignedFirst = array.read %assignedArray[%zero] : !A, !felt.type
+    %assignedDynamic = array.read %assignedArray[%j] : !A, !felt.type
+    function.return
+  }
+}
+)mlir";
+    while (source.find("SIZE") != std::string::npos) {
+      source.replace(source.find("SIZE"), StringRef("SIZE").size(), size);
+    }
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &, DataFlowSolver &solver) {
+      for (auto read : fn.getOps<array::ReadArrayOp>()) {
+        expectValue(solver, read.getResult(), UnreducedInterval(field.zero(), field.maxVal()));
+      }
+    });
+  }
+}
+
+// A copied unknown must overwrite a known destination tracked through a singleton range.
+TEST_F(IntervalStorageTests, AggregateAssignmentsPreserveSingletonDefaults) {
+  auto mod = parseModule(R"mlir(
+!A = !array.type<1,2 x !felt.type>
+!W = !pod.type<[@values: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%source: !A, %assigned: !W, %i: index, %j: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %source[%i, %j] = %nine : !A, !felt.type
+    %old = pod.read %assigned[@values] : !W, !A
+    array.write %old[%i, %zero] = %seven : !A, !felt.type
+    pod.write %assigned[@values] = %source : !W, !A
+    %copied = pod.read %assigned[@values] : !W, !A
+    %value = array.read %copied[%i, %zero] : !A, !felt.type
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+    SourceRefIndex values(StringAttr::get(&ctx, "values"));
+    expectStored(
+        analysis,
+        SourceRef(
+            fn.getArgument(1), {values, SourceRefIndex::forArrayDimension(1), SourceRefIndex(0)}
+        ),
+        Interval::Entire(field)
+    );
+    auto read = *fn.getOps<array::ReadArrayOp>().begin();
+    expectValue(solver, read.getResult(), UnreducedInterval(field.zero(), field.maxVal()));
+  });
+}
+
+// Writes must revisit initialized concrete and ranged readers in the same storage group.
+TEST_F(IntervalStorageTests, IndexedWritesNotifyOverlappingReaders) {
+  for (bool rangedWrite : {false, true}) {
+    SCOPED_TRACE(rangedWrite ? "ranged write" : "concrete write");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !P>, %unrelated: !P, %index: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %eleven = felt.const 11
+    %left = array.read %array[%zero] : !array.type<2 x !P>, !P
+    %right = array.read %array[%one] : !array.type<2 x !P>, !P
+    %selected = array.read %array[%index] : !array.type<2 x !P>, !P
+    pod.write %left[@value] = %seven : !P, !felt.type
+    pod.write %right[@value] = %seven : !P, !felt.type
+    pod.write %left[@other] = %eleven : !P, !felt.type
+    pod.write %unrelated[@value] = %eleven : !P, !felt.type
+    pod.write %selected[@value] = %nine : !P, !felt.type
+    %first = pod.read %left[@value] : !P, !felt.type
+    %second = pod.read %right[@value] : !P, !felt.type
+    %dynamic = pod.read %selected[@value] : !P, !felt.type
+    %duplicate = pod.read %left[@value] : !P, !felt.type
+    %other = pod.read %left[@other] : !P, !felt.type
+    %independent = pod.read %unrelated[@value] : !P, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto lateWrite = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+    if (!rangedWrite) {
+      auto left = *fn.getOps<array::ReadArrayOp>().begin();
+      lateWrite.setOperand(0, left.getResult());
+    }
+    auto reads = llvm::to_vector(fn.getOps<pod::ReadPodOp>());
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op != lateWrite.getOperation()) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      ASSERT_TRUE(succeeded(visit(lateWrite)));
+    }, [&](IntervalDataFlowAnalysis &, DataFlowSolver &solver) {
+      SmallVector<UnreducedInterval> expected {{7, 9},   {7, rangedWrite ? 9 : 7},
+                                               {7, 9},   {7, 9},
+                                               {11, 11}, {11, 11}};
+      ASSERT_EQ(reads.size(), expected.size());
+      for (auto [read, bounds] : llvm::zip(reads, expected)) {
+        SCOPED_TRACE(debug::toStringOne(*read));
+        expectValue(solver, read.getResult(), bounds);
+      }
+    });
+  }
+}
+
+// Large copies and concrete writes must avoid scanning every stored write or reader per leaf.
+TEST_F(IntervalStorageTests, LargeConcreteAggregateCopies) {
+  constexpr unsigned count = 65536;
+  std::string source;
+  llvm::raw_string_ostream os(source);
+  os << "!A = !array.type<" << count << R"mlir( x !felt.type>
+!W = !pod.type<[@array: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !A) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+)mlir";
+  for (unsigned i = 0; i < count; ++i) {
+    os << "    %c" << i << " = arith.constant " << i << " : index\n"
+       << "    array.write %array[%c" << i << "] = " << (i % 2 == 0 ? "%seven" : "%nine")
+       << " : !A, !felt.type\n"
+       << "    %read" << i << " = array.read %array[%c" << i << "] : !A, !felt.type\n";
+  }
+  os << R"mlir(
+    %copy = pod.new { @array = %array } : !W
+    %copied = pod.read %copy[@array] : !W, !A
+    %first = array.read %copied[%c0] : !A, !felt.type
+    %last = array.read %copied[%c)mlir"
+     << count - 1 << R"mlir(] : !A, !felt.type
+    function.return %first, %last : !felt.type, !felt.type
+  }
+}
+)mlir";
+  auto mod = parseModule(source);
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto copy = *fn.getOps<pod::NewPodOp>().begin();
+  SourceRefIndex array(StringAttr::get(&ctx, "array"));
+  auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit) {
+    // Register every source reader before any write is analyzed.
+    for (Operation &op : fn.getBody().front()) {
+      if (&op == copy.getOperation()) {
+        break;
+      }
+      if (!isa<array::WriteArrayOp>(op)) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+    for (auto write : fn.getOps<array::WriteArrayOp>()) {
+      ASSERT_TRUE(succeeded(visit(write)));
+    }
+    for (Operation *op = copy; op; op = op->getNextNode()) {
+      ASSERT_TRUE(succeeded(visit(op)));
+    }
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+    for (unsigned i = 0; i < count; ++i) {
+      SCOPED_TRACE(i);
+      ASSERT_NO_FATAL_FAILURE(expectStored(
+          analysis, SourceRef(copy->getResult(0), {array, SourceRefIndex(i)}),
+          Interval::Degenerate(field, field.felt(i % 2 == 0 ? 7 : 9))
+      ));
+      const int expected = i % 2 == 0 ? 7 : 9;
+      expectValue(solver, reads[i].getResult(), UnreducedInterval(expected, expected));
+    }
+    auto returned = fn.getBody().front().getTerminator()->getOperands();
+    expectValue(solver, returned[0], UnreducedInterval(7, 7));
+    expectValue(solver, returned[1], UnreducedInterval(9, 9));
+  });
+}
+
+// Ranged copies should inspect only overlapping writes for each named POD field.
+TEST_F(IntervalStorageTests, LargeRangedAggregateCopies) {
+  constexpr unsigned count = 1024;
+  std::string source;
+  llvm::raw_string_ostream os(source);
+  os << "!P = !pod.type<[";
+  for (unsigned i = 0; i < count; ++i) {
+    os << (i == 0 ? "" : ", ") << "@field" << i << ": !felt.type";
+  }
+  os << R"mlir(]>
+!A = !array.type<2 x !P>
+!W = !pod.type<[@pod: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !A, %index: index) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %left = array.read %array[%zero] : !A, !P
+    %right = array.read %array[%one] : !A, !P
+)mlir";
+  for (unsigned i = 0; i < count; ++i) {
+    os << "    pod.write %left[@field" << i << "] = %seven : !P, !felt.type\n"
+       << "    pod.write %right[@field" << i << "] = %nine : !P, !felt.type\n";
+  }
+  os << R"mlir(
+    %selected = array.read %array[%index] : !A, !P
+    %copy = pod.new { @pod = %selected } : !W
+    %copied = pod.read %copy[@pod] : !W, !P
+    %first = pod.read %copied[@field0] : !P, !felt.type
+    %last = pod.read %copied[@field)mlir"
+     << count - 1 << R"mlir(] : !P, !felt.type
+    function.return %first, %last : !felt.type, !felt.type
+  }
+}
+)mlir";
+  auto mod = parseModule(source);
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto copy = *fn.getOps<pod::NewPodOp>().begin();
+  SourceRefIndex pod(StringAttr::get(&ctx, "pod"));
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+    for (unsigned i = 0; i < count; ++i) {
+      SCOPED_TRACE(i);
+      SourceRefIndex member(StringAttr::get(&ctx, "field" + std::to_string(i)));
+      ASSERT_NO_FATAL_FAILURE(expectStored(
+          analysis, SourceRef(copy->getResult(0), {pod, member}),
+          UnreducedInterval(7, 9).reduce(field)
+      ));
+    }
+    for (Value returned : fn.getBody().front().getTerminator()->getOperands()) {
+      expectValue(solver, returned, UnreducedInterval(7, 9));
+    }
+  });
+}
+
+// Copying two independent dynamic selections must preserve their separate value identities.
+TEST_F(IntervalStorageTests, RangedAggregateCopiesKeepIndependentSymbols) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type) {
+    %left = array.read %array[%i] : !array.type<2 x !P>, !P
+    %right = array.read %array[%j] : !array.type<2 x !P>, !P
+    pod.write %left[@value] = %input : !P, !felt.type
+    %leftCopy = pod.new { @child = %left } : !W
+    %rightCopy = pod.new { @child = %right } : !W
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto copies = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+  SourceRef::Path path {
+      SourceRefIndex(StringAttr::get(&ctx, "child")), SourceRefIndex(StringAttr::get(&ctx, "value"))
+  };
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+    SmallVector<llvm::SMTExprRef> expressions;
+    for (auto copy : copies) {
+      SourceRef ref(copy->getResult(0), path);
+      expectStored(analysis, ref, Interval::Entire(field));
+      auto it = analysis.getWriteResults().find(ref);
+      ASSERT_NE(it, analysis.getWriteResults().end());
+      expressions.push_back(it->second.getExpr());
+      ASSERT_NE(expressions.back(), nullptr);
+    }
+    EXPECT_FALSE(*expressions[0] == *expressions[1]);
+  });
+}
+
+// Repeated aggregate values share leaf symbols only while their source storage is unchanged.
+TEST_F(IntervalStorageTests, RangedAggregateCopiesPreserveSourceIdentity) {
+  for (unsigned selection : {0U, 1U, 2U, 3U, 4U, 5U, 6U}) {
+    // Same SSA value, equivalent reads, independent reads, or source mutations before use.
+    SCOPED_TRACE(selection);
+    for (bool reverse : {false, true}) {
+      SCOPED_TRACE(reverse ? "right copy first" : "left copy first");
+      auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+!W = !pod.type<[@child: !P, @duplicate: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type) {
+    %zero = arith.constant 0 : index
+    %seed = array.read %array[%zero] : !array.type<2 x !P>, !P
+    pod.write %seed[@value] = %input : !P, !felt.type
+    pod.write %seed[@other] = %input : !P, !felt.type
+    %left = array.read %array[%i] : !array.type<2 x !P>, !P
+    %right = array.read %array[%i] : !array.type<2 x !P>, !P
+    %leftCopy = pod.new { @child = %left, @duplicate = %left } : !W
+    pod.write %left[@value] = %input : !P, !felt.type
+    %rightCopy = pod.new { @child = %right, @duplicate = %right } : !W
+    function.return
+  }
+}
+)mlir");
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+      auto copies = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+      auto interveningWrite = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+      if (selection == 0 || selection == 3) {
+        copies[1]->setOperand(0, reads[1].getResult());
+        copies[1]->setOperand(1, reads[1].getResult());
+      }
+      if (selection == 2) {
+        reads[2]->setOperand(1, fn.getArgument(2));
+      }
+      if (selection < 3) {
+        interveningWrite.erase();
+      } else if (selection >= 5) {
+        interveningWrite->moveBefore(copies.front());
+        if (selection == 6) {
+          interveningWrite->setOperand(0, reads[2].getResult());
+        }
+      }
+      SourceRefIndex child(StringAttr::get(&ctx, "child"));
+      SourceRefIndex duplicate(StringAttr::get(&ctx, "duplicate"));
+      SourceRefIndex value(StringAttr::get(&ctx, "value"));
+      SourceRefIndex other(StringAttr::get(&ctx, "other"));
+      SmallVector<llvm::SMTExprRef> initial;
+      runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit) {
+        for (Operation &op : fn.getBody().front()) {
+          if (!llvm::isa<pod::NewPodOp>(op)) {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        for (unsigned idx : {0U, 1U}) {
+          ASSERT_TRUE(succeeded(visit(copies[reverse ? 1U - idx : idx])));
+        }
+        for (auto copy : copies) {
+          initial.push_back(
+              analysis.getWriteResults().at(SourceRef(copy->getResult(0), {child, value})).getExpr()
+          );
+        }
+        // Revisiting either copy must retain its previously published identity.
+        for (auto copy : copies) {
+          ASSERT_TRUE(succeeded(visit(copy)));
+        }
+      }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+        SmallVector<llvm::SMTExprRef> expressions;
+        for (auto [idx, copy] : llvm::enumerate(copies)) {
+          SourceRef ref(copy->getResult(0), {child, value});
+          expectStored(analysis, ref, Interval::Entire(field));
+          const auto *expr = analysis.getWriteResults().at(ref).getExpr();
+          ASSERT_NE(expr, nullptr);
+          EXPECT_EQ(expr, initial[idx]);
+          expressions.push_back(expr);
+          EXPECT_EQ(
+              expr, analysis.getWriteResults()
+                        .at(SourceRef(copy->getResult(0), {duplicate, value}))
+                        .getExpr()
+          );
+          const auto *otherExpr = analysis.getWriteResults()
+                                      .at(SourceRef(copy->getResult(0), {child, other}))
+                                      .getExpr();
+          ASSERT_NE(otherExpr, nullptr);
+          EXPECT_FALSE(*expr == *otherExpr);
+        }
+        const bool sameValue = selection < 2;
+        EXPECT_EQ(*expressions[0] == *expressions[1], sameValue);
+      });
+    }
+  }
+}
+
+// A partially written or unbounded selection still includes unwritten alternatives.
+TEST_F(IntervalStorageTests, RangedAggregateCopiesPreserveUnwrittenDefaults) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !P>, %dynamic: !array.type<? x !P>, %i: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %first = array.read %array[%zero] : !array.type<2 x !P>, !P
+    %dynamicFirst = array.read %dynamic[%zero] : !array.type<? x !P>, !P
+    pod.write %first[@value] = %seven : !P, !felt.type
+    pod.write %dynamicFirst[@value] = %seven : !P, !felt.type
+    %partial = array.read %array[%i] : !array.type<2 x !P>, !P
+    %unbounded = array.read %dynamic[%i] : !array.type<? x !P>, !P
+    %partialCopy = pod.new { @child = %partial } : !W
+    %unboundedCopy = pod.new { @child = %unbounded } : !W
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  runOrdered(*mod, fn, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+    for (auto copy : fn.getOps<pod::NewPodOp>()) {
+      expectStored(
+          analysis,
+          SourceRef(
+              copy->getResult(0), {SourceRefIndex(StringAttr::get(&ctx, "child")),
+                                   SourceRefIndex(StringAttr::get(&ctx, "value"))}
+          ),
+          Interval::Entire(field)
+      );
+    }
+  });
 }
 
 } // namespace
