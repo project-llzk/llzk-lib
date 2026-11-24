@@ -1079,7 +1079,11 @@ IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, llvm::SMTExprRef sel
       });
     });
     if (concreteWrites == 0 || required != llvm::DynamicAPInt(concreteWrites)) {
-      result = ExpressionValue(selectionSymbol, getRefInterval(ref), getRefUnreducedInterval(ref));
+      // Keep SSA roots' own symbols; repeated concrete storage reads share the location symbol.
+      result = ExpressionValue(
+          rangedSelection || ref.getPath().empty() ? selectionSymbol : getOrCreateSymbol(ref),
+          getRefInterval(ref), getRefUnreducedInterval(ref)
+      );
     }
   }
   auto joinWrite = [&](const ExpressionValue &writtenVal) {
