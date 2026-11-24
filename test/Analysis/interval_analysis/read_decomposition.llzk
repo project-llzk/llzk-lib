@@ -294,3 +294,263 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
 // CHECK-NEXT:      }
 // CHECK-NEXT:  }
+
+// -----
+
+// A dynamic write can change a concrete element between two reads; x = 11 and y = 9 remains valid.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @ConcreteOverlappingWrite {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %replacement: !struct.type<@Cell>) -> !struct.type<@ConcreteOverlappingWrite> {
+      %self = struct.new : !struct.type<@ConcreteOverlappingWrite>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %array[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@ConcreteOverlappingWrite>
+    }
+  }
+}
+
+// CHECK-LABEL: @ConcreteOverlappingWrite SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// A write to the same constant index must preserve the valid witness x = 11, y = 9.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @ConcreteSameElementWrite {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %replacement: !struct.type<@Cell>) -> !struct.type<@ConcreteSameElementWrite> {
+      %self = struct.new : !struct.type<@ConcreteSameElementWrite>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      array.write %array[%index] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %right = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@ConcreteSameElementWrite>
+    }
+  }
+}
+
+// CHECK-LABEL: @ConcreteSameElementWrite SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Separate constants for the same index still identify one unchanged read value.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @EquivalentConcreteIndices {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>) -> !struct.type<@EquivalentConcreteIndices> {
+      %self = struct.new : !struct.type<@EquivalentConcreteIndices>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %otherIndex = arith.constant 0 : index
+      %right = array.read %array[%otherIndex] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@EquivalentConcreteIndices>
+    }
+  }
+}
+
+// CHECK-LABEL: @EquivalentConcreteIndices SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeF:[ 2013265919, 0 ]
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Independent direct felt-array selections must not acquire same-value decomposition bounds.
+module attributes {llzk.lang} {
+  struct.def @FeltIndependentSelections {
+    function.def @product(%array: !array.type<2 x !felt.type>, %i: index, %j: index) -> !struct.type<@FeltIndependentSelections> {
+      %self = struct.new : !struct.type<@FeltIndependentSelections>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %x = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+      %y = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@FeltIndependentSelections>
+    }
+  }
+}
+
+// CHECK-LABEL: @FeltIndependentSelections SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [array.read] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Direct felt-array reads across a dynamic-index overwrite can hold different values.
+module attributes {llzk.lang} {
+  struct.def @FeltOverlappingWrite {
+    function.def @product(%array: !array.type<2 x !felt.type>, %i: index, %replacement: !felt.type) -> !struct.type<@FeltOverlappingWrite> {
+      %self = struct.new : !struct.type<@FeltOverlappingWrite>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %x = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+      array.write %array[%i] = %replacement : !array.type<2 x !felt.type>, !felt.type
+      %y = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@FeltOverlappingWrite>
+    }
+  }
+}
+
+// CHECK-LABEL: @FeltOverlappingWrite SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [array.read] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Direct felt-array reads across a constant-index overwrite also remain independent.
+module attributes {llzk.lang} {
+  struct.def @FeltConcreteSameElementWrite {
+    function.def @product(%array: !array.type<2 x !felt.type>, %replacement: !felt.type) -> !struct.type<@FeltConcreteSameElementWrite> {
+      %self = struct.new : !struct.type<@FeltConcreteSameElementWrite>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %x = array.read %array[%index] : !array.type<2 x !felt.type>, !felt.type
+      array.write %array[%index] = %replacement : !array.type<2 x !felt.type>, !felt.type
+      %y = array.read %array[%index] : !array.type<2 x !felt.type>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@FeltConcreteSameElementWrite>
+    }
+  }
+}
+
+// CHECK-LABEL: @FeltConcreteSameElementWrite SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [array.read] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
