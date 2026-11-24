@@ -33,8 +33,20 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @IndependentSelections SSAIntervals {
-// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
-// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -71,8 +83,20 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @SameSSAValue SSAIntervals {
-// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
-// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeF:[ 2013265919, 0 ]
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -109,8 +133,18 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @SameConcreteElement SSAIntervals {
-// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
-// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeF:[ 2013265919, 0 ]
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -147,8 +181,19 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @SameDynamicIndex SSAIntervals {
-// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
-// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeF:[ 2013265919, 0 ]
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -185,8 +230,20 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @SameAggregateHandle SSAIntervals {
-// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
-// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeF:[ 2013265919, 0 ]
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
 
 // -----
 
@@ -224,5 +281,16 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: @OverlappingWrite SSAIntervals {
-// CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
-// CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in Entire
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
