@@ -11,21 +11,27 @@
 
 #include "llzk/Analysis/SourceRefLattice.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
+#include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Cast/IR/Ops.h"
 #include "llzk/Dialect/Constrain/IR/Ops.h"
 #include "llzk/Dialect/Function/IR/Ops.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Polymorphic/IR/Types.h"
+#include "llzk/Util/Compare.h"
 #include "llzk/Util/Hash.h"
 #include "llzk/Util/SymbolHelper.h"
 #include "llzk/Util/TypeHelper.h"
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Analysis/DataFlow/DenseAnalysis.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/IR/Value.h>
 
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/Support/Debug.h>
 
+#include <algorithm>
 #include <numeric>
 #include <unordered_set>
 
@@ -40,6 +46,90 @@ using namespace component;
 using namespace constrain;
 using namespace function;
 using namespace pod;
+
+namespace {
+
+/// Infer the half-open index bounds of a statically bounded structured loop.
+static std::optional<std::pair<DynamicAPInt, DynamicAPInt>> getStaticLoopIndexRange(Value index) {
+  if (auto toIndex = index.getDefiningOp<cast::FeltToIndexOp>()) {
+    index = toIndex.getValue();
+  }
+  auto blockArg = llvm::dyn_cast<BlockArgument>(index);
+  if (!blockArg) {
+    return std::nullopt;
+  }
+
+  if (auto forOp = llvm::dyn_cast<scf::ForOp>(blockArg.getOwner()->getParentOp())) {
+    if (blockArg != forOp.getInductionVar()) {
+      return std::nullopt;
+    }
+    auto lower = forOp.getLowerBound().getDefiningOp<arith::ConstantIndexOp>();
+    auto upper = forOp.getUpperBound().getDefiningOp<arith::ConstantIndexOp>();
+    if (lower && upper) {
+      return std::pair(DynamicAPInt(lower.value()), DynamicAPInt(upper.value()));
+    }
+    return std::nullopt;
+  }
+
+  auto whileOp = llvm::dyn_cast<scf::WhileOp>(blockArg.getOwner()->getParentOp());
+  if (!whileOp || blockArg.getOwner() != &whileOp.getAfter().front()) {
+    return std::nullopt;
+  }
+  unsigned argumentNumber = blockArg.getArgNumber();
+  if (argumentNumber >= whileOp.getBeforeArguments().size() ||
+      argumentNumber >= whileOp.getInits().size()) {
+    return std::nullopt;
+  }
+
+  auto lower = whileOp.getInits()[argumentNumber].getDefiningOp<felt::FeltConstantOp>();
+  auto cmp = whileOp.getConditionOp().getCondition().getDefiningOp<boolean::CmpOp>();
+  Value beforeArgument = whileOp.getBeforeArguments()[argumentNumber];
+  if (!lower || !cmp || cmp.getPredicate() != boolean::FeltCmpPredicate::LT ||
+      cmp.getLhs() != beforeArgument ||
+      whileOp.getConditionOp().getArgs()[argumentNumber] != beforeArgument) {
+    return std::nullopt;
+  }
+  auto upper = cmp.getRhs().getDefiningOp<felt::FeltConstantOp>();
+  if (!upper) {
+    return std::nullopt;
+  }
+  auto upperBound = upper.getValue().getReducedValue();
+  if (!upperBound) {
+    // A fieldless literal is not a bound until its field representative is known.
+    return std::nullopt;
+  }
+  // The backedge need not be monotone. The condition proves an upper bound, while a felt's
+  // representative is nonnegative regardless of the initializer or recurrence.
+  return std::pair(DynamicAPInt(0), *upperBound);
+}
+
+/// Select constant indices, known loop ranges, or whole dimensions from operand states.
+static std::vector<SourceRefIndex> getArrayAccessIndices(
+    ArrayAccessOpInterface access,
+    llvm::function_ref<const SourceRefLatticeValue &(Value)> getIndexState
+) {
+  std::vector<SourceRefIndex> indices;
+  ArrayType arrayType = access.getArrRef().getType();
+  for (auto [i, index] : llvm::enumerate(access.getIndices())) {
+    int64_t dimSize = arrayType.getDimSize(llzk::checkedCast<unsigned>(i));
+    auto constantIndex = getIndexState(index).getConstantValue();
+    if (succeeded(constantIndex)) {
+      indices.emplace_back(*constantIndex);
+    } else if (
+        auto bounds = getStaticLoopIndexRange(index); bounds && !ShapedType::isDynamic(dimSize)
+    ) {
+      // A guarded access may be valid even when the loop exceeds the array's bounds.
+      auto lower = std::clamp(bounds->first, DynamicAPInt(0), DynamicAPInt(dimSize));
+      auto upper = std::clamp(bounds->second, lower, DynamicAPInt(dimSize));
+      indices.emplace_back(lower, upper);
+    } else {
+      indices.push_back(SourceRefIndex::forArrayDimension(dimSize));
+    }
+  }
+  return indices;
+}
+
+} // namespace
 
 //===----------------------------------------------------------------------===//
 // SourceRefAnalysis
@@ -93,23 +183,12 @@ SourceRefAnalysis::getWriteTargetState(DataFlowSolver &solver, Operation *op) {
       ensure(it != operandVals.end(), "improperly constructed operandVals map");
       const auto &currVals = it->second;
 
-      std::vector<SourceRefIndex> indices;
-      for (auto [i, idxOperand] : llvm::enumerate(arrayAccessOp.getIndices())) {
-        auto idxIt = operandVals.find(idxOperand);
+      auto indices =
+          getArrayAccessIndices(arrayAccessOp, [&](Value index) -> const SourceRefLatticeValue & {
+        auto idxIt = operandVals.find(index);
         ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-        const auto &idxVals = idxIt->second;
-
-        auto constantIndex = idxVals.getConstantValue();
-        if (succeeded(constantIndex)) {
-          indices.emplace_back(*constantIndex);
-        } else {
-          ArrayType arrayType = array.getType();
-          assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
-          indices.push_back(
-              SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
-          );
-        }
-      }
+        return idxIt->second;
+      });
 
       auto newValsRes = currVals.extract(indices);
       ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
@@ -337,23 +416,12 @@ SourceRefLatticeValue SourceRefAnalysis::arraySubdivisionOpUpdate(
   ensure(it != operandVals.end(), "improperly constructed operandVals map");
   const auto &currVals = it->second->getValue();
 
-  std::vector<SourceRefIndex> indices;
-  for (auto [i, idxOperand] : llvm::enumerate(arrayAccessOp.getIndices())) {
-    auto idxIt = operandVals.find(idxOperand);
+  auto indices =
+      getArrayAccessIndices(arrayAccessOp, [&](Value index) -> const SourceRefLatticeValue & {
+    auto idxIt = operandVals.find(index);
     ensure(idxIt != operandVals.end(), "improperly constructed operandVals map");
-    const auto &idxVals = idxIt->second->getValue();
-
-    auto constantIndex = idxVals.getConstantValue();
-    if (succeeded(constantIndex)) {
-      indices.emplace_back(*constantIndex);
-    } else {
-      ArrayType arrayType = array.getType();
-      assert(i <= std::numeric_limits<unsigned>::max() && "index too large");
-      indices.push_back(
-          SourceRefIndex::forArrayDimension(arrayType.getDimSize(static_cast<unsigned>(i)))
-      );
-    }
-  }
+    return idxIt->second->getValue();
+  });
 
   auto newValsRes = currVals.extract(indices);
   ensure(succeeded(newValsRes), "could not create SourceRef child for array access");
