@@ -138,18 +138,25 @@ protected:
   using Visit = std::function<LogicalResult(Operation *)>;
 
   /// Initialize references, seed interval visits, then drain their real queued dependencies.
+  /// Optionally observe the production transfer function's visits.
   void runOrdered(
       ModuleOp mod,
       const std::function<void(IntervalDataFlowAnalysis &, const Visit &, DataFlowSolver &)>
           &initialize,
-      const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check
+      const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check,
+      const std::function<void(Operation *, ArrayRef<IntervalAnalysisLattice *>)> &observer = {}
   ) {
     auto smt = llvm::CreateZ3Solver();
     DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
     llzk::dataflow::loadRequiredAnalyses(solver);
     solver.load<SourceRefAnalysis>();
     ASSERT_TRUE(succeeded(solver.initializeAndRun(mod)));
-    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    IntervalDataFlowAnalysis *analysis;
+    if (observer) {
+      analysis = solver.load<ObservedIntervalAnalysis>(smt, field, observer);
+    } else {
+      analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    }
     Visit visit = [&](Operation *op) {
       SmallVector<const IntervalAnalysisLattice *> operands;
       SmallVector<IntervalAnalysisLattice *> results;
@@ -1568,6 +1575,83 @@ module attributes {llzk.lang} {
         expectValue(solver, read.getResult(), bounds);
       }
     });
+  }
+}
+
+// A burst of writes needs bounded revisits, and a later burst must still refresh its consumers.
+TEST_F(IntervalStorageTests, StorageNotificationsBoundRevisits) {
+  constexpr unsigned count = 256;
+  for (bool delayWrites : {false, true}) {
+    SCOPED_TRACE(delayWrites ? "copy before analyzed writes" : "copy after analyzed writes");
+    std::string source;
+    llvm::raw_string_ostream os(source);
+    os << "!A = !array.type<" << count + 1 << R"mlir( x !felt.type>
+!W = !pod.type<[@array: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !A) -> (!felt.type, !felt.type) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+)mlir";
+    for (unsigned i = 0; i < count; ++i) {
+      os << "    %c" << i << " = arith.constant " << i << " : index\n"
+         << "    array.write %array[%c" << i << "] = %seven : !A, !felt.type\n";
+    }
+    os << "    %lateIndex = arith.constant " << count << R"mlir( : index
+    array.write %array[%lateIndex] = %nine : !A, !felt.type
+    %copy = pod.new { @array = %array } : !W
+    %copied = pod.read %copy[@array] : !W, !A
+    %first = array.read %copied[%c0] : !A, !felt.type
+    %last = array.read %copied[%lateIndex] : !A, !felt.type
+    function.return %first, %last : !felt.type, !felt.type
+  }
+}
+)mlir";
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto writes = llvm::to_vector(fn.getOps<array::WriteArrayOp>());
+    auto copy = *fn.getOps<pod::NewPodOp>().begin();
+    auto returned = fn.getBody().front().getTerminator()->getOperands();
+    SourceRefIndex array(StringAttr::get(&ctx, "array"));
+    unsigned writerVisits = 0, copyVisits = 0, readVisits = 0;
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op == writes.back().getOperation() || (delayWrites && isa<array::WriteArrayOp>(op))) {
+          continue;
+        }
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+      if (delayWrites) {
+        for (auto write : llvm::drop_end(writes)) {
+          ASSERT_TRUE(succeeded(visit(write)));
+        }
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+      expectValue(solver, returned[0], UnreducedInterval(7, 7));
+      expectValue(solver, returned[1], Interval::Entire(field).firstUnreduced());
+      expectStored(
+          analysis, SourceRef(copy->getResult(0), {array, SourceRefIndex(0)}),
+          Interval::Degenerate(field, field.felt(7))
+      );
+      // A consumer visited for the first burst must be eligible for another notification.
+      solver.enqueue({solver.getProgramPointAfter(writes.back()), &analysis});
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [](DataFlowAnalysis &) {
+        return false;
+      })));
+      expectValue(solver, returned[1], UnreducedInterval(9, 9));
+      expectStored(
+          analysis, SourceRef(copy->getResult(0), {array, SourceRefIndex(count)}),
+          Interval::Degenerate(field, field.felt(9))
+      );
+    }, [&](Operation *op, ArrayRef<IntervalAnalysisLattice *>) {
+      writerVisits += isa<array::WriteArrayOp>(op);
+      copyVisits += op == copy.getOperation();
+      readVisits += isa<array::ReadArrayOp, pod::ReadPodOp>(op);
+    });
+    // Allow scheduling variation without accepting work proportional to the square of count.
+    EXPECT_LE(writerVisits, 4U * (count + 1));
+    EXPECT_LE(copyVisits, 8U);
+    EXPECT_LE(readVisits, 16U);
   }
 }
 

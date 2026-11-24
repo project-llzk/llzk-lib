@@ -1230,7 +1230,8 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     );
   };
 
-  auto &contributions = writeContributions[writtenRef];
+  // Most leaves have one publisher. Avoid the default map's large first-insertion allocation.
+  auto &contributions = writeContributions.try_emplace(writtenRef, 1).first->second;
   auto [it, inserted] =
       contributions.try_emplace(publisher, WriteContribution {writeVal, mayBeSkipped, {}});
   if (!inserted) {
@@ -1267,12 +1268,18 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     }
   }
   writeResults[writtenRef] = *combined;
+  // Several changed leaves can notify the same copy or read before it is visited.
+  auto enqueueConsumer = [this](Operation *consumer) {
+    if (pendingStorageConsumers.insert(consumer).second) {
+      _dataflowSolver.enqueue({getProgramPointAfter(consumer), this});
+    }
+  };
   // Recompute from every possible source instead of intersecting with stale read bounds.
   auto notifyReaders = [&](const SourceRef &source) {
     if (writtenRef.getPath().size() == source.getPath().size() &&
         writtenRef.hasOverlappingPrefix(source)) {
       for (Operation *reader : storageReaders.at(source)) {
-        _dataflowSolver.enqueue({getProgramPointAfter(reader), this});
+        enqueueConsumer(reader);
       }
     }
   };
@@ -1290,7 +1297,7 @@ void IntervalDataFlowAnalysis::recordRefWrite(
   for (const auto &[source, consumers] : aggregateReaders) {
     if (writtenRef.hasOverlappingPrefix(source)) {
       for (Operation *consumer : consumers) {
-        _dataflowSolver.enqueue({getProgramPointAfter(consumer), this});
+        enqueueConsumer(consumer);
       }
     }
   }
@@ -1377,6 +1384,8 @@ ChangeResult IntervalDataFlowAnalysis::setRefinedValue(
 mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     Operation *op, ArrayRef<const Lattice *> operands, ArrayRef<Lattice *> results
 ) {
+  // Clear before evaluating the operation so changes during this visit can reschedule it.
+  pendingStorageConsumers.erase(op);
   // We only perform the visitation on operations within functions
   FuncDefOp fn = op->getParentOfType<FuncDefOp>();
   if (!fn) {
@@ -1431,10 +1440,18 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     return LatticeValue(getRefValue(refSet.getSingleValue(), value));
   };
+  // Scalar reads subscribe to their selected leaves through getRefValue.
+  const bool scalarRead =
+      isReadOp(op) && op->getNumResults() == 1 &&
+      !llvm::isa<ArrayType, StructType, pod::PodType>(op->getResult(0).getType());
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
     SourceRefLatticeValue refSet = getSourceRefState(val);
-    if (llvm::isa<ArrayType, StructType, pod::PodType>(val.getType())) {
+    // Write destinations supply addresses; aggregate rvalues still consume stored contents.
+    const bool writeDestination =
+        opNum == 0 && llvm::isa<WriteArrayOp, pod::WritePodOp, MemberWriteOp>(op);
+    if (!writeDestination && !scalarRead &&
+        llvm::isa<ArrayType, StructType, pod::PodType>(val.getType())) {
       // Aggregate storage changes independently of its SSA lattice. Observe prefixes even
       // when their descendants have not been written yet.
       for (const SourceRef &source : refSet.foldToScalar()) {

@@ -422,6 +422,8 @@ private:
   /// Revisit consumers when overlapping storage descendants appear or change, including
   /// fields that were not stored when an aggregate was first copied.
   llvm::DenseMap<SourceRef, llvm::DenseSet<mlir::Operation *>> aggregateReaders;
+  /// Coalesce storage notifications until a consumer runs; later writes may notify it again.
+  llvm::DenseSet<mlir::Operation *> pendingStorageConsumers;
 
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
