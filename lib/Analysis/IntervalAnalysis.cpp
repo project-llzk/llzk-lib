@@ -893,6 +893,9 @@ IntervalDataFlowAnalysis::getRefUnreducedInterval(const SourceRef &ref) {
 }
 
 ExpressionValue IntervalDataFlowAnalysis::getRefValue(const SourceRef &ref, Value val) {
+  if (Operation *definition = val.getDefiningOp(); definition && isReadOp(definition)) {
+    storageReaders[ref].insert(definition);
+  }
   if (auto it = writeResults.find(ref); it != writeResults.end()) {
     // Independent indices can select different elements of the same range.
     return hasRangedSelection(ref) ? it->second.withExpression(getOrCreateSymbol(val)) : it->second;
@@ -922,25 +925,60 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     );
   };
 
-  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
-    it->second = joinStoredWrite(it->second, writeVal);
-  } else if (mayBeSkipped) {
+  auto [it, inserted] =
+      writeContributions.try_emplace(writtenRef, WriteContribution {writeVal, mayBeSkipped});
+  if (!inserted) {
+    it->second.value = joinStoredWrite(it->second.value, writeVal);
+    it->second.mayBeSkipped &= mayBeSkipped;
+  }
+  const WriteContribution &contribution = it->second;
+  ExpressionValue stored = contribution.value;
+  if (contribution.mayBeSkipped) {
     ExpressionValue noWrite(
-        getOrCreateSymbol(writtenRef), getRefInterval(writtenRef),
-        getRefUnreducedInterval(writtenRef)
+        getOrCreateSymbol(writtenRef), getDefaultIntervalForType(writtenRef.getType()),
+        getDefaultUnreducedIntervalForType(writtenRef.getType())
     );
-    writeResults[writtenRef] = joinStoredWrite(noWrite, writeVal);
-  } else {
-    writeResults[writtenRef] = writeVal;
+    stored = joinStoredWrite(noWrite, contribution.value);
   }
+  auto previous = writeResults.find(writtenRef);
+  if (previous != writeResults.end() && previous->second == stored) {
+    return;
+  }
+  writeResults[writtenRef] = std::move(stored);
+  // Recompute from every possible source instead of intersecting with stale read bounds.
+  for (Operation *reader : storageReaders[writtenRef]) {
+    _dataflowSolver.enqueue({getProgramPointAfter(reader), this});
+  }
+}
 
-  const ExpressionValue &readerUpdate = mayBeSkipped ? writeResults[writtenRef] : writeVal;
-  for (Lattice *readerLattice : readResults[writtenRef]) {
-    ExpressionValue prior = readerLattice->getValue().getScalarValue();
-    Interval intersection = prior.getInterval().intersect(readerUpdate.getInterval());
-    ExpressionValue newVal = prior.withInterval(intersection);
-    propagateIfChanged(readerLattice, readerLattice->setValue(newVal));
+void IntervalDataFlowAnalysis::updateComputedValue(
+    Lattice *lattice, ExpressionValue value, bool storageRead
+) {
+  auto [it, inserted] = computedIntervals.try_emplace(lattice, value.getInterval());
+  bool expands = !inserted && value.getInterval().intersect(it->second) != value.getInterval();
+  it->second = value.getInterval();
+  if (storageRead && expands) {
+    // Backward constraints may have narrowed other operands using the old read bounds.
+    // Restore those inputs before propagating the expanded read and reapplying constraints.
+    for (const auto &[refined, base] : refinementBases) {
+      propagateIfChanged(refined, refined->setValue(base));
+    }
+    refinementBases.clear();
   }
+  const ExpressionValue &prior = lattice->getValue().getScalarValue();
+  if (!storageRead && !expands && prior.getExpr()) {
+    value = refineReducedInterval(value, value.getInterval().intersect(prior.getInterval()));
+  }
+  propagateIfChanged(lattice, lattice->setValue(value));
+}
+
+ChangeResult
+IntervalDataFlowAnalysis::setRefinedValue(Lattice *lattice, const ExpressionValue &value) {
+  const ExpressionValue &prior = lattice->getValue().getScalarValue();
+  if (prior != value) {
+    refinementBases.try_emplace(lattice, prior);
+  }
+  return lattice->setValue(value);
 }
 
 mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
@@ -982,8 +1020,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       std::optional<UnreducedInterval> joinedUnreduced = std::nullopt;
       bool sawFirst = false;
       for (const SourceRef &ref : refSet.getScalarValue()) {
-        joinedInterval = joinedInterval.join(getRefInterval(ref));
-        auto refUnreduced = getRefUnreducedInterval(ref);
+        auto refValue = getRefValue(ref, value);
+        joinedInterval = joinedInterval.join(refValue.getInterval());
+        const auto &refUnreduced = refValue.getOptionalUnreducedInterval();
         if (!sawFirst) {
           joinedUnreduced = refUnreduced;
           sawFirst = true;
@@ -1021,6 +1060,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           auto stored = getRefValue(*arrayRef, val);
           operandVals.emplace_back(stored);
           Lattice *operandLattice = getLatticeElement(val);
+          computedIntervals.try_emplace(operandLattice, stored.getInterval());
           (void)operandLattice->setValue(stored);
           continue;
         }
@@ -1061,6 +1101,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // update that value in the lattice so we can find it later, but we don't
     // need to propagate the changes, since we already have what we need.
     Lattice *operandLattice = getLatticeElement(val);
+    if (Operation *definition = val.getDefiningOp(); definition && isReadOp(definition)) {
+      computedIntervals.try_emplace(
+          operandLattice, operandVals[opNum].getScalarValue().getInterval()
+      );
+    }
     (void)operandLattice->setValue(operandVals[opNum]);
   }
 
@@ -1069,7 +1114,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     if (!llvm::isa<ArrayType, StructType, pod::PodType>(resultVal.getType())) {
       auto resolvedValue = resolveRefStateValue(resultVal, getSourceRefState(resultVal));
       if (resolvedValue.has_value()) {
-        propagateIfChanged(results[0], results[0]->setValue(*resolvedValue));
+        updateComputedValue(results[0], resolvedValue->getScalarValue(), true);
       }
     }
     return success();
@@ -1098,22 +1143,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       result = performUnaryArithmetic(op, operandVals[0]);
     }
 
-    // Also intersect with prior interval, if it's initialized
-    const ExpressionValue &prior = results[0]->getValue().getScalarValue();
-    if (prior.getExpr()) {
-      result = refineReducedInterval(result, result.getInterval().intersect(prior.getInterval()));
-    }
-    propagateIfChanged(results[0], results[0]->setValue(result));
+    updateComputedValue(results[0], std::move(result));
   } else if (auto selectOp = llvm::dyn_cast<arith::SelectOp>(op)) {
     ExpressionValue result = selectValue(
         smtSolver, operandVals[0].getScalarValue(), operandVals[1].getScalarValue(),
         operandVals[2].getScalarValue()
     );
-    const ExpressionValue &prior = results[0]->getValue().getScalarValue();
-    if (prior.getExpr()) {
-      result = refineReducedInterval(result, result.getInterval().intersect(prior.getInterval()));
-    }
-    propagateIfChanged(results[0], results[0]->setValue(result));
+    updateComputedValue(results[0], std::move(result));
   } else if (EmitEqualityOp emitEq = llvm::dyn_cast<EmitEqualityOp>(op)) {
     Value lhsVal = emitEq.getLhs(), rhsVal = emitEq.getRhs();
     ExpressionValue lhsExpr = operandVals[0].getScalarValue();
@@ -1144,12 +1180,13 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     // No need to propagate the constraint
     (void)getLatticeElement(cond)->addSolverConstraint(assertExpr);
   } else if (auto writePod = llvm::dyn_cast<pod::WritePodOp>(op)) {
-    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     SourceRefLatticeValue podRefs = getSourceRefState(writePod.getPodRef());
     if (podRefs.isScalar()) {
       auto recordRefsRes = podRefs.referencePodRecord(writePod.getRecordNameAttr());
       ensure(succeeded(recordRefsRes), "could not create SourceRef child for pod write");
       SourceRefLatticeValue recordRefs = recordRefsRes->first;
+      // A write to one of several possible PODs can miss each candidate.
+      const bool maySkipWrite = isInMaybeSkippedScfRegion(op) || !recordRefs.isSingleValue();
       Type valueTy = writePod.getValue().getType();
       if (!llvm::isa<ArrayType, StructType, pod::PodType>(valueTy)) {
         ExpressionValue writeVal = operandVals[1].getScalarValue();
@@ -1221,9 +1258,11 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       }
     }
   } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
-    const bool maySkipWrite = isInMaybeSkippedScfRegion(op);
     ExpressionValue writeVal = operandVals.back().getScalarValue();
     auto arrayRef = getArrayAccessRef(op, writeArr);
+    // A ranged access may miss each candidate even when the operation always executes.
+    const bool maySkipWrite =
+        isInMaybeSkippedScfRegion(op) || (succeeded(arrayRef) && hasRangedSelection(*arrayRef));
     if (succeeded(arrayRef)) {
       recordRefWrite(*arrayRef, writeVal, maySkipWrite);
     }
@@ -1236,7 +1275,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       auto [targetRefs, _] = *targetRefsRes;
       ensure(targetRefs.isScalar(), "array write must resolve to scalar references");
       for (const SourceRef &ref : targetRefs.getScalarValue()) {
-        recordRefWrite(ref, writeVal, maySkipWrite);
+        recordRefWrite(
+            ref, writeVal, maySkipWrite || !targetRefs.isSingleValue() || hasRangedSelection(ref)
+        );
       }
     }
   } else if (auto createArray = llvm::dyn_cast<CreateArrayOp>(op)) {
@@ -1575,7 +1616,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
   // Intersect with the current value to accumulate restrictions across constraints.
   Interval intersection = oldLatticeVal.getInterval().intersect(newInterval);
   ExpressionValue newLatticeVal = refineReducedInterval(oldLatticeVal, intersection);
-  ChangeResult changed = valLattice->setValue(newLatticeVal);
+  ChangeResult changed = setRefinedValue(valLattice, newLatticeVal);
 
   if (auto blockArg = llvm::dyn_cast<BlockArgument>(val)) {
     auto fnOp = dyn_cast<FuncDefOp>(blockArg.getOwner()->getParentOp());
@@ -1594,7 +1635,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
           trackUnreducedIntervals ? std::optional<UnreducedInterval>(newInterval.firstUnreduced())
                                   : std::nullopt
       );
-      propagateIfChanged(computeEntryLattice, computeEntryLattice->setValue(newArgVal));
+      propagateIfChanged(computeEntryLattice, setRefinedValue(computeEntryLattice, newArgVal));
     }
   }
 
@@ -1860,7 +1901,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
         }
       }
       ExpressionValue refined = refineReducedInterval(reader->getValue().getScalarValue(), shared);
-      propagateIfChanged(reader, reader->setValue(refined));
+      propagateIfChanged(reader, setRefinedValue(reader, refined));
     }
   };
 
@@ -1877,7 +1918,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
       // Also propagate to all other member read results for this member
       for (Lattice *l : readResults[ref]) {
         if (l != valLattice) {
-          propagateIfChanged(l, l->setValue(newLatticeVal));
+          propagateIfChanged(l, setRefinedValue(l, newLatticeVal));
         }
       }
     }
@@ -1894,7 +1935,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
       for (Lattice *l : readResults[*arrayRef]) {
         if (l != valLattice) {
-          propagateIfChanged(l, l->setValue(newLatticeVal));
+          propagateIfChanged(l, setRefinedValue(l, newLatticeVal));
         }
       }
     }
@@ -1912,7 +1953,7 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
       // Also propagate to all other member read results for this member
       for (Lattice *l : readResults[ref]) {
         if (l != valLattice) {
-          propagateIfChanged(l, l->setValue(newLatticeVal));
+          propagateIfChanged(l, setRefinedValue(l, newLatticeVal));
         }
       }
     }

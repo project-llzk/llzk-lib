@@ -1,0 +1,4 @@
+fixed:
+  - Interval Analysis: Remove stale no-write defaults after unconditional storage writes regardless of analysis visitation order.
+  - Interval Analysis: Keep no-write defaults for dynamic array writes and ambiguous array or POD write targets.
+  - Interval Analysis: Re-expand reads and dependent calculations when later storage writes add possible values.
