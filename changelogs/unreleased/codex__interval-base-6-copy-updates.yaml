@@ -1,0 +1,3 @@
+fixed:
+  - Interval Analysis: Propagate delayed and overlapping storage writes through aggregate copies, SCF yields, and dependent calculations, replacing stale publications while retaining alternative source values, independent destination writes, and component identities.
+  - Interval Analysis: Bound aggregate update work by narrowing storage subscriptions and coalescing pending notifications, and reduce allocation overhead for per-leaf write contributions.

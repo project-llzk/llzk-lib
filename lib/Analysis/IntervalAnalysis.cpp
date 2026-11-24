@@ -834,6 +834,35 @@ IntervalDataFlowAnalysis::IntervalDataFlowAnalysis(
       trackUnreducedIntervals(shouldTrackUnreducedIntervals) {}
 
 SourceRefLatticeValue IntervalDataFlowAnalysis::getSourceRefState(Value val) {
+  // Components copy handles, so constraints must retain their original storage identity.
+  if (llvm::isa<StructType>(val.getType())) {
+    return SourceRefAnalysis::getValueState(_dataflowSolver, val);
+  }
+  Operation *definition = val.getDefiningOp();
+  if (llvm::isa_and_present<CreateArrayOp>(definition)) {
+    // Interval writes live at this result root; dependency sets describe initializer inputs.
+    return SourceRefLatticeValue(SourceRef(llvm::cast<OpResult>(val)));
+  }
+  // Scalar and aggregate reads must use the same materialized roots as their writes.
+  if (auto readPod = llvm::dyn_cast_if_present<pod::ReadPodOp>(definition)) {
+    auto refs =
+        getSourceRefState(readPod.getPodRef()).referencePodRecord(readPod.getRecordNameAttr());
+    ensure(succeeded(refs), "could not resolve pod read");
+    return refs->first;
+  }
+  if (auto readArray = llvm::dyn_cast_if_present<ReadArrayOp>(definition)) {
+    auto refs = getSourceRefState(readArray.getArrRef())
+                    .extract(getArrayAccessIndices(definition, readArray));
+    ensure(succeeded(refs), "could not resolve array read");
+    return refs->first;
+  }
+  if (auto readMember = llvm::dyn_cast_if_present<MemberReadOp>(definition)) {
+    auto member = readMember.getMemberDefOp(tables);
+    ensure(succeeded(member), "could not resolve member definition");
+    auto refs = getSourceRefState(readMember.getComponent()).referenceMember(*member);
+    ensure(succeeded(refs), "could not resolve member read");
+    return refs->first;
+  }
   return SourceRefAnalysis::getValueState(_dataflowSolver, val);
 }
 
@@ -962,23 +991,26 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
     const SourceRef &ref, llvm::SMTExprRef selectionSymbol, Operation *readSite
 ) {
   auto getStoredValue = [&](const SourceRef &writtenRef, const ExpressionValue &writtenVal) {
-    const auto &contribution = writeContributions.at(writtenRef);
-    if (readSite && !contribution.mayBeSkipped &&
-        llvm::none_of(contribution.guaranteedWrites, [&](Operation *writer) {
-      // A later write cannot initialize an earlier read. This conservative proof also
-      // handles reads nested inside an operation after the write's block position.
-      Operation *enclosing = writer->getBlock()->findAncestorOpInBlock(*readSite);
-      while (!enclosing) {
-        // A single-block execute region runs every contained operation before returning.
-        // Multi-block regions may bypass the writer, so do not lift through them.
-        auto executeRegion = llvm::dyn_cast<scf::ExecuteRegionOp>(writer->getParentOp());
-        if (!executeRegion || !llvm::hasSingleElement(executeRegion.getRegion())) {
-          return false;
+    const auto &contributions = writeContributions.at(writtenRef);
+    if (readSite &&
+        llvm::any_of(contributions, [](const auto &entry) { return !entry.second.mayBeSkipped; }) &&
+        llvm::none_of(contributions, [&](const auto &entry) {
+      return llvm::any_of(entry.second.guaranteedWrites, [&](Operation *writer) {
+        // A later write cannot initialize an earlier read. This conservative proof also
+        // handles reads nested inside an operation after the write's block position.
+        Operation *enclosing = writer->getBlock()->findAncestorOpInBlock(*readSite);
+        while (!enclosing) {
+          // A single-block execute region runs every contained operation before returning.
+          // Multi-block regions may bypass the writer, so do not lift through them.
+          auto executeRegion = llvm::dyn_cast<scf::ExecuteRegionOp>(writer->getParentOp());
+          if (!executeRegion || !llvm::hasSingleElement(executeRegion.getRegion())) {
+            return false;
+          }
+          writer = executeRegion;
+          enclosing = writer->getBlock()->findAncestorOpInBlock(*readSite);
         }
-        writer = executeRegion;
-        enclosing = writer->getBlock()->findAncestorOpInBlock(*readSite);
-      }
-      return enclosing != writer && writer->isBeforeInBlock(enclosing);
+        return enclosing != writer && writer->isBeforeInBlock(enclosing);
+      });
     })) {
       return ExpressionValue(
           selectionSymbol, writtenVal.getInterval().join(getDefaultIntervalForType(ref.getType())),
@@ -1050,10 +1082,13 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
     }
     // Concrete entries retain their own no-write alternatives. Ranged entries contribute
     // only actual writes; uncovered selections already received a fallback above.
-    joinWrite(
-        hasRangedSelection(writtenRef) ? writeContributions.at(writtenRef).value
-                                       : getStoredValue(writtenRef, writeResults.at(writtenRef))
-    );
+    if (!hasRangedSelection(writtenRef)) {
+      joinWrite(getStoredValue(writtenRef, writeResults.at(writtenRef)));
+    } else {
+      for (const auto &[writer, contribution] : writeContributions.at(writtenRef)) {
+        joinWrite(contribution.value);
+      }
+    }
   }
   ensure(result.has_value(), "covered storage selection must have a value");
   // Equal ranges describe possible locations, not equality of independently selected values.
@@ -1122,16 +1157,18 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
     // Singleton suffixes still resolve source-prefix uncertainty. Branch and loop yields
     // retain complete alternatives because each may leave different elements unwritten.
     if (!mergesAlternatives && hasNonSingletonRange(writtenRef, source.getPath().size())) {
-      const auto &contribution = writeContributions.at(writtenRef).value;
-      auto [it, inserted] = rangedContributions.try_emplace(selected, contribution);
-      if (!inserted) {
-        it->second = ExpressionValue(
-            nullptr, it->second.getInterval().join(contribution.getInterval()),
-            mergeUnreducedIntervals(
-                it->second.getOptionalUnreducedInterval(),
-                contribution.getOptionalUnreducedInterval()
-            )
-        );
+      for (const auto &[writer, entry] : writeContributions.at(writtenRef)) {
+        const auto &contribution = entry.value;
+        auto [it, inserted] = rangedContributions.try_emplace(selected, contribution);
+        if (!inserted) {
+          it->second = ExpressionValue(
+              nullptr, it->second.getInterval().join(contribution.getInterval()),
+              mergeUnreducedIntervals(
+                  it->second.getOptionalUnreducedInterval(),
+                  contribution.getOptionalUnreducedInterval()
+              )
+          );
+        }
       }
     }
   }
@@ -1167,11 +1204,15 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
 
 void IntervalDataFlowAnalysis::recordRefWrite(
     const SourceRef &writtenRef, const ExpressionValue &writeVal, Operation *writeSite,
-    bool mayBeSkipped
+    bool mayBeSkipped, Operation *publisher
 ) {
   // Every publication path, including member writes and translated aggregate leaves,
   // must retain the alternative where a different element of a range was selected.
   mayBeSkipped |= hasNonSingletonRange(writtenRef);
+  std::optional<ExpressionValue> previous;
+  if (auto it = writeResults.find(writtenRef); it != writeResults.end()) {
+    previous = it->second;
+  }
   auto joinStoredWrite = [this, &writtenRef](
                              const ExpressionValue &old, const ExpressionValue &next
                          ) -> ExpressionValue {
@@ -1189,40 +1230,56 @@ void IntervalDataFlowAnalysis::recordRefWrite(
     );
   };
 
+  // Most leaves have one publisher. Avoid the default map's large first-insertion allocation.
+  auto &contributions = writeContributions.try_emplace(writtenRef, 1).first->second;
   auto [it, inserted] =
-      writeContributions.try_emplace(writtenRef, WriteContribution {writeVal, mayBeSkipped, {}});
+      contributions.try_emplace(publisher, WriteContribution {writeVal, mayBeSkipped, {}});
   if (!inserted) {
-    it->second.value = joinStoredWrite(it->second.value, writeVal);
-    it->second.mayBeSkipped &= mayBeSkipped;
+    it->second.value = publisher ? writeVal : joinStoredWrite(it->second.value, writeVal);
+    it->second.mayBeSkipped = publisher ? mayBeSkipped : it->second.mayBeSkipped && mayBeSkipped;
   }
-  bool newGuaranteedWrite = !mayBeSkipped && it->second.guaranteedWrites.insert(writeSite).second;
-  const WriteContribution &contribution = it->second;
-  ExpressionValue stored = contribution.value;
-  if (contribution.mayBeSkipped) {
-    ExpressionValue noWrite(
+  bool guaranteedWritesChanged =
+      !mayBeSkipped && it->second.guaranteedWrites.insert(writeSite).second;
+  if (publisher && mayBeSkipped && !it->second.guaranteedWrites.empty()) {
+    it->second.guaranteedWrites.clear();
+    guaranteedWritesChanged = true;
+  }
+
+  // A prior publication is not another possible write. Recompute from current contributions,
+  // retaining the no-write alternative only while every contribution may be skipped.
+  std::optional<ExpressionValue> combined;
+  if (llvm::all_of(contributions, [](const auto &entry) { return entry.second.mayBeSkipped; })) {
+    combined = ExpressionValue(
         getOrCreateSymbol(writtenRef), getDefaultIntervalForType(writtenRef.getType()),
         getDefaultUnreducedIntervalForType(writtenRef.getType())
     );
-    stored = joinStoredWrite(noWrite, contribution.value);
   }
-  auto previous = writeResults.find(writtenRef);
-  if (previous != writeResults.end() && previous->second == stored && !newGuaranteedWrite) {
+  for (const auto &[writer, contribution] : contributions) {
+    combined = combined ? joinStoredWrite(*combined, contribution.value) : contribution.value;
+  }
+  if (previous && *previous == *combined && !guaranteedWritesChanged) {
     return;
   }
-  if (previous == writeResults.end()) {
+  if (!previous) {
     auto &group = writeGroups[getStorageGroupKey(writtenRef)];
     group.all.push_back(writtenRef);
     if (hasRangedSelection(writtenRef)) {
       group.ranged.push_back(writtenRef);
     }
   }
-  writeResults[writtenRef] = std::move(stored);
+  writeResults[writtenRef] = *combined;
+  // Several changed leaves can notify the same copy or read before it is visited.
+  auto enqueueConsumer = [this](Operation *consumer) {
+    if (pendingStorageConsumers.insert(consumer).second) {
+      _dataflowSolver.enqueue({getProgramPointAfter(consumer), this});
+    }
+  };
   // Recompute from every possible source instead of intersecting with stale read bounds.
   auto notifyReaders = [&](const SourceRef &source) {
     if (writtenRef.getPath().size() == source.getPath().size() &&
         writtenRef.hasOverlappingPrefix(source)) {
       for (Operation *reader : storageReaders.at(source)) {
-        _dataflowSolver.enqueue({getProgramPointAfter(reader), this});
+        enqueueConsumer(reader);
       }
     }
   };
@@ -1234,6 +1291,14 @@ void IntervalDataFlowAnalysis::recordRefWrite(
       group != storageReaderGroups.end()) {
     for (const SourceRef &source : rangedWrite ? group->second.all : group->second.ranged) {
       notifyReaders(source);
+    }
+  }
+  // Prefix subscriptions also catch new fields in a previously empty aggregate copy.
+  for (const auto &[source, consumers] : aggregateReaders) {
+    if (writtenRef.hasOverlappingPrefix(source)) {
+      for (Operation *consumer : consumers) {
+        enqueueConsumer(consumer);
+      }
     }
   }
 }
@@ -1319,6 +1384,8 @@ ChangeResult IntervalDataFlowAnalysis::setRefinedValue(
 mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
     Operation *op, ArrayRef<const Lattice *> operands, ArrayRef<Lattice *> results
 ) {
+  // Clear before evaluating the operation so changes during this visit can reschedule it.
+  pendingStorageConsumers.erase(op);
   // We only perform the visitation on operations within functions
   FuncDefOp fn = op->getParentOfType<FuncDefOp>();
   if (!fn) {
@@ -1373,9 +1440,24 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
     return LatticeValue(getRefValue(refSet.getSingleValue(), value));
   };
+  // Scalar reads subscribe to their selected leaves through getRefValue.
+  const bool scalarRead =
+      isReadOp(op) && op->getNumResults() == 1 &&
+      !llvm::isa<ArrayType, StructType, pod::PodType>(op->getResult(0).getType());
   for (unsigned opNum = 0; opNum < op->getNumOperands(); ++opNum) {
     Value val = op->getOperand(opNum);
     SourceRefLatticeValue refSet = getSourceRefState(val);
+    // Write destinations supply addresses; aggregate rvalues still consume stored contents.
+    const bool writeDestination =
+        opNum == 0 && llvm::isa<WriteArrayOp, pod::WritePodOp, MemberWriteOp>(op);
+    if (!writeDestination && !scalarRead &&
+        llvm::isa<ArrayType, StructType, pod::PodType>(val.getType())) {
+      // Aggregate storage changes independently of its SSA lattice. Observe prefixes even
+      // when their descendants have not been written yet.
+      for (const SourceRef &source : refSet.foldToScalar()) {
+        aggregateReaders[source].insert(op);
+      }
+    }
     if (refSet.isSingleValue()) {
       operandRefs.push_back(refSet.getSingleValue());
     } else {
@@ -1537,7 +1619,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           );
         }
         for (const auto &[translatedRef, translatedVal] : remappedWrites) {
-          recordRefWrite(translatedRef, translatedVal, op, maySkipWrite);
+          recordRefWrite(translatedRef, translatedVal, op, maySkipWrite, /*publisher=*/op);
         }
       }
     }
@@ -1573,7 +1655,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           if (rhsPrefix.has_value()) {
             for (const auto &[translatedRef, translatedVal] :
                  getAggregateWrites(*rhsPrefix, memberRef, writem.getVal(), op)) {
-              recordRefWrite(translatedRef, translatedVal, op, maySkipWrite);
+              recordRefWrite(translatedRef, translatedVal, op, maySkipWrite, /*publisher=*/op);
             }
           }
         }
@@ -1629,7 +1711,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           path.emplace_back(integerAttrToDynamicAPInt(idxAttr));
         }
 
-        recordRefWrite(SourceRef(arrayRes, std::move(path)), operandVals[i].getScalarValue(), op);
+        recordRefWrite(
+            SourceRef(arrayRes, std::move(path)), operandVals[i].getScalarValue(), op,
+            /*mayBeSkipped=*/false, /*publisher=*/op
+        );
       }
     } else if (!elements.empty()) {
       ensure(arrayTy.hasStaticShape(), "aggregate array.new initializer requires static shape");
@@ -1657,7 +1742,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         );
       }
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
-        recordRefWrite(translatedRef, translatedVal, op);
+        recordRefWrite(translatedRef, translatedVal, op, /*mayBeSkipped=*/false, /*publisher=*/op);
       }
     }
   } else if (auto newPod = llvm::dyn_cast<pod::NewPodOp>(op)) {
@@ -1667,7 +1752,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           podRoot.createChild(SourceRefIndex(StringAttr::get(op->getContext(), record.name)));
       ensure(succeeded(recordRef), "could not create SourceRef child for pod initializer");
       if (!llvm::isa<ArrayType, StructType, pod::PodType>(record.value.getType())) {
-        recordRefWrite(*recordRef, operandVals[idx].getScalarValue(), op);
+        recordRefWrite(
+            *recordRef, operandVals[idx].getScalarValue(), op, /*mayBeSkipped=*/false,
+            /*publisher=*/op
+        );
         continue;
       }
 
@@ -1677,7 +1765,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       }
       for (const auto &[translatedRef, translatedVal] :
            getAggregateWrites(sourceRefs.getSingleValue(), *recordRef, record.value, op)) {
-        recordRefWrite(translatedRef, translatedVal, op);
+        recordRefWrite(translatedRef, translatedVal, op, /*mayBeSkipped=*/false, /*publisher=*/op);
       }
     }
   } else if (
@@ -1750,14 +1838,32 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       }
 
       SourceRef resultRef(llvm::cast<OpResult>(parentRes));
-      llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
+      llvm::MapVector<SourceRef, ExpressionValue> remappedWrites;
+      // Join all possible sources before replacing this yield's publication for each leaf.
       for (const SourceRef &yieldedRef : yieldedRefs.getScalarValue()) {
-        llvm::append_range(
-            remappedWrites, getAggregateWrites(yieldedRef, resultRef, yieldOp.getOperand(idx), op)
-        );
+        for (const auto &[translatedRef, translatedVal] :
+             getAggregateWrites(yieldedRef, resultRef, yieldOp.getOperand(idx), op)) {
+          auto [it, inserted] = remappedWrites.try_emplace(translatedRef, translatedVal);
+          if (inserted) {
+            continue;
+          }
+          const ExpressionValue &previous = it->second;
+          const auto *expr = previous.getExpr();
+          if (!expr || !translatedVal.getExpr() || *expr != *translatedVal.getExpr()) {
+            expr = getOrCreateSymbol(translatedRef);
+          }
+          it->second = ExpressionValue(
+              expr, previous.getInterval().join(translatedVal.getInterval()),
+              mergeUnreducedIntervals(
+                  previous.getOptionalUnreducedInterval(),
+                  translatedVal.getOptionalUnreducedInterval()
+              )
+          );
+        }
       }
+      // Branch yields remain independent publishers, even when they share a parent result.
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
-        recordRefWrite(translatedRef, translatedVal, op);
+        recordRefWrite(translatedRef, translatedVal, op, /*mayBeSkipped=*/false, /*publisher=*/op);
       }
     }
   } else if (
