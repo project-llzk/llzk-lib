@@ -1362,3 +1362,108 @@ module attributes {llzk.lang} {
     }
   }
 }
+
+// -----
+
+// A well-formed poly.expr with a fielded felt type cannot instantiate a fieldless felt parameter.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @LocalValue : !felt.type<"bn128">
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.expr @ExprFielded {
+      %v = poly.read_const @LocalValue : !felt.type<"bn128">
+      poly.yield %v : !felt.type<"bn128">
+    }
+    struct.def @Use {
+      // expected-error@+1 {{'struct.member' op instantiation value '@ExprFielded' is not compatible with parameter "@N" type restriction '!felt.type'}}
+      struct.member @value : !struct.type<@Target::@S<[@ExprFielded]>>
+      function.def @compute() -> !struct.type<@Caller::@Use<[@LocalValue]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@LocalValue]>>
+        function.return %self : !struct.type<@Caller::@Use<[@LocalValue]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@LocalValue]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A well-formed poly.expr with a mismatched felt field cannot instantiate a fielded felt parameter.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type<"goldilocks">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @LocalValue : !felt.type<"bn128">
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.expr @ExprFielded {
+      %v = poly.read_const @LocalValue : !felt.type<"bn128">
+      poly.yield %v : !felt.type<"bn128">
+    }
+    struct.def @Use {
+      // expected-error@+1 {{'struct.member' op instantiation value '@ExprFielded' is not compatible with parameter "@N" type restriction '!felt.type<"goldilocks">'}}
+      struct.member @value : !struct.type<@Target::@S<[@ExprFielded]>>
+      function.def @compute() -> !struct.type<@Caller::@Use<[@LocalValue]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@LocalValue]>>
+        function.return %self : !struct.type<@Caller::@Use<[@LocalValue]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@LocalValue]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A well-formed poly.expr with a fieldless felt type cannot instantiate a fielded felt parameter.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @FieldlessValue : !felt.type
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.expr @ExprFieldless {
+      %v = poly.read_const @FieldlessValue : !felt.type
+      poly.yield %v : !felt.type
+    }
+    struct.def @Use {
+      // expected-error@+1 {{'struct.member' op instantiation value '@ExprFieldless' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+      struct.member @value : !struct.type<@Target::@S<[@ExprFieldless]>>
+      function.def @compute() -> !struct.type<@Caller::@Use<[@FieldlessValue]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@FieldlessValue]>>
+        function.return %self : !struct.type<@Caller::@Use<[@FieldlessValue]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@FieldlessValue]>>) { function.return }
+    }
+  }
+}

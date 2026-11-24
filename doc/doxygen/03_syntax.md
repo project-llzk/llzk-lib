@@ -50,8 +50,8 @@ module attributes {llzk.lang = "circom"} {
   restricted to a value type such as `index`, `i1`, or felt.
   Affine maps are allowed only for unrestricted parameters or those restricted to `index` or `i1`.
   The wildcard `?` is not a valid `struct.type` argument.
-  Constant globals must match the declared parameter type, except for the felt-field rule below;
-  they do not use the cross-type numeric conversions described below.
+  Constant globals must match the declared parameter type (including felt field); they do not use
+  the cross-type numeric conversions described below.
   A local `poly.param` or `poly.expr` binding typed as `i1` or felt may still be passed as an
   argument to an `index` parameter (and an `index` binding to an `i1` or felt parameter),
   deferring value conversion and range checks to monomorphization.
