@@ -85,6 +85,17 @@ bool hasNonSingletonRange(const SourceRef &ref) {
   });
 }
 
+/// Recognize operations that cannot mutate existing array or component storage.
+bool preservesReadStorage(Operation *op) {
+  auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(op);
+  if (arrayAccess && arrayAccess.isRead()) {
+    return true;
+  }
+  // Emitting constraints is observable, but cannot mutate array or component storage.
+  return llvm::isa<EmitEqualityOp, EmitContainmentOp>(op) || isMemoryEffectFree(op) ||
+         hasSingleEffect<MemoryEffects::Read>(op);
+}
+
 /// Exclude storage mutations between two ordered operations in the same block.
 bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
   if (first->getBlock() != second->getBlock() || !first->isBeforeInBlock(second)) {
@@ -92,15 +103,25 @@ bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
   }
   for (Operation *between = first->getNextNode(); between != second;
        between = between->getNextNode()) {
-    auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(between);
-    if (arrayAccess && arrayAccess.isRead()) {
-      continue;
+    if (!preservesReadStorage(between)) {
+      return false;
     }
-    // Emitting constraints is observable, but cannot mutate array or component storage.
-    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(between)) {
-      continue;
-    }
-    if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
+  }
+  return true;
+}
+
+/// Prove equal source observations across copies, allowing fresh aggregate allocations.
+/// Include the earlier endpoint because an aggregate assignment can itself mutate storage.
+bool hasCopyPreservingSameBlockPath(Operation *first, Operation *second) {
+  if (first == second) {
+    return true;
+  }
+  if (first->getBlock() != second->getBlock() || !first->isBeforeInBlock(second)) {
+    return false;
+  }
+  for (Operation *between = first; between != second; between = between->getNextNode()) {
+    if (!llvm::isa<pod::NewPodOp, CreateArrayOp, CreateStructOp>(between) &&
+        !preservesReadStorage(between)) {
       return false;
     }
   }
@@ -1015,8 +1036,41 @@ ExpressionValue IntervalDataFlowAnalysis::getRefValue(
   return rangedSelection ? result->withExpression(selectionSymbol) : *result;
 }
 
+llvm::SMTExprRef IntervalDataFlowAnalysis::getAggregateCopySymbol(
+    const SourceRef &selected, Value sourceValue, Operation *copySite
+) {
+  auto &observations = aggregateCopySymbols[selected];
+  for (const auto &prior : observations) {
+    if (prior.sourceValue == sourceValue && prior.copySite == copySite) {
+      return prior.symbol;
+    }
+  }
+  llvm::SMTExprRef symbol = nullptr;
+  for (const auto &prior : observations) {
+    if (!haveSameReadValue(prior.sourceValue, sourceValue) ||
+        (!hasCopyPreservingSameBlockPath(prior.copySite, copySite) &&
+         !hasCopyPreservingSameBlockPath(copySite, prior.copySite))) {
+      continue;
+    }
+    // Equal reads can be mutated separately after their creation and before either copy.
+    if (prior.sourceValue != sourceValue &&
+        (!hasCopyPreservingSameBlockPath(prior.sourceValue.getDefiningOp(), prior.copySite) ||
+         !hasCopyPreservingSameBlockPath(sourceValue.getDefiningOp(), copySite))) {
+      continue;
+    }
+    symbol = prior.symbol;
+    break;
+  }
+  if (!symbol) {
+    std::string name = symbolNamespace + "copy." + std::to_string(nextAggregateCopySymbol++);
+    symbol = createSymbol(selected.getType(), name.c_str());
+  }
+  observations.push_back({sourceValue, copySite, symbol});
+  return symbol;
+}
+
 SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::getAggregateWrites(
-    const SourceRef &source, const SourceRef &destination
+    const SourceRef &source, const SourceRef &destination, Value sourceValue, Operation *copySite
 ) {
   SourceRefSet selections;
   for (const auto &[writtenRef, writtenVal] : writeResults) {
@@ -1036,7 +1090,10 @@ SmallVector<std::pair<SourceRef, ExpressionValue>> IntervalDataFlowAnalysis::get
     auto translated = selected.translate(source, destination);
     ensure(succeeded(translated), "could not translate aggregate descendant");
     // Resolve the complete selection once for each destination leaf.
-    writes.emplace_back(*translated, getRefValue(selected, getOrCreateSymbol(*translated)));
+    const auto *symbol = hasRangedSelection(selected)
+                             ? getAggregateCopySymbol(selected, sourceValue, copySite)
+                             : getOrCreateSymbol(*translated);
+    writes.emplace_back(*translated, getRefValue(selected, symbol));
   }
   return writes;
 }
@@ -1390,7 +1447,10 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       } else if (operandRefs[1].has_value()) {
         llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
         for (const SourceRef &recordRef : recordRefs.getScalarValue()) {
-          llvm::append_range(remappedWrites, getAggregateWrites(*operandRefs[1], recordRef));
+          llvm::append_range(
+              remappedWrites,
+              getAggregateWrites(*operandRefs[1], recordRef, writePod.getValue(), op)
+          );
         }
         for (const auto &[translatedRef, translatedVal] : remappedWrites) {
           recordRefWrite(translatedRef, translatedVal, op, maySkipWrite);
@@ -1428,7 +1488,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
 
           if (rhsPrefix.has_value()) {
             for (const auto &[translatedRef, translatedVal] :
-                 getAggregateWrites(*rhsPrefix, memberRef)) {
+                 getAggregateWrites(*rhsPrefix, memberRef, writem.getVal(), op)) {
               recordRefWrite(translatedRef, translatedVal, op, maySkipWrite);
             }
           }
@@ -1508,7 +1568,8 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
           elementTarget = *child;
         }
         llvm::append_range(
-            remappedWrites, getAggregateWrites(elementRefs.getSingleValue(), elementTarget)
+            remappedWrites,
+            getAggregateWrites(elementRefs.getSingleValue(), elementTarget, element, op)
         );
       }
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
@@ -1531,7 +1592,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
         continue;
       }
       for (const auto &[translatedRef, translatedVal] :
-           getAggregateWrites(sourceRefs.getSingleValue(), *recordRef)) {
+           getAggregateWrites(sourceRefs.getSingleValue(), *recordRef, record.value, op)) {
         recordRefWrite(translatedRef, translatedVal, op);
       }
     }
@@ -1607,7 +1668,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       SourceRef resultRef(llvm::cast<OpResult>(parentRes));
       llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> remappedWrites;
       for (const SourceRef &yieldedRef : yieldedRefs.getScalarValue()) {
-        llvm::append_range(remappedWrites, getAggregateWrites(yieldedRef, resultRef));
+        llvm::append_range(
+            remappedWrites, getAggregateWrites(yieldedRef, resultRef, yieldOp.getOperand(idx), op)
+        );
       }
       for (const auto &[translatedRef, translatedVal] : remappedWrites) {
         recordRefWrite(translatedRef, translatedVal, op);

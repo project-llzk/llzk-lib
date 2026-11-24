@@ -350,6 +350,16 @@ private:
   /// Cached inverse symbols keyed by operation identity, separate from value and ref symbols.
   mlir::DenseMap<mlir::Operation *, llvm::SMTExprRef> inverseSymbols;
 
+  /// A stable observation of a selected aggregate leaf by a copying operation.
+  struct AggregateCopySymbol {
+    mlir::Value sourceValue;
+    mlir::Operation *copySite;
+    llvm::SMTExprRef symbol;
+  };
+  /// Equal source values share symbols only across storage-preserving copy paths.
+  llvm::DenseMap<SourceRef, llvm::SmallVector<AggregateCopySymbol>> aggregateCopySymbols;
+  uint64_t nextAggregateCopySymbol = 0;
+
   /// Symbol-name prefix unique to this analysis within `smtSolver`.
   /// Reserved for the solver's entire lifetime, even after this analysis is destroyed.
   std::string symbolNamespace;
@@ -531,10 +541,19 @@ private:
   /// Resolve a scalar value and subscribe reads to changes in the selected storage.
   ExpressionValue getRefValue(const SourceRef &ref, mlir::Value val);
 
+  /// Reuse a ranged leaf's symbol for repeated or proven-equal source values only when
+  /// the copy sites cannot observe intervening mutations. Keep revisits stable.
+  llvm::SMTExprRef getAggregateCopySymbol(
+      const SourceRef &selected, mlir::Value sourceValue, mlir::Operation *copySite
+  );
+
   /// @brief Resolve and translate stored descendants of an aggregate selection, including
-  /// overlapping concrete and ranged writes, once per destination leaf.
-  llvm::SmallVector<std::pair<SourceRef, ExpressionValue>>
-  getAggregateWrites(const SourceRef &source, const SourceRef &destination);
+  /// overlapping concrete and ranged writes, once per destination leaf. Preserve the
+  /// identity of sourceValue at copySite rather than assigning each destination a new value.
+  llvm::SmallVector<std::pair<SourceRef, ExpressionValue>> getAggregateWrites(
+      const SourceRef &source, const SourceRef &destination, mlir::Value sourceValue,
+      mlir::Operation *copySite
+  );
 
   /// @brief Record a write to the given SourceRef and revisit reads of that location
   /// when its stored value changes, including when new contributions expand it.

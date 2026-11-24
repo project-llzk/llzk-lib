@@ -2,3 +2,4 @@ fixed:
   - Interval Analysis: Include overlapping ranged writes when resolving stored intervals and copying aggregate fields.
   - Interval Analysis: Remove no-write defaults only when concrete writes fully cover a selection.
   - Interval Analysis: Preserve independent symbols for dynamic aggregate copies.
+  - Interval Analysis: Preserve symbols when copying the same ranged aggregate value without intervening mutations.

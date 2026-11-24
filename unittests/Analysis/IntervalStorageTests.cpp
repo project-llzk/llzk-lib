@@ -1398,6 +1398,103 @@ module attributes {llzk.lang} {
   });
 }
 
+// Repeated aggregate values share leaf symbols only while their source storage is unchanged.
+TEST_F(IntervalStorageTests, RangedAggregateCopiesPreserveSourceIdentity) {
+  for (unsigned selection : {0U, 1U, 2U, 3U, 4U, 5U, 6U}) {
+    // Same SSA value, equivalent reads, independent reads, or source mutations before use.
+    SCOPED_TRACE(selection);
+    for (bool reverse : {false, true}) {
+      SCOPED_TRACE(reverse ? "right copy first" : "left copy first");
+      auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+!W = !pod.type<[@child: !P, @duplicate: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type) {
+    %zero = arith.constant 0 : index
+    %seed = array.read %array[%zero] : !array.type<2 x !P>, !P
+    pod.write %seed[@value] = %input : !P, !felt.type
+    pod.write %seed[@other] = %input : !P, !felt.type
+    %left = array.read %array[%i] : !array.type<2 x !P>, !P
+    %right = array.read %array[%i] : !array.type<2 x !P>, !P
+    %leftCopy = pod.new { @child = %left, @duplicate = %left } : !W
+    pod.write %left[@value] = %input : !P, !felt.type
+    %rightCopy = pod.new { @child = %right, @duplicate = %right } : !W
+    function.return
+  }
+}
+)mlir");
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+      auto copies = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+      auto interveningWrite = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+      if (selection == 0 || selection == 3) {
+        copies[1]->setOperand(0, reads[1].getResult());
+        copies[1]->setOperand(1, reads[1].getResult());
+      }
+      if (selection == 2) {
+        reads[2]->setOperand(1, fn.getArgument(2));
+      }
+      if (selection < 3) {
+        interveningWrite.erase();
+      } else if (selection >= 5) {
+        interveningWrite->moveBefore(copies.front());
+        if (selection == 6) {
+          interveningWrite->setOperand(0, reads[2].getResult());
+        }
+      }
+      SourceRefIndex child(StringAttr::get(&ctx, "child"));
+      SourceRefIndex duplicate(StringAttr::get(&ctx, "duplicate"));
+      SourceRefIndex value(StringAttr::get(&ctx, "value"));
+      SourceRefIndex other(StringAttr::get(&ctx, "other"));
+      SmallVector<llvm::SMTExprRef> initial;
+      runOrdered(
+          *mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &) {
+        for (Operation &op : fn.getBody().front()) {
+          if (!llvm::isa<pod::NewPodOp>(op)) {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        for (unsigned idx : {0U, 1U}) {
+          ASSERT_TRUE(succeeded(visit(copies[reverse ? 1U - idx : idx])));
+        }
+        for (auto copy : copies) {
+          initial.push_back(
+              analysis.getWriteResults().at(SourceRef(copy->getResult(0), {child, value})).getExpr()
+          );
+        }
+        // Revisiting either copy must retain its previously published identity.
+        for (auto copy : copies) {
+          ASSERT_TRUE(succeeded(visit(copy)));
+        }
+      }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+        SmallVector<llvm::SMTExprRef> expressions;
+        for (auto [idx, copy] : llvm::enumerate(copies)) {
+          SourceRef ref(copy->getResult(0), {child, value});
+          expectStored(analysis, ref, Interval::Entire(field));
+          const auto *expr = analysis.getWriteResults().at(ref).getExpr();
+          ASSERT_NE(expr, nullptr);
+          EXPECT_EQ(expr, initial[idx]);
+          expressions.push_back(expr);
+          EXPECT_EQ(
+              expr, analysis.getWriteResults()
+                        .at(SourceRef(copy->getResult(0), {duplicate, value}))
+                        .getExpr()
+          );
+          const auto *otherExpr = analysis.getWriteResults()
+                                      .at(SourceRef(copy->getResult(0), {child, other}))
+                                      .getExpr();
+          ASSERT_NE(otherExpr, nullptr);
+          EXPECT_FALSE(*expr == *otherExpr);
+        }
+        const bool sameValue = selection < 2;
+        EXPECT_EQ(*expressions[0] == *expressions[1], sameValue);
+      }
+      );
+    }
+  }
+}
+
 // A partially written or unbounded selection still includes unwritten alternatives.
 TEST_F(IntervalStorageTests, RangedAggregateCopiesPreserveUnwrittenDefaults) {
   auto mod = parseModule(R"mlir(
