@@ -35,10 +35,10 @@ module attributes {llzk.lang = "circom"} {
 - `felt.type`: Finite field element.
 - `array.type<N x E>`: Aggregate type with indexed [pseudo-homogeneous](\ref pseudo-homogeneous) elements. Element type cannot be another array type, instead multi-dimensional arrays are specified with a comma-separated list of dimension sizes. Each dimension size can be specified as an integer literal, a symbol (referring to a template parameter within a templated `struct.def`), or an [affine_map](https://mlir.llvm.org/docs/Dialects/Affine/#polyhedral-structures) (used when creating arrays within a loop where the dimension size depends on the loop iteration variable).
 - `struct.type<@Name<[...]>>`: Identity-bearing, pointer-like handle to a mutable component
-  instance defined by `struct.def @Name`, rather than a bag of member values. Copying a struct
-  value preserves the identity of the referenced component and does not duplicate its members,
-  signals, or tables. Structs generally correlate to components/functions in the source language;
-  constituent elements may be local variables, subcomponents, or called functions.
+  instance defined by `struct.def @Name`. Copying a struct value preserves the identity of the
+  referenced component and does not duplicate its members, signals, or tables. Structs generally
+  correlate to components/functions in the source language; constituent elements may be local
+  variables, subcomponents, or called functions.
 
   A supplied argument list has one entry per `poly.param` in the `poly.template` containing
   the referenced `struct.def`, in declaration order. For a definition with no template parameters,
@@ -50,9 +50,11 @@ module attributes {llzk.lang = "circom"} {
   restricted to a value type such as `index`, `i1`, or felt.
   Affine maps are allowed only for unrestricted parameters or those restricted to `index` or `i1`.
   The wildcard `?` is not a valid `struct.type` argument.
-  Local numeric bindings may forward from `i1` or felt to `index`, or from `index` to `i1` or felt.
   Constant globals must match the declared parameter type, except for the felt-field rule below;
-  they do not use these local numeric conversions.
+  they do not use the cross-type numeric conversions described below.
+  A local `poly.param` or `poly.expr` binding typed as `i1` or felt may still be passed as an
+  argument to an `index` parameter (and an `index` binding to an `i1` or felt parameter),
+  deferring value conversion and range checks to monomorphization.
   Monomorphization checks conversion values: felt-to-index requires a known field and a reduced
   value in the nonnegative signed 64-bit range, and index-to-`i1` requires zero or one.
 

@@ -47,9 +47,11 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
 
     Untyped local template bindings remain deferred. A type variable cannot reference a parameter
     explicitly restricted to a value type such as `index`, `i1`, or felt.
-    Local numeric bindings may forward from `i1` or felt to `index`, or from `index` to `i1` or felt.
     Constant globals must match the declared parameter type, except for the felt-field rule below;
-    they do not use these local numeric conversions.
+    they do not use the cross-type numeric conversions described below.
+    A local `poly.param` or `poly.expr` binding typed as `i1` or felt may still be passed as an
+    argument to an `index` parameter (and an `index` binding to an `i1` or felt parameter),
+    deferring value conversion and range checks to monomorphization.
     Monomorphization checks conversion values: felt-to-index requires a known field and a reduced
     value in the nonnegative signed 64-bit range, and index-to-`i1` requires zero or one.
 
