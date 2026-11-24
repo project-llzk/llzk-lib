@@ -20,6 +20,8 @@
 
 #include <mlir/Analysis/DataFlow/DeadCodeAnalysis.h>
 #include <mlir/Dialect/SCF/IR/SCF.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/ADT/EquivalenceClasses.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -70,6 +72,80 @@ bool hasRangedSelection(const SourceRef &ref) {
   return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
     return index.isIndexRange();
   });
+}
+
+/// Exclude storage mutations between two ordered operations in the same block.
+bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
+  if (first->getBlock() != second->getBlock() || !first->isBeforeInBlock(second)) {
+    return false;
+  }
+  for (Operation *between = first->getNextNode(); between != second;
+       between = between->getNextNode()) {
+    auto arrayAccess = llvm::dyn_cast<ArrayAccessOpInterface>(between);
+    if (arrayAccess && arrayAccess.isRead()) {
+      continue;
+    }
+    // Emitting constraints is observable, but cannot mutate array or component storage.
+    if (llvm::isa<EmitEqualityOp, EmitContainmentOp>(between)) {
+      continue;
+    }
+    if (!isMemoryEffectFree(between) && !hasSingleEffect<MemoryEffects::Read>(between)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Prove same-block reads equivalent using matching or singleton indices and write-free paths.
+bool haveSameReadValue(Value lhs, Value rhs) {
+  if (lhs == rhs) {
+    return true;
+  }
+  Operation *left = lhs.getDefiningOp(), *right = rhs.getDefiningOp();
+  if (!llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(left) ||
+      !llvm::isa_and_present<ReadArrayOp, ExtractArrayOp, MemberReadOp>(right) ||
+      left->getBlock() != right->getBlock()) {
+    return false;
+  }
+  bool equivalentArrayIndices = false;
+  if (auto leftAccess = llvm::dyn_cast<ArrayAccessOpInterface>(left)) {
+    auto rightAccess = llvm::dyn_cast<ArrayAccessOpInterface>(right);
+    if (!rightAccess || leftAccess.getArrRef().getType() != rightAccess.getArrRef().getType() ||
+        leftAccess.getIndices().size() != rightAccess.getIndices().size()) {
+      return false;
+    }
+    // A successful access to a singleton dimension can only select index zero. Check
+    // every dimension before allowing the index operands to differ in operation equivalence.
+    auto shape = leftAccess.getArrRef().getType().getShape();
+    for (auto [dim, indices] :
+         llvm::enumerate(llvm::zip(leftAccess.getIndices(), rightAccess.getIndices()))) {
+      if (std::get<0>(indices) != std::get<1>(indices) && shape[dim] != 1) {
+        return false;
+      }
+    }
+    equivalentArrayIndices = true;
+  }
+  auto sameOperand = [left, right, equivalentArrayIndices](Value a, Value b) {
+    if (a == b || (equivalentArrayIndices && a.getType().isIndex() && b.getType().isIndex())) {
+      return success();
+    }
+    if (!llvm::isa<ArrayType, StructType>(a.getType()) || !haveSameReadValue(a, b)) {
+      return failure();
+    }
+    // Equal array copies can diverge before either scalar read. Protect each copy from
+    // its creation through its use, in addition to the interval between the scalar reads.
+    return success(
+        !llvm::isa<ArrayType>(a.getType()) ||
+        (hasReadPreservingSameBlockPath(a.getDefiningOp(), left) &&
+         hasReadPreservingSameBlockPath(b.getDefiningOp(), right))
+    );
+  };
+  if (!OperationEquivalence::isEquivalentTo(
+          left, right, sameOperand, nullptr, OperationEquivalence::IgnoreLocations
+      )) {
+    return false;
+  }
+  return hasReadPreservingSameBlockPath(left, right) || hasReadPreservingSameBlockPath(right, left);
 }
 
 template <typename Fn>
@@ -1750,10 +1826,46 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
     }
   };
 
+  auto propagateRangedRead = [&](const SourceRef &ref) {
+    auto &readers = rangedReadResults[ref];
+    readers.insert(valLattice);
+    SmallVector<Lattice *> aliases;
+    Interval shared = newLatticeVal.getInterval();
+    for (Lattice *reader : readers) {
+      if (haveSameReadValue(val, reader->getAnchor())) {
+        aliases.push_back(reader);
+        shared = shared.intersect(reader->getValue().getScalarValue().getInterval());
+      }
+    }
+    for (Lattice *reader : aliases) {
+      // Keep per-read symbols, but equate proven aliases for relational solver constraints.
+      if (reader != valLattice) {
+        llvm::SMTExprRef lhs = newLatticeVal.getExpr();
+        llvm::SMTExprRef rhs = reader->getValue().getScalarValue().getExpr();
+        // Incomplete read analysis can leave expressions uninitialized. Keep the pair uncached
+        // so a later visit can assert the equality once both expressions are available.
+        if (lhs && rhs) {
+          // Canonicalize the pair so visits from either read share one assertion.
+          if (std::less<llvm::SMTExprRef> {}(rhs, lhs)) {
+            std::swap(lhs, rhs);
+          }
+          if (assertedReadAliases.insert({lhs, rhs}).second) {
+            smtSolver->addConstraint(smtSolver->mkEqual(lhs, rhs));
+          }
+        }
+      }
+      ExpressionValue refined = refineReducedInterval(reader->getValue().getScalarValue(), shared);
+      propagateIfChanged(reader, reader->setValue(refined));
+    }
+  };
+
   auto readmCase = [&](MemberReadOp) {
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue()) {
+    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
+      propagateRangedRead(sourceRefVal.getSingleValue());
+    }
+    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
 
@@ -1768,7 +1880,11 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
   auto readArrCase = [&](ReadArrayOp) {
     auto arrayRef = getArrayAccessRef(valUser, llvm::cast<ReadArrayOp>(definingOp));
-    if (succeeded(arrayRef)) {
+    if (succeeded(arrayRef) && hasRangedSelection(*arrayRef)) {
+      propagateRangedRead(*arrayRef);
+    }
+    // A constraint on one selection cannot refine other reads of the same possible range.
+    if (succeeded(arrayRef) && !hasRangedSelection(*arrayRef)) {
       readResults[*arrayRef].insert(valLattice);
 
       for (Lattice *l : readResults[*arrayRef]) {
@@ -1780,7 +1896,11 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
 
     SourceRefLatticeValue sourceRefVal = getSourceRefState(val);
 
-    if (sourceRefVal.isSingleValue()) {
+    // Equivalent aggregate copies have different SSA roots but the same resolved selection.
+    if (sourceRefVal.isSingleValue() && hasRangedSelection(sourceRefVal.getSingleValue())) {
+      propagateRangedRead(sourceRefVal.getSingleValue());
+    }
+    if (sourceRefVal.isSingleValue() && !hasRangedSelection(sourceRefVal.getSingleValue())) {
       const SourceRef &ref = sourceRefVal.getSingleValue();
       readResults[ref].insert(valLattice);
 
