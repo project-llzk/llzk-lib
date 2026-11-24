@@ -205,6 +205,8 @@ TEST_F(SourceRefTests, LatticePrefixReplacementPreservesUnmatchedRefs) {
   SourceRefLatticeValue value;
   EXPECT_EQ(value.insert(computeMember), ChangeResult::Change);
   EXPECT_EQ(value.insert(unrelated), ChangeResult::Change);
+  EXPECT_EQ(value.insert(computeMember), ChangeResult::NoChange);
+  EXPECT_EQ(value.getScalarValue().size(), 2U);
   TranslationMap replacements {{computeRoot, SourceRefLatticeValue(constrainRoot)}};
   auto [replaced, changed] = value.replacePrefixes(replacements);
 
@@ -394,6 +396,10 @@ TEST_F(SourceRefTests, ComputeSelfRebasesToConstrainSelfWithoutChangingPath) {
   SourceRef expectedConstrainValue(
       constrainSelfArg, {SourceRefIndex(storage), SourceRefIndex(valueName)}
   );
+
+  auto suffix = computeValue.getSuffix(computeSelf);
+  ASSERT_TRUE(succeeded(suffix));
+  EXPECT_EQ(SourceRef::appendSuffix(constrainSelf, *suffix), expectedConstrainValue);
 
   auto translated = computeValue.translate(computeSelf, constrainSelf);
   ASSERT_TRUE(succeeded(translated));
