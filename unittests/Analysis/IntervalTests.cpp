@@ -19,13 +19,17 @@
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Analysis/DataFlowFramework.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
 #include <array>
+#include <functional>
 #include <gtest/gtest.h>
 #include <string>
 #include <unordered_set>
+#include <utility>
 
 using namespace mlir;
 using namespace llzk;
@@ -672,6 +676,804 @@ module attributes {llzk.lang} {
     return analysis.getSolver().lookupState<IntervalAnalysisLattice>(value);
   }
 };
+
+namespace {
+
+/// Run ordered test visits during solver initialization so lattice updates can propagate.
+/// Only this driver is initialized; the solver then drains dependencies queued by the visits.
+class IntervalTestInitialization : public DataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(IntervalTestInitialization)
+
+  /// Own the callback that establishes the test's initial visitation order.
+  IntervalTestInitialization(DataFlowSolver &dataflowSolver, std::function<void()> callback)
+      : DataFlowAnalysis(dataflowSolver), initializeCallback(std::move(callback)) {}
+
+  /// Execute the callback while the solver is running, stopping on fatal test assertions.
+  LogicalResult initialize(Operation *) override {
+    initializeCallback();
+    return success(!testing::Test::HasFatalFailure());
+  }
+
+  /// The driver creates no dependencies of its own.
+  LogicalResult visit(ProgramPoint *) override { return success(); }
+
+private:
+  std::function<void()> initializeCallback;
+};
+
+} // namespace
+
+// Scalar reads must use the same materialized aggregate roots as subsequent writes.
+TEST_F(IntervalAnalysisAPITests, ScalarReadsUseMaterializedAggregateRoots) {
+  for (bool useSwitch : {false, true}) {
+    for (bool delayedWrites : {false, true}) {
+      SCOPED_TRACE(useSwitch ? "index switch" : "if");
+      SCOPED_TRACE(delayedWrites ? "reads before writes" : "writes before reads");
+      std::string source = R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!A = !array.type<1 x !felt.type>
+!W = !pod.type<[@pod: !P, @array: !A]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1, %selector: index) -> (!felt.type, !felt.type, !felt.type, !felt.type) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %pod = pod.new { @value = %seven } : !P
+    %array = array.new %seven : !A
+    // CONDITIONAL
+    pod.write %selectedPod[@value] = %nine : !P, !felt.type
+    array.write %selectedArray[%zero] = %nine : !A, !felt.type
+    %copy = pod.new { @pod = %selectedPod, @array = %selectedArray } : !W
+    %copiedPod = pod.read %copy[@pod] : !W, !P
+    %copiedArray = pod.read %copy[@array] : !W, !A
+    %podRead = pod.read %selectedPod[@value] : !P, !felt.type
+    %arrayRead = array.read %selectedArray[%zero] : !A, !felt.type
+    %nestedPodRead = pod.read %copiedPod[@value] : !P, !felt.type
+    %nestedArrayRead = array.read %copiedArray[%zero] : !A, !felt.type
+    function.return %podRead, %arrayRead, %nestedPodRead, %nestedArrayRead : !felt.type, !felt.type, !felt.type, !felt.type
+  }
+}
+)mlir";
+      source.replace(
+          source.find("// CONDITIONAL"), std::string("// CONDITIONAL").size(),
+          useSwitch ? R"mlir(
+    %selectedPod, %selectedArray = scf.index_switch %selector -> !P, !A
+    case 0 {
+      scf.yield %pod, %array : !P, !A
+    }
+    default {
+      scf.yield %pod, %array : !P, !A
+    }
+)mlir"
+                    : R"mlir(
+    %selectedPod, %selectedArray = scf.if %condition -> (!P, !A) {
+      scf.yield %pod, %array : !P, !A
+    } else {
+      scf.yield %pod, %array : !P, !A
+    }
+)mlir"
+      );
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      const Field &field = Field::getField("babybear");
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+      auto visit = [&](Operation *op) {
+        SmallVector<const IntervalAnalysisLattice *> operands;
+        SmallVector<IntervalAnalysisLattice *> results;
+        for (Value value : op->getOperands()) {
+          operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        for (Value value : op->getResults()) {
+          results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        return analysis->visitOperation(op, operands, results);
+      };
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto returned = fn.getBody().front().getTerminator()->getOperands();
+      auto checkReads = [&](int64_t upper) {
+        for (Value value : returned) {
+          const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+          ASSERT_NE(lattice, nullptr);
+          const auto &stored = lattice->getValue().getScalarValue();
+          EXPECT_EQ(stored.getInterval(), UnreducedInterval(7, upper).reduce(field));
+          EXPECT_EQ(stored.getOptionalUnreducedInterval(), UnreducedInterval(7, upper));
+        }
+      };
+      SmallVector<Operation *> writes;
+      auto *driver = solver.load<IntervalTestInitialization>([&] {
+        for (Operation &op : fn.getBody().front()) {
+          if (isa<pod::WritePodOp, array::WriteArrayOp>(op)) {
+            writes.push_back(&op);
+            if (delayedWrites) {
+              continue;
+            }
+          }
+          if (isa<scf::IfOp, scf::IndexSwitchOp>(op)) {
+            for (Region &region : op.getRegions()) {
+              ASSERT_TRUE(succeeded(visit(region.front().getTerminator())));
+            }
+          } else {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        checkReads(delayedWrites ? 7 : 9);
+        if (delayedWrites) {
+          for (Operation *write : writes) {
+            ASSERT_TRUE(succeeded(visit(write)));
+          }
+        }
+      });
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+        return &candidate == driver;
+      })));
+      checkReads(9);
+    }
+  }
+}
+
+// A published default must refine after an unconditional write, including through copies.
+TEST_F(IntervalAnalysisAPITests, ConditionalPublicationsReplaceStaleDefaults) {
+  for (bool delayedWrites : {false, true}) {
+    for (bool independentWrite : {false, true}) {
+      SCOPED_TRACE(delayedWrites ? "writes after publication" : "writes before publication");
+      SCOPED_TRACE(independentWrite ? "independent result write" : "only conditional publication");
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %index = arith.constant 0 : index
+    %pod = pod.new : !pod.type<[@value: !felt.type]>
+    %array = array.new : !array.type<1 x !felt.type>
+    pod.write %pod[@value] = %seven : !pod.type<[@value: !felt.type]>, !felt.type
+    array.write %array[%index] = %seven : !array.type<1 x !felt.type>, !felt.type
+    %selectedPod, %selectedArray = scf.if %condition -> (!pod.type<[@value: !felt.type]>, !array.type<1 x !felt.type>) {
+      scf.yield %pod, %array : !pod.type<[@value: !felt.type]>, !array.type<1 x !felt.type>
+    } else {
+      scf.yield %pod, %array : !pod.type<[@value: !felt.type]>, !array.type<1 x !felt.type>
+    }
+    // INDEPENDENT_WRITE
+    %copy = pod.new { @pod = %selectedPod, @array = %selectedArray } : !pod.type<[@pod: !pod.type<[@value: !felt.type]>, @array: !array.type<1 x !felt.type>]>
+    %out = array.new %copy : !array.type<1 x !pod.type<[@pod: !pod.type<[@value: !felt.type]>, @array: !array.type<1 x !felt.type>]>>
+    function.return
+  }
+}
+)mlir";
+      if (independentWrite) {
+        source.replace(
+            source.find("// INDEPENDENT_WRITE"), std::string("// INDEPENDENT_WRITE").size(),
+            "pod.write %selectedPod[@value] = %nine : !pod.type<[@value: !felt.type]>, !felt.type"
+        );
+      }
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      const Field &field = Field::getField("babybear");
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+      auto visit = [&](Operation *op) {
+        SmallVector<const IntervalAnalysisLattice *> operands;
+        SmallVector<IntervalAnalysisLattice *> results;
+        for (Value value : op->getOperands()) {
+          operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        for (Value value : op->getResults()) {
+          results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        return analysis->visitOperation(op, operands, results);
+      };
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto conditional = *fn.getOps<scf::IfOp>().begin();
+      auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
+      auto resultField = SourceRef(conditional->getResult(0))
+                             .createChild(SourceRefIndex(StringAttr::get(&ctx, "value")));
+      ASSERT_TRUE(succeeded(resultField));
+      SmallVector<Operation *> writes;
+      auto *driver = solver.load<IntervalTestInitialization>([&] {
+        for (Operation &op : fn.getBody().front()) {
+          if (&op == conditional.getOperation()) {
+            break;
+          }
+          if (isa<pod::WritePodOp, array::WriteArrayOp>(op)) {
+            writes.push_back(&op);
+            if (delayedWrites) {
+              continue;
+            }
+          }
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+        ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+        ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+        EXPECT_EQ(
+            analysis->getWriteResults().at(*resultField).getInterval(),
+            delayedWrites ? Interval::Entire(field) : Interval::Degenerate(field, field.felt(7))
+        );
+        // Publish the same initial state into both copies before refining the sources.
+        for (Operation *op = conditional->getNextNode(); op != nullptr; op = op->getNextNode()) {
+          ASSERT_TRUE(succeeded(visit(op)));
+        }
+        if (delayedWrites) {
+          for (Operation *write : writes) {
+            ASSERT_TRUE(succeeded(visit(write)));
+          }
+        }
+      });
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+        return &candidate == driver;
+      })));
+      auto check = [&](const SourceRef &ref, int64_t upper) {
+        const auto &stored = analysis->getWriteResults();
+        auto it = stored.find(ref);
+        ASSERT_NE(it, stored.end());
+        EXPECT_EQ(it->second.getInterval(), UnreducedInterval(7, upper).reduce(field));
+        EXPECT_EQ(it->second.getOptionalUnreducedInterval(), UnreducedInterval(7, upper));
+      };
+      check(*resultField, independentWrite ? 9 : 7);
+      check(SourceRef(conditional->getResult(1), {SourceRefIndex(0)}), 7);
+      check(
+          SourceRef(
+              arrays.back()->getResult(0),
+              {SourceRefIndex(0), SourceRefIndex(StringAttr::get(&ctx, "pod")),
+               SourceRefIndex(StringAttr::get(&ctx, "value"))}
+          ),
+          independentWrite ? 9 : 7
+      );
+      check(
+          SourceRef(
+              arrays.back()->getResult(0),
+              {SourceRefIndex(0), SourceRefIndex(StringAttr::get(&ctx, "array")), SourceRefIndex(0)}
+          ),
+          7
+      );
+    }
+  }
+}
+
+namespace {
+
+/// Count real interval transfer visits to test dependency invalidation independently of precision.
+class CountingIntervalAnalysis : public IntervalDataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(CountingIntervalAnalysis)
+  using IntervalDataFlowAnalysis::IntervalDataFlowAnalysis;
+
+  /// Count each scheduled transfer before running the normal analysis implementation.
+  LogicalResult visitOperation(
+      Operation *op, ArrayRef<const IntervalAnalysisLattice *> operands,
+      ArrayRef<IntervalAnalysisLattice *> results
+  ) override {
+    ++visits[op];
+    return IntervalDataFlowAnalysis::visitOperation(op, operands, results);
+  }
+
+  /// Return the number of transfers performed for an operation.
+  unsigned getVisits(Operation *op) const { return visits.lookup(op); }
+
+private:
+  llvm::DenseMap<Operation *, unsigned> visits;
+};
+
+} // namespace
+
+// Ranged subscriptions must observe writes through concrete aliases of the same storage.
+TEST_F(IntervalAnalysisAPITests, OverlappingArrayWritesNotifyRangedSubscribers) {
+  for (unsigned sourceKind : {0U, 1U, 2U}) {
+    for (bool rangedWrite : {false, true}) {
+      SCOPED_TRACE(sourceKind); // Argument, owned array, and array nested in a POD.
+      SCOPED_TRACE(rangedWrite ? "ranged write" : "concrete write");
+      auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%index: index, %condition: i1, %argument: !array.type<2 x !pod.type<[@value: !felt.type]>>) {
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %owned = array.new : !array.type<2 x !pod.type<[@value: !felt.type]>>
+    %container = pod.new { @items = %owned } : !pod.type<[@items: !array.type<2 x !pod.type<[@value: !felt.type]>>]>
+    %nested = pod.read %container[@items] : !pod.type<[@items: !array.type<2 x !pod.type<[@value: !felt.type]>>]>, !array.type<2 x !pod.type<[@value: !felt.type]>>
+    %other = array.new : !array.type<2 x !pod.type<[@value: !felt.type]>>
+    %slice = array.read %argument[%index] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    %copy = pod.new { @slice = %slice } : !pod.type<[@slice: !pod.type<[@value: !felt.type]>]>
+    %otherSlice = array.read %other[%index] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    %unrelated = pod.new { @slice = %otherSlice } : !pod.type<[@slice: !pod.type<[@value: !felt.type]>]>
+    %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+      scf.yield %slice : !pod.type<[@value: !felt.type]>
+    } else {
+      scf.yield %slice : !pod.type<[@value: !felt.type]>
+    }
+    %fixed = array.read %argument[%one] : !array.type<2 x !pod.type<[@value: !felt.type]>>, !pod.type<[@value: !felt.type]>
+    pod.write %fixed[@value] = %seven : !pod.type<[@value: !felt.type]>, !felt.type
+    function.return
+  }
+}
+)mlir");
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
+      auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+      auto read = *fn.getOps<array::ReadArrayOp>().begin();
+      auto write = *fn.getOps<pod::WritePodOp>().begin();
+      auto selections = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+      auto fixed = selections.back();
+      auto conditional = *fn.getOps<scf::IfOp>().begin();
+      auto nested = *fn.getOps<pod::ReadPodOp>().begin();
+      std::array<Value, 3> sources {
+          fn.getArgument(2), arrays.front().getResult(), nested.getResult()
+      };
+      read->setOperand(0, sources[sourceKind]);
+      fixed->setOperand(0, sources[sourceKind]);
+      if (rangedWrite) {
+        fixed->setOperand(1, fn.getArgument(0));
+      }
+
+      const Field &field = Field::getField("babybear");
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      auto *analysis = solver.load<CountingIntervalAnalysis>(smt, field, false, false);
+      auto visit = [&](Operation *op) {
+        SmallVector<const IntervalAnalysisLattice *> operands;
+        SmallVector<IntervalAnalysisLattice *> results;
+        for (Value value : op->getOperands()) {
+          operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        for (Value value : op->getResults()) {
+          results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        return analysis->visitOperation(op, operands, results);
+      };
+      auto *thenYield = conditional.thenBlock()->getTerminator();
+      auto *elseYield = conditional.elseBlock()->getTerminator();
+      auto *driver = solver.load<IntervalTestInitialization>([&] {
+        // Initialize roots before subscribing ranged consumers: pending-producer root
+        // subscriptions would otherwise conceal the missing overlapping-path dependency.
+        for (Operation &op : fn.getBody().front()) {
+          if (&op == write.getOperation()) {
+            continue;
+          }
+          if (&op == conditional.getOperation()) {
+            ASSERT_TRUE(succeeded(visit(thenYield)));
+            ASSERT_TRUE(succeeded(visit(elseYield)));
+          } else {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        EXPECT_EQ(analysis->getVisits(pods[1]), 1U);
+        EXPECT_EQ(analysis->getVisits(thenYield), 1U);
+        EXPECT_EQ(analysis->getVisits(elseYield), 1U);
+        ASSERT_TRUE(succeeded(visit(write)));
+      });
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+        return &candidate == driver;
+      })));
+      EXPECT_GT(analysis->getVisits(pods[1]), 1U);
+      EXPECT_GT(analysis->getVisits(thenYield), 1U);
+      EXPECT_GT(analysis->getVisits(elseYield), 1U);
+      EXPECT_EQ(analysis->getVisits(pods[2]), 1U);
+    }
+  }
+}
+
+// A ranged write must widen concrete copies and yields regardless of visitation order.
+TEST_F(IntervalAnalysisAPITests, RangedWritesUpdateConcreteAggregateSubscribers) {
+  for (bool delayedWrite : {false, true}) {
+    for (bool aggregateWrite : {false, true}) {
+      SCOPED_TRACE(delayedWrite ? "write after copies" : "write before copies");
+      SCOPED_TRACE(aggregateWrite ? "aggregate write" : "scalar write");
+      std::string source = R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%index: index, %condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %payload = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+    %replacement = pod.new { @value = %nine } : !pod.type<[@value: !felt.type]>
+    %element = pod.new { @payload = %payload, @other = %seven } : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %array = array.new %element, %element, %element, %element : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
+    %dynamic = array.read %array[%zero, %index] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %dynamicPayload = pod.read %dynamic[@payload] : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>, !pod.type<[@value: !felt.type]>
+    %concrete = array.read %array[%zero, %one] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %podCopy = pod.new { @selected = %concrete } : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
+    %arrayCopy = array.new %concrete : !array.type<1 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
+    %assigned = pod.new : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
+    pod.write %assigned[@selected] = %concrete : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %selected = scf.if %condition -> (!pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>) {
+      scf.yield %concrete : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    } else {
+      scf.yield %concrete : !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    }
+    %out = array.new %selected : !array.type<1 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>
+    %disjoint = array.read %array[%one, %one] : !array.type<2,2 x !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>>, !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>
+    %unrelated = pod.new { @selected = %disjoint } : !pod.type<[@selected: !pod.type<[@payload: !pod.type<[@value: !felt.type]>, @other: !felt.type]>]>
+    // LATE_WRITE
+    function.return
+  }
+}
+)mlir";
+      source.replace(
+          source.find("// LATE_WRITE"), std::string("// LATE_WRITE").size(),
+          aggregateWrite
+              ? "pod.write %dynamic[@payload] = %replacement : !pod.type<[@payload: "
+                "!pod.type<[@value: !felt.type]>, @other: !felt.type]>, !pod.type<[@value: "
+                "!felt.type]>"
+              : "pod.write %dynamicPayload[@value] = %nine : !pod.type<[@value: !felt.type]>, "
+                "!felt.type"
+      );
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+      auto arrays = llvm::to_vector(fn.getOps<array::CreateArrayOp>());
+      auto conditional = *fn.getOps<scf::IfOp>().begin();
+      auto write = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+      const Field &field = Field::getField("babybear");
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      auto *analysis = solver.load<CountingIntervalAnalysis>(smt, field, false, true);
+      auto visit = [&](Operation *op) {
+        SmallVector<const IntervalAnalysisLattice *> operands;
+        SmallVector<IntervalAnalysisLattice *> results;
+        for (Value value : op->getOperands()) {
+          operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        for (Value value : op->getResults()) {
+          results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+        }
+        return analysis->visitOperation(op, operands, results);
+      };
+      SourceRefIndex selected(StringAttr::get(&ctx, "selected"));
+      SourceRefIndex payload(StringAttr::get(&ctx, "payload"));
+      SourceRefIndex value(StringAttr::get(&ctx, "value"));
+      SourceRefIndex other(StringAttr::get(&ctx, "other"));
+      SmallVector<SourceRef> copies {
+          SourceRef(pods[3]->getResult(0), {selected}),
+          SourceRef(arrays[1]->getResult(0), {SourceRefIndex(0)}),
+          SourceRef(pods[4]->getResult(0), {selected}), SourceRef(conditional->getResult(0)),
+          SourceRef(arrays[2]->getResult(0), {SourceRefIndex(0)})
+      };
+      auto check = [&](const SourceRef &ref, int64_t upper) {
+        auto it = analysis->getWriteResults().find(ref);
+        ASSERT_NE(it, analysis->getWriteResults().end());
+        EXPECT_EQ(it->second.getInterval(), UnreducedInterval(7, upper).reduce(field));
+        EXPECT_EQ(it->second.getOptionalUnreducedInterval(), UnreducedInterval(7, upper));
+      };
+      auto checkCopies = [&](int64_t upper) {
+        for (const SourceRef &copy : copies) {
+          check(*copy.createChild(payload)->createChild(value), upper);
+          check(*copy.createChild(other), 7);
+        }
+      };
+      auto *driver = solver.load<IntervalTestInitialization>([&] {
+        for (Operation &op : fn.getBody().front()) {
+          if (&op == pods[3].getOperation() && !delayedWrite) {
+            ASSERT_TRUE(succeeded(visit(write)));
+          }
+          if (&op == write.getOperation()) {
+            continue;
+          }
+          if (&op == conditional.getOperation()) {
+            ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+            ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+          } else {
+            ASSERT_TRUE(succeeded(visit(&op)));
+          }
+        }
+        checkCopies(delayedWrite ? 7 : 9);
+        if (delayedWrite) {
+          ASSERT_TRUE(succeeded(visit(write)));
+        }
+      });
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+        return &candidate == driver;
+      })));
+      checkCopies(9);
+      check(SourceRef(pods[5]->getResult(0), {selected, payload, value}), 7);
+      EXPECT_EQ(analysis->getVisits(pods[5]), 1U);
+    }
+  }
+}
+
+// A join can run before aggregate initializers when the worklist discovers new live regions.
+TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsRevisitConditionalYield) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = felt.const 0
+    %seven = felt.const 7
+    %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+    %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+    %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+      scf.yield %left : !pod.type<[@value: !felt.type]>
+    } else {
+      scf.yield %right : !pod.type<[@value: !felt.type]>
+    }
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+
+  // Settle liveness and storage identities first, then explicitly exercise the legal
+  // worklist order where both yields precede the writes that materialize their sources.
+  auto visit = [&](Operation *op) {
+    SmallVector<const IntervalAnalysisLattice *> operands;
+    SmallVector<IntervalAnalysisLattice *> results;
+    for (Value value : op->getOperands()) {
+      operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    for (Value value : op->getResults()) {
+      results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    return analysis->visitOperation(op, operands, results);
+  };
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto conditional = *fn.getOps<scf::IfOp>().begin();
+  auto resultField = SourceRef(conditional->getResult(0))
+                         .createChild(SourceRefIndex(StringAttr::get(&ctx, "value")));
+  ASSERT_TRUE(succeeded(resultField));
+  auto *driver = solver.load<IntervalTestInitialization>([&] {
+    ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+    ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+    EXPECT_FALSE(analysis->getWriteResults().contains(*resultField));
+
+    for (Operation &op : fn.getBody().front()) {
+      if (isa<felt::FeltConstantOp, pod::NewPodOp>(op)) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+  });
+  // Drain only queued dependencies. Reinitializing the analysis would revisit every yield
+  // and mask a missing storage subscription.
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+    return &candidate == driver;
+  })));
+  const auto &writes = analysis->getWriteResults();
+  auto stored = writes.find(*resultField);
+  ASSERT_NE(stored, writes.end());
+  EXPECT_EQ(stored->second.getInterval(), UnreducedInterval(0, 7).reduce(field));
+  EXPECT_EQ(stored->second.getOptionalUnreducedInterval(), UnreducedInterval(0, 7));
+}
+
+// Copies made before a conditional publishes its fields must update through every consumer.
+TEST_F(IntervalAnalysisAPITests, DelayedAggregateFieldsPropagateThroughCopyChains) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = felt.const 0
+    %seven = felt.const 7
+    %left = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+    %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+    %selected = scf.if %condition -> (!pod.type<[@value: !felt.type]>) {
+      scf.yield %left : !pod.type<[@value: !felt.type]>
+    } else {
+      scf.yield %right : !pod.type<[@value: !felt.type]>
+    }
+    %copy1 = pod.new { @child = %selected } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+    %alias = pod.read %copy1[@child] : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>, !pod.type<[@value: !felt.type]>
+    %copy2 = pod.new { @child = %alias } : !pod.type<[@child: !pod.type<[@value: !felt.type]>]>
+    %array = array.new %copy2, %copy2 : !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>
+    %copy3 = pod.new { @values = %array } : !pod.type<[@values: !array.type<2 x !pod.type<[@child: !pod.type<[@value: !felt.type]>]>>]>
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  const Field &field = Field::getField("babybear");
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+  auto visit = [&](Operation *op) {
+    SmallVector<const IntervalAnalysisLattice *> operands;
+    SmallVector<IntervalAnalysisLattice *> results;
+    for (Value value : op->getOperands()) {
+      operands.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    for (Value value : op->getResults()) {
+      results.push_back(solver.getOrCreateState<IntervalAnalysisLattice>(value));
+    }
+    return analysis->visitOperation(op, operands, results);
+  };
+
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto conditional = *fn.getOps<scf::IfOp>().begin();
+  auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+  auto *driver = solver.load<IntervalTestInitialization>([&] {
+    // Visit the entire consumer chain first, so every later copy needs a storage notification.
+    for (Operation *op = conditional->getNextNode(); op != nullptr; op = op->getNextNode()) {
+      ASSERT_TRUE(succeeded(visit(op)));
+    }
+    ASSERT_TRUE(succeeded(visit(conditional.thenBlock()->getTerminator())));
+    ASSERT_TRUE(succeeded(visit(conditional.elseBlock()->getTerminator())));
+    for (Operation &op : fn.getBody().front()) {
+      if (&op == conditional.getOperation()) {
+        break;
+      }
+      ASSERT_TRUE(succeeded(visit(&op)));
+    }
+  });
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+    return &candidate == driver;
+  })));
+
+  const auto &writes = analysis->getWriteResults();
+  for (int64_t index : {0, 1}) {
+    SourceRef leaf(
+        pods.back()->getResult(0),
+        {SourceRefIndex(StringAttr::get(&ctx, "values")), SourceRefIndex(index),
+         SourceRefIndex(StringAttr::get(&ctx, "child")),
+         SourceRefIndex(StringAttr::get(&ctx, "value"))}
+    );
+    auto stored = writes.find(leaf);
+    ASSERT_NE(stored, writes.end());
+    EXPECT_EQ(stored->second.getInterval(), UnreducedInterval(0, 7).reduce(field));
+    EXPECT_EQ(stored->second.getOptionalUnreducedInterval(), UnreducedInterval(0, 7));
+  }
+}
+
+// Equal ranges describe possible locations, not equal values at independent dynamic indices.
+TEST_F(IntervalAnalysisAPITests, AmbiguousArrayReadsHaveIndependentSymbols) {
+  for (bool storedRange : {false, true}) {
+    SCOPED_TRACE(storedRange ? "ranged writes" : "unwritten arrays");
+    std::string source = R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %pods: !array.type<2 x !P>, %i: index, %j: index, %input: !felt.type, %condition: i1) -> (!felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type) {
+    %leftPod = array.read %pods[%i] : !array.type<2 x !P>, !P
+    %rightPod = array.read %pods[%j] : !array.type<2 x !P>, !P
+    // WRITES
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %array[%j] : !array.type<2 x !felt.type>, !felt.type
+    %leftCopy = pod.new { @child = %leftPod } : !W
+    %rightCopy = pod.new { @child = %rightPod } : !W
+    %leftChild = pod.read %leftCopy[@child] : !W, !P
+    %rightChild = pod.read %rightCopy[@child] : !W, !P
+    %copiedLeft = pod.read %leftChild[@value] : !P, !felt.type
+    %copiedRight = pod.read %rightChild[@value] : !P, !felt.type
+    %leftChoice = scf.if %condition -> (!P) {
+      scf.yield %leftPod : !P
+    } else {
+      scf.yield %leftPod : !P
+    }
+    %rightChoice = scf.if %condition -> (!P) {
+      scf.yield %rightPod : !P
+    } else {
+      scf.yield %rightPod : !P
+    }
+    %chosenLeft = pod.read %leftChoice[@value] : !P, !felt.type
+    %chosenRight = pod.read %rightChoice[@value] : !P, !felt.type
+    function.return %left, %right, %copiedLeft, %copiedRight, %chosenLeft, %chosenRight : !felt.type, !felt.type, !felt.type, !felt.type, !felt.type, !felt.type
+  }
+}
+)mlir";
+    if (storedRange) {
+      source.replace(
+          source.find("// WRITES"), std::string("// WRITES").size(),
+          "array.write %array[%i] = %input : !array.type<2 x !felt.type>, !felt.type\n"
+          "    pod.write %leftPod[@value] = %input : !P, !felt.type"
+      );
+    }
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    const Field &field = Field::getField("babybear");
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto returned = fn.getBody().front().getTerminator()->getOperands();
+    SmallVector<llvm::SMTExprRef> expressions;
+    for (Value value : returned) {
+      const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+      ASSERT_NE(lattice, nullptr);
+      const auto &stored = lattice->getValue().getScalarValue();
+      ASSERT_NE(stored.getExpr(), nullptr);
+      EXPECT_EQ(stored.getInterval(), Interval::Entire(field));
+      EXPECT_EQ(
+          stored.getOptionalUnreducedInterval(), UnreducedInterval(field.zero(), field.maxVal())
+      );
+      expressions.push_back(stored.getExpr());
+    }
+    for (unsigned first : {0U, 2U, 4U}) {
+      EXPECT_FALSE(*expressions[first] == *expressions[first + 1]);
+      if (first == 0) {
+        EXPECT_EQ(expressions[first], analysis->getOrCreateSymbol(returned[first]));
+        EXPECT_EQ(expressions[first + 1], analysis->getOrCreateSymbol(returned[first + 1]));
+      }
+      // Distinct dynamic selections can read 7 and 9, even after a ranged write.
+      smt->addConstraint(smt->mkEqual(
+          expressions[first], smt->mkBitvector(toAPSInt(field.felt(7)), field.bitWidth())
+      ));
+      smt->addConstraint(smt->mkEqual(
+          expressions[first + 1], smt->mkBitvector(toAPSInt(field.felt(9)), field.bitWidth())
+      ));
+    }
+    EXPECT_EQ(smt->check(), std::optional<bool>(true));
+  }
+}
+
+// Conditional storage roots retain the nested/disjoint alias proofs from the preceding stack.
+TEST_F(IntervalAnalysisAPITests, ConditionalArrayReadsPreserveStackedAliasProofs) {
+  for (bool sameIndex : {false, true}) {
+    for (bool disjointWrite : {false, true}) {
+      SCOPED_TRACE(sameIndex ? "same index" : "independent indices");
+      SCOPED_TRACE(disjointWrite ? "disjoint write" : "overlapping write");
+      std::string source = R"mlir(
+!A = !array.type<2 x !felt.type>
+module attributes {llzk.lang} {
+  function.def @test(%a: !A, %b: !A, %i: index, %j: index, %condition: i1, %input: !felt.type) {
+    %selected = scf.if %condition -> (!A) {
+      scf.yield %a : !A
+    } else {
+      scf.yield %b : !A
+    }
+    %fresh = array.new : !A
+    %yes = arith.constant true
+    %left = array.read %selected[%i] : !A, !felt.type
+    array.write WRITE_TARGET[%i] = %input : !A, !felt.type
+    scf.if %yes {
+      %right = array.read %selected[READ_INDEX] : !A, !felt.type
+      %different = bool.cmp ne(%left, %right)
+      bool.assert %different
+    }
+    function.return
+  }
+}
+)mlir";
+      source.replace(
+          source.find("WRITE_TARGET"), StringRef("WRITE_TARGET").size(),
+          disjointWrite ? "%fresh" : "%selected"
+      );
+      source.replace(
+          source.find("READ_INDEX"), StringRef("READ_INDEX").size(), sameIndex ? "%i" : "%j"
+      );
+      auto mod = parseModule(source);
+      ASSERT_TRUE(mod);
+      auto smt = llvm::CreateZ3Solver();
+      DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+      llzk::dataflow::loadRequiredAnalyses(solver);
+      solver.load<SourceRefAnalysis>();
+      solver.load<IntervalDataFlowAnalysis>(smt, Field::getField("babybear"), false, false);
+      ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+      SmallVector<boolean::CmpOp> comparisons;
+      mod->walk([&](boolean::CmpOp comparison) { comparisons.push_back(comparison); });
+      ASSERT_EQ(comparisons.size(), 1U);
+      const auto *lattice =
+          solver.lookupState<IntervalAnalysisLattice>(comparisons.front().getResult());
+      ASSERT_NE(lattice, nullptr);
+      ASSERT_FALSE(lattice->getConstraints().empty());
+      for (const ExpressionValue &constraint : lattice->getConstraints()) {
+        smt->addConstraint(constraint.getExpr());
+      }
+      EXPECT_EQ(smt->check(), std::optional<bool>(!(sameIndex && disjointWrite)));
+    }
+  }
+}
 
 // Equal-looking values in separate functions must still have separate SMT identities.
 TEST_F(IntervalAnalysisAPITests, ValueSymbolsCacheIdentityAndPreserveSorts) {

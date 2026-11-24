@@ -382,6 +382,7 @@ private:
   llvm::DenseMap<Lattice *, Interval> computedIntervals;
   /// Values before backward refinement, restored when a storage read expands.
   llvm::DenseMap<Lattice *, ExpressionValue> refinementBases;
+
   /// Track SourceRef-indexed writes. For now, we'll overapproximate repeated writes.
   llvm::DenseMap<SourceRef, ExpressionValue> writeResults;
 
@@ -390,6 +391,7 @@ private:
     ExpressionValue value;
     bool mayBeSkipped;
   };
+
   /// Keep recomputed publications separate from actual writes to the same location.
   /// The null key accumulates ordinary writes; operation keys hold replaceable publications.
   llvm::DenseMap<SourceRef, llvm::DenseMap<mlir::Operation *, WriteContribution>>
@@ -398,6 +400,12 @@ private:
   /// Revisit consumers when overlapping storage descendants appear or change, including
   /// fields that were not stored when an aggregate was first copied.
   llvm::DenseMap<SourceRef, llvm::DenseSet<mlir::Operation *>> aggregateReaders;
+
+  /// Conditional aggregate results are materialized only after every live yield is visited.
+  llvm::DenseSet<mlir::Operation *> visitedConditionalYields;
+
+  /// Distinguish unwritten aggregate fields from producers that have not been analyzed yet.
+  llvm::DenseSet<mlir::Value> initializedAggregates;
 
   void setToEntryState(Lattice *lattice) override {
     // Initialize the value with an interval in our specified field.
@@ -544,8 +552,20 @@ private:
       mlir::Operation *publisher = nullptr
   );
 
+  /// Merge every live conditional aggregate alternative, including unwritten fields.
+  void recordConditionalAggregateYields(mlir::Operation *yield);
+
+  /// Subscribe a consumer to a storage prefix and its producer's initial publication.
+  /// Returns false while the source producer has not yet published its initial state.
+  bool subscribeToAggregate(const SourceRef &source, mlir::Operation *consumer);
+
+  /// Publish completion of an aggregate's initial storage state, including empty states,
+  /// and wake consumers waiting for that producer.
+  void markAggregateInitialized(mlir::OpResult result);
+
   /// @brief Resolve storage used by reads and copies, retaining original component handle
   /// identities and addressing materialized value arrays at their result roots.
+  /// Conditional component handles retain their original identity when it is unambiguous.
   SourceRefLatticeValue getSourceRefState(mlir::Value val);
 };
 

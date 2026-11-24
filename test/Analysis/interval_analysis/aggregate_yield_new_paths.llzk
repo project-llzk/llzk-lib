@@ -1,0 +1,143 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals" %s -o /dev/null 2>&1 | FileCheck %s --implicit-check-not=error:
+
+// Outer joins must subscribe before a nested result has any materialized fields.
+module attributes {llzk.lang} {
+  struct.def @NestedIfBoth {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+    function.def @compute(%innerCondition: i1, %outerCondition: i1) -> !struct.type<@NestedIfBoth> {
+      %self = struct.new : !struct.type<@NestedIfBoth>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %selected = scf.if %outerCondition -> (!pod.type<[@value: !felt.type]>) {
+        %inner = scf.if %innerCondition -> (!pod.type<[@value: !felt.type]>) {
+          %branchLeft = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+          scf.yield %branchLeft : !pod.type<[@value: !felt.type]>
+        } else {
+          %branchRight = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+          scf.yield %branchRight : !pod.type<[@value: !felt.type]>
+        }
+        scf.yield %inner : !pod.type<[@value: !felt.type]>
+      } else {
+        %other = scf.if %innerCondition -> (!pod.type<[@value: !felt.type]>) {
+          %otherLeft = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+          scf.yield %otherLeft : !pod.type<[@value: !felt.type]>
+        } else {
+          %otherRight = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+          scf.yield %otherRight : !pod.type<[@value: !felt.type]>
+        }
+        scf.yield %other : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@NestedIfBoth>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@NestedIfBoth>
+    }
+    function.def @constrain(%self: !struct.type<@NestedIfBoth>, %innerCondition: i1, %outerCondition: i1) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NestedIfBoth StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %self.storage.value in TypeA:[ 0, 7 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NestedIfKnownElse {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+    function.def @compute(%innerCondition: i1, %outerCondition: i1) -> !struct.type<@NestedIfKnownElse> {
+      %self = struct.new : !struct.type<@NestedIfKnownElse>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %right = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+      %selected = scf.if %outerCondition -> (!pod.type<[@value: !felt.type]>) {
+        %inner = scf.if %innerCondition -> (!pod.type<[@value: !felt.type]>) {
+          %branchLeft = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+          scf.yield %branchLeft : !pod.type<[@value: !felt.type]>
+        } else {
+          %branchRight = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+          scf.yield %branchRight : !pod.type<[@value: !felt.type]>
+        }
+        scf.yield %inner : !pod.type<[@value: !felt.type]>
+      } else {
+        scf.yield %right : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@NestedIfKnownElse>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@NestedIfKnownElse>
+    }
+    function.def @constrain(%self: !struct.type<@NestedIfKnownElse>, %innerCondition: i1, %outerCondition: i1) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NestedIfKnownElse StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %self.storage.value in TypeA:[ 0, 7 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+module attributes {llzk.lang} {
+  struct.def @NestedIndexSwitch {
+    struct.member @storage : !pod.type<[@value: !felt.type]>
+    function.def @compute(%innerCondition: i1, %selector: index) -> !struct.type<@NestedIndexSwitch> {
+      %self = struct.new : !struct.type<@NestedIndexSwitch>
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %selected = scf.index_switch %selector -> !pod.type<[@value: !felt.type]>
+      case 0 {
+        %inner = scf.if %innerCondition -> (!pod.type<[@value: !felt.type]>) {
+          %branchLeft = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+          scf.yield %branchLeft : !pod.type<[@value: !felt.type]>
+        } else {
+          %branchRight = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+          scf.yield %branchRight : !pod.type<[@value: !felt.type]>
+        }
+        scf.yield %inner : !pod.type<[@value: !felt.type]>
+      }
+      default {
+        %other = scf.if %innerCondition -> (!pod.type<[@value: !felt.type]>) {
+          %otherLeft = pod.new { @value = %zero } : !pod.type<[@value: !felt.type]>
+          scf.yield %otherLeft : !pod.type<[@value: !felt.type]>
+        } else {
+          %otherRight = pod.new { @value = %seven } : !pod.type<[@value: !felt.type]>
+          scf.yield %otherRight : !pod.type<[@value: !felt.type]>
+        }
+        scf.yield %other : !pod.type<[@value: !felt.type]>
+      }
+      struct.writem %self[@storage] = %selected : !struct.type<@NestedIndexSwitch>, !pod.type<[@value: !felt.type]>
+      function.return %self : !struct.type<@NestedIndexSwitch>
+    }
+    function.def @constrain(%self: !struct.type<@NestedIndexSwitch>, %innerCondition: i1, %selector: index) {
+      function.return
+    }
+  }
+}
+// CHECK-LABEL: @NestedIndexSwitch StructIntervals {
+// CHECK-NEXT:      compute {
+// CHECK-NEXT:          %arg0 in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %self.storage.value in TypeA:[ 0, 7 ]
+// CHECK-NEXT:      }
+// CHECK-NEXT:      constrain {
+// CHECK-NEXT:          %self.storage.value in Entire
+// CHECK-NEXT:          %arg1 in Entire
+// CHECK-NEXT:          %arg2 in Entire
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

@@ -1,0 +1,4 @@
+fixed:
+  - Preserve all live alternatives of scf.if and scf.index_switch aggregate results, including type-appropriate defaults for fields left unwritten.
+  - Prevent incomplete or stale intervals in conditional aggregate results and dependent copies when source initialization or field writes are analyzed later.
+  - Resolve scalar reads through merged aggregate storage while preserving visible member constraints through unambiguous conditional component aliases.
