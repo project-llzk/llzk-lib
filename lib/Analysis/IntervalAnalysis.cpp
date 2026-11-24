@@ -74,6 +74,17 @@ bool hasRangedSelection(const SourceRef &ref) {
   });
 }
 
+/// Only ranges with more than one possible index can miss a candidate write target.
+bool hasNonSingletonRange(const SourceRef &ref) {
+  return llvm::any_of(ref.getPath(), [](const SourceRefIndex &index) {
+    if (!index.isIndexRange()) {
+      return false;
+    }
+    auto [low, high] = index.getIndexRange();
+    return index.hasUnboundedUpperBound() || high - low != 1;
+  });
+}
+
 /// Exclude storage mutations between two ordered operations in the same block.
 bool hasReadPreservingSameBlockPath(Operation *first, Operation *second) {
   if (first->getBlock() != second->getBlock() || !first->isBeforeInBlock(second)) {
@@ -940,7 +951,7 @@ void IntervalDataFlowAnalysis::recordRefWrite(
 ) {
   // Every publication path, including member writes and translated aggregate leaves,
   // must retain the alternative where a different element of a range was selected.
-  mayBeSkipped |= hasRangedSelection(writtenRef);
+  mayBeSkipped |= hasNonSingletonRange(writtenRef);
   auto joinStoredWrite = [this, &writtenRef](
                              const ExpressionValue &old, const ExpressionValue &next
                          ) -> ExpressionValue {
@@ -1342,9 +1353,9 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
   } else if (auto writeArr = llvm::dyn_cast<WriteArrayOp>(op)) {
     ExpressionValue writeVal = operandVals.back().getScalarValue();
     auto arrayRef = getArrayAccessRef(op, writeArr);
-    // A ranged access may miss each candidate even when the operation always executes.
+    // A non-singleton range may miss each candidate even when the operation always executes.
     const bool maySkipWrite =
-        isInMaybeSkippedScfRegion(op) || (succeeded(arrayRef) && hasRangedSelection(*arrayRef));
+        isInMaybeSkippedScfRegion(op) || (succeeded(arrayRef) && hasNonSingletonRange(*arrayRef));
     if (succeeded(arrayRef)) {
       recordRefWrite(*arrayRef, writeVal, op, maySkipWrite);
     }
@@ -1359,7 +1370,7 @@ mlir::LogicalResult IntervalDataFlowAnalysis::visitOperation(
       for (const SourceRef &ref : targetRefs.getScalarValue()) {
         recordRefWrite(
             ref, writeVal, op,
-            maySkipWrite || !targetRefs.isSingleValue() || hasRangedSelection(ref)
+            maySkipWrite || !targetRefs.isSingleValue() || hasNonSingletonRange(ref)
         );
       }
     }
