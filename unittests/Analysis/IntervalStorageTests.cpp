@@ -40,10 +40,10 @@ public:
 
   /// Attach an observer to the production transfer function.
   ObservedIntervalAnalysis(
-      DataFlowSolver &solver, llvm::SMTSolverRef smt, const Field &field,
+      DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &prime,
       std::function<void(Operation *, ArrayRef<IntervalAnalysisLattice *>)> observer
   )
-      : IntervalDataFlowAnalysis(solver, std::move(smt), field, false, true),
+      : IntervalDataFlowAnalysis(dataflowSolver, std::move(smt), prime, false, true),
         observe(std::move(observer)) {}
 
   /// Record the result of each normal visit without changing solver scheduling.

@@ -29,7 +29,6 @@ module attributes {llzk.lang} {
   }
 }
 
-
 // CHECK-LABEL: @ReadsBeforeWrites StructIntervals { }
 
 // CHECK-LABEL: @ReadsBeforeWrites SSAIntervals {
@@ -70,7 +69,6 @@ module attributes {llzk.lang} {
   }
 }
 
-
 // CHECK-LABEL: @UnchangedReadKeepsRefinement StructIntervals { }
 
 // CHECK-LABEL: @UnchangedReadKeepsRefinement SSAIntervals {
@@ -109,7 +107,6 @@ module attributes {llzk.lang} {
     }
   }
 }
-
 
 // CHECK-LABEL: @RangedPodRemapDefaults StructIntervals { }
 
