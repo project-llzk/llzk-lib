@@ -343,3 +343,56 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Parent<[#felt<co
     }
   }
 }
+
+// -----
+
+// An untyped local forwarding binding cannot strip a field during struct monomorphization.
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Parent<[#felt<const 2013265924 : !felt.type<"babybear">>]>>} {
+  poly.template @Inner {
+    poly.param @N : !felt.type
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Inner::@Child<[@N]>> {
+        %self = struct.new : !struct.type<@Inner::@Child<[@N]>>
+        function.return %self : !struct.type<@Inner::@Child<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Inner::@Child<[@N]>>) { function.return }
+    }
+  }
+  poly.template @Outer {
+    poly.param @Deferred
+    struct.def @Parent {
+      // expected-error@+1 {{instantiation value '#felt<const 2013265924 : <"babybear">> : !felt.type<"babybear">' is not compatible with parameter "@N" type restriction '!felt.type'}}
+      struct.member @child : !struct.type<@Inner::@Child<[@Deferred]>>
+      function.def @compute() -> !struct.type<@Outer::@Parent<[@Deferred]>> {
+        %self = struct.new : !struct.type<@Outer::@Parent<[@Deferred]>>
+        function.return %self : !struct.type<@Outer::@Parent<[@Deferred]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Parent<[@Deferred]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A fielded constant forwarded to a fieldless felt function parameter cannot strip its field.
+module attributes {llzk.lang, llzk.main = !struct.type<@Outer::@Parent<[#felt<const 2013265924 : !felt.type<"babybear">>]>>} {
+  poly.template @ValueFunction {
+    poly.param @N : !felt.type
+    function.def @value() -> !felt.type {
+      %n = poly.read_const @N : !felt.type
+      function.return %n : !felt.type
+    }
+  }
+  poly.template @Outer {
+    poly.param @Deferred
+    struct.def @Parent {
+      function.def @compute() -> !struct.type<@Outer::@Parent<[@Deferred]>> {
+        %self = struct.new : !struct.type<@Outer::@Parent<[@Deferred]>>
+        // expected-error@+1 {{function argument #felt<const 2013265924 : <"babybear">> : !felt.type<"babybear"> does not match parameter @N of type '!felt.type'}}
+        %v = function.call @ValueFunction::@value<[@Deferred]>() : () -> !felt.type
+        function.return %self : !struct.type<@Outer::@Parent<[@Deferred]>>
+      }
+      function.def @constrain(%self: !struct.type<@Outer::@Parent<[@Deferred]>>) { function.return }
+    }
+  }
+}

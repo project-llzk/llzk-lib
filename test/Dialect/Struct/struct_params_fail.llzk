@@ -1258,3 +1258,107 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Target::@S<[#felt<const 
     }
   }
 }
+
+// -----
+
+// A fielded felt constant cannot instantiate a fieldless felt struct parameter in a member type.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    poly.param @N : !felt.type
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // expected-error@+1 {{instantiation value '#felt<const 35 : <"bn128">> : !felt.type<"bn128">' is not compatible with parameter "@N" type restriction '!felt.type'}}
+    struct.member @value : !struct.type<@Target::@S<[#felt<const 35 : !felt.type<"bn128">>]>>
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}
+
+// -----
+
+// A fielded felt constant cannot instantiate a fieldless felt struct parameter in llzk.main.
+// expected-error@+1 {{instantiation value '#felt<const 35 : <"bn128">> : !felt.type<"bn128">' is not compatible with parameter "@N" type restriction '!felt.type'}}
+module attributes {llzk.lang, llzk.main = !struct.type<@Target::@S<[#felt<const 35 : !felt.type<"bn128">>]>>} {
+  poly.template @Target {
+    poly.param @N : !felt.type
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A fielded constant global cannot instantiate a fieldless felt struct parameter.
+module attributes {llzk.lang} {
+  // expected-note@+1 {{argument symbol defined here}}
+  global.def const @FieldedGlobal : !felt.type<"bn128"> = 35
+
+  poly.template @Target {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // expected-error@+1 {{'struct.member' op instantiation value '@FieldedGlobal' is not compatible with parameter "@N" type restriction '!felt.type'}}
+    struct.member @value : !struct.type<@Target::@S<[@FieldedGlobal]>>
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}
+
+// -----
+
+// A fielded local template binding cannot instantiate a fieldless felt struct parameter.
+module attributes {llzk.lang} {
+  poly.template @Target {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type
+    struct.def @S {
+      function.def @compute() -> !struct.type<@Target::@S<[@N]>> {
+        %self = struct.new : !struct.type<@Target::@S<[@N]>>
+        function.return %self : !struct.type<@Target::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Target::@S<[@N]>>) { function.return }
+    }
+  }
+
+  poly.template @Caller {
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.param @Value : !felt.type<"bn128">
+    struct.def @Use {
+      // expected-error@+1 {{'struct.member' op instantiation value '@Value' is not compatible with parameter "@N" type restriction '!felt.type'}}
+      struct.member @value : !struct.type<@Target::@S<[@Value]>>
+      function.def @compute() -> !struct.type<@Caller::@Use<[@Value]>> {
+        %self = struct.new : !struct.type<@Caller::@Use<[@Value]>>
+        function.return %self : !struct.type<@Caller::@Use<[@Value]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Use<[@Value]>>) { function.return }
+    }
+  }
+}

@@ -546,16 +546,9 @@ LogicalResult verifyResolvedTemplateParamSymbolCompatibility(
   if (!declaredType) {
     return success();
   }
-  // A fieldless felt restriction accepts any known felt field; a known field must match a
-  // fielded restriction. Type unification alone requires both felt types to be identical.
-  auto typeCompatible = [declaredType](Type sourceType) {
-    if (auto targetFelt = llvm::dyn_cast<FeltType>(*declaredType)) {
-      if (auto sourceFelt = llvm::dyn_cast<FeltType>(sourceType)) {
-        return !targetFelt.hasField() || sourceFelt == targetFelt;
-      }
-    }
-    return typesUnify(sourceType, *declaredType);
-  };
+  // Type unification preserves strict equality for felt fields so a fieldless parameter
+  // never strips field identity from fielded symbols and a fielded parameter requires
+  // the matching field.
   bool compatible = false;
   if (auto binding = llvm::dyn_cast<TemplateSymbolBindingOpInterface>(symbolDef)) {
     std::optional<Type> bindingType = binding.getTypeOpt();
@@ -563,10 +556,11 @@ LogicalResult verifyResolvedTemplateParamSymbolCompatibility(
     bool typeBinding = bindingType && llvm::isa<TemplateParamOp>(symbolDef) &&
                        llvm::isa<TypeVarType>(*bindingType);
     compatible = !bindingType || (typeBinding == llvm::isa<TypeVarType>(*declaredType) &&
-                                  typeCompatible(*bindingType));
+                                  typesUnify(*bindingType, *declaredType));
   } else {
     auto global = llvm::cast<GlobalDefOp>(symbolDef);
-    compatible = !llvm::isa<TypeVarType>(*declaredType) && typeCompatible(global.getType());
+    compatible =
+        !llvm::isa<TypeVarType>(*declaredType) && typesUnify(global.getType(), *declaredType);
   }
   if (!compatible) {
     auto diag = origin->emitOpError().append(

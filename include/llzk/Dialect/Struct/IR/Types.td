@@ -55,10 +55,9 @@ def LLZK_StructType : StructDialectType<"Struct", "type"> {
     Monomorphization checks conversion values: felt-to-index requires a known field and a reduced
     value in the nonnegative signed 64-bit range, and index-to-`i1` requires zero or one.
 
-    A felt restriction accepts integer literals. A fieldless felt restriction also accepts felt
-    values with any field. The `llzk-monomorphize-templates` pass uses their reduced value when
-    specializing a fieldless parameter. The legacy `llzk-flatten` pass does not support this
-    conversion when the fieldless value is read and used.
+    A felt restriction accepts integer literals. A fieldless felt restriction also accepts
+    fieldless felt constants and fieldless felt symbols; explicitly fielded felt constants
+    and typed fielded symbols are rejected so field identity is never dropped.
     A fielded felt restriction accepts fieldless felt constants; explicitly fielded constants
     and typed felt symbols must have the matching field. A symbol typed as fieldless felt
     cannot satisfy it.

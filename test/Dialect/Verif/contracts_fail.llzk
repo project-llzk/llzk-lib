@@ -1366,3 +1366,53 @@ module attributes {llzk.lang} {
     verif.include @SpecTemplate::@Base<[@F]>() : () -> ()
   }
 }
+
+// -----
+
+// A fielded constant global cannot instantiate a fieldless felt include parameter.
+module attributes {llzk.lang} {
+  // expected-note@+1 {{argument symbol defined here}}
+  global.def const @FieldedGlobal : !felt.type<"bn128"> = 35
+
+  poly.template @Spec {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type
+    function.def @token() { function.return }
+    verif.contract @Base for @Spec::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  function.def @entry() { function.return }
+
+  verif.contract @Wrapper for @entry () {
+    // expected-error@+1 {{'verif.include' op instantiation value '@FieldedGlobal' is not compatible with parameter "@N" type restriction '!felt.type'}}
+    verif.include @Spec::@Base<[@FieldedGlobal]>() : () -> ()
+  }
+}
+
+// -----
+
+// A fielded local template binding cannot instantiate a fieldless felt include parameter.
+module attributes {llzk.lang} {
+  poly.template @Spec {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type
+    function.def @token() { function.return }
+    verif.contract @Base for @Spec::@token () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+
+  poly.template @Caller {
+    // expected-note@+1 {{argument symbol defined here}}
+    poly.param @LocalValue : !felt.type<"bn128">
+    function.def @local_entry() { function.return }
+    verif.contract @LocalWrapper for @Caller::@local_entry () {
+      // expected-error@+1 {{'verif.include' op instantiation value '@LocalValue' is not compatible with parameter "@N" type restriction '!felt.type'}}
+      verif.include @Spec::@Base<[@LocalValue]>() : () -> ()
+    }
+  }
+}

@@ -1,8 +1,8 @@
 // RUN: llzk-opt -verify-diagnostics %s | FileCheck %s
 
-// A fieldless restriction accepts known-field symbols in contract inclusions.
+// A fieldless restriction accepts fieldless felt symbols in contract inclusions.
 module attributes {llzk.lang} {
-  global.def const @GlobalValue : !felt.type<"bn128"> = 35
+  global.def const @GlobalValue : !felt.type = 35
 
   poly.template @Spec {
     poly.param @N : !felt.type
@@ -19,7 +19,7 @@ module attributes {llzk.lang} {
   }
 
   poly.template @Caller {
-    poly.param @LocalValue : !felt.type<"bn128">
+    poly.param @LocalValue : !felt.type
     function.def @local_entry() { function.return }
     verif.contract @LocalWrapper for @Caller::@local_entry () {
       verif.include @Spec::@Base<[@LocalValue]>() : () -> ()
@@ -28,7 +28,7 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    global.def const @GlobalValue : !felt.type<"bn128"> =  35 : <"bn128">
+// CHECK-NEXT:    global.def const @GlobalValue : !felt.type =  35
 // CHECK-NEXT:    poly.template @Spec {
 // CHECK-NEXT:      poly.param @N : !felt.type
 // CHECK-NEXT:      function.def @token() {
@@ -46,7 +46,7 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      verif.include @Spec::@Base<[@GlobalValue]>() : () -> ()
 // CHECK-NEXT:    }
 // CHECK-NEXT:    poly.template @Caller {
-// CHECK-NEXT:      poly.param @LocalValue : !felt.type<"bn128">
+// CHECK-NEXT:      poly.param @LocalValue : !felt.type
 // CHECK-NEXT:      function.def @local_entry() {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

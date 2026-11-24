@@ -22,9 +22,10 @@ namespace llzk::component {
 namespace {
 
 /// Check a concrete struct argument against its declared restriction. With a restriction,
-/// affine maps are valid only for index or integer parameters; a fieldless felt constant satisfies
-/// a fielded felt restriction. StructType::verify has already checked IntegerAttr types.
-/// Numeric argument values are converted and checked during template normalization.
+/// affine maps are valid only for index or integer parameters; a fieldless felt constant
+/// satisfies any felt restriction, while a fielded felt constant requires the matching field
+/// restriction. StructType::verify has already checked IntegerAttr types. Numeric argument
+/// values are converted and checked during template normalization.
 bool isCompatibleTemplateArgument(Attribute value, Type restriction) {
   if (isa<TypeVarType>(restriction)) {
     return isa<TypeAttr>(value);
@@ -37,7 +38,7 @@ bool isCompatibleTemplateArgument(Attribute value, Type restriction) {
   if (felt::FeltType feltType = dyn_cast<felt::FeltType>(restriction)) {
     if (felt::FeltConstAttr feltValue = dyn_cast<felt::FeltConstAttr>(value)) {
       felt::FeltType valueType = feltValue.getType();
-      return !feltType.hasField() || !valueType.hasField() || valueType == feltType;
+      return !valueType.hasField() || valueType == feltType;
     }
     return isa<IntegerAttr>(value);
   }
