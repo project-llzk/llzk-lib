@@ -1,0 +1,3 @@
+fixed:
+  - Interval Analysis: Share constraints between matching dynamic array and component-member reads across nested SCF blocks when no storage writes can intervene, including across loop iterations.
+  - Interval Analysis: Treat writes inside boolean quantifiers as barriers to read-alias proofs.
