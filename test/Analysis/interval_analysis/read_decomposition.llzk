@@ -13,7 +13,7 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @IndependentSelections {
-    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@IndependentSelections> {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index) -> !struct.type<@IndependentSelections> {
       %self = struct.new : !struct.type<@IndependentSelections>
       %index = arith.constant 0 : index
       %zero = felt.const 0
@@ -51,7 +51,7 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @SameSSAValue {
-    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameSSAValue> {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index) -> !struct.type<@SameSSAValue> {
       %self = struct.new : !struct.type<@SameSSAValue>
       %index = arith.constant 0 : index
       %zero = felt.const 0
@@ -89,7 +89,7 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @SameConcreteElement {
-    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameConcreteElement> {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>) -> !struct.type<@SameConcreteElement> {
       %self = struct.new : !struct.type<@SameConcreteElement>
       %index = arith.constant 0 : index
       %zero = felt.const 0
@@ -127,7 +127,7 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @SameDynamicIndex {
-    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameDynamicIndex> {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index) -> !struct.type<@SameDynamicIndex> {
       %self = struct.new : !struct.type<@SameDynamicIndex>
       %index = arith.constant 0 : index
       %zero = felt.const 0
@@ -165,7 +165,7 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @SameAggregateHandle {
-    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@SameAggregateHandle> {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index) -> !struct.type<@SameAggregateHandle> {
       %self = struct.new : !struct.type<@SameAggregateHandle>
       %index = arith.constant 0 : index
       %zero = felt.const 0
@@ -203,7 +203,7 @@ module attributes {llzk.lang} {
     }
   }
   struct.def @OverlappingWrite {
-    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %replacement: !struct.type<@Cell>) -> !struct.type<@OverlappingWrite> {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index, %replacement: !struct.type<@Cell>) -> !struct.type<@OverlappingWrite> {
       %self = struct.new : !struct.type<@OverlappingWrite>
       %index = arith.constant 0 : index
       %zero = felt.const 0
