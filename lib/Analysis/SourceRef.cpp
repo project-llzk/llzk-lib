@@ -526,11 +526,16 @@ FailureOr<SourceRef> SourceRef::translate(const SourceRef &prefix, const SourceR
     return failure();
   }
 
-  SourceRef translated = appendSuffix(other, *suffix);
-  if (capturedComponentDepth != 0 && capturedComponentDepth >= prefix.path.size()) {
+  return translateSuffix(*suffix, other);
+}
+
+SourceRef
+SourceRef::translateSuffix(ArrayRef<SourceRefIndex> suffix, const SourceRef &other) const {
+  SourceRef translated = appendSuffix(other, suffix);
+  size_t prefixSize = path.size() - suffix.size();
+  if (capturedComponentDepth != 0 && capturedComponentDepth >= prefixSize) {
     translated.capturedComponentDepth = std::max(
-        translated.capturedComponentDepth,
-        other.path.size() + capturedComponentDepth - prefix.path.size()
+        translated.capturedComponentDepth, other.path.size() + capturedComponentDepth - prefixSize
     );
   }
   return translated;
