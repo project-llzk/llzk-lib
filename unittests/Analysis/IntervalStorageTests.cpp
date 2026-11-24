@@ -235,6 +235,105 @@ module attributes {llzk.lang} {
   }
 }
 
+// Missing read expressions defer only the SMT equality, which a later visit can still assert.
+TEST_F(IntervalStorageTests, RangedAliasesWithMissingExpressionsCanBeRevisited) {
+  for (unsigned initializedReads : {0U, 1U, 2U}) {
+    // Neither expression initialized, only the left initialized, or only the right initialized.
+    SCOPED_TRACE(initializedReads);
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%i: index, %bound: !felt.type) {
+    %array = "builtin.unrealized_conversion_cast"() : () -> !array.type<2 x !felt.type>
+    %left = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %right = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+    %leftCheck = bool.cmp eq(%left, %bound)
+    bool.assert %leftCheck
+    %rightCheck = bool.cmp eq(%right, %right)
+    bool.assert %rightCheck
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+    auto asserts = llvm::to_vector(fn.getOps<boolean::AssertOp>());
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+    SmallVector<IntervalAnalysisLattice *> readLattices;
+    for (auto [i, read] : llvm::enumerate(reads)) {
+      auto *lattice = solver.getOrCreateState<IntervalAnalysisLattice>(read.getResult());
+      ExpressionValue value(field);
+      if (initializedReads & (1U << i)) {
+        value = value.withExpression(analysis->getOrCreateSymbol(read.getResult()));
+      }
+      (void)lattice->setValue(value);
+      readLattices.push_back(lattice);
+    }
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    EXPECT_EQ(StringRef(buildStringViaPrint(*smt)).count("(assert "), 0U);
+    for (auto [i, lattice] : llvm::enumerate(readLattices)) {
+      const auto &value = lattice->getValue().getScalarValue();
+      EXPECT_EQ(value.getExpr() != nullptr, (initializedReads & (1U << i)) != 0);
+      EXPECT_EQ(value.getInterval(), Interval::Entire(field));
+    }
+
+    // Replay an assertion on the live worklist without reinitializing the analysis states.
+    // This deliberately tests explicit revisits, not automatic retry of a deferred equality.
+    auto revisit = [&](boolean::AssertOp assertOp) {
+      solver.enqueue({solver.getProgramPointAfter(assertOp), analysis});
+      return solver.initializeAndRun(*mod, [](DataFlowAnalysis &) { return false; });
+    };
+
+    // Narrow one read while expressions are still missing. Its alias must narrow as well.
+    Interval narrowed = UnreducedInterval(0, 7).reduce(field);
+    auto *boundLattice = solver.getOrCreateState<IntervalAnalysisLattice>(fn.getArgument(1));
+    (void)boundLattice->setValue(
+        ExpressionValue(analysis->getOrCreateSymbol(fn.getArgument(1)), narrowed)
+    );
+    ASSERT_TRUE(succeeded(revisit(asserts.front())));
+    EXPECT_EQ(StringRef(buildStringViaPrint(*smt)).count("(assert "), 0U);
+    for (auto [i, lattice] : llvm::enumerate(readLattices)) {
+      const auto &value = lattice->getValue().getScalarValue();
+      EXPECT_EQ(value.getExpr() != nullptr, (initializedReads & (1U << i)) != 0);
+      EXPECT_EQ(value.getInterval(), narrowed);
+    }
+
+    // Initialize the missing symbols without changing the bounds, then revisit repeatedly.
+    for (auto [read, lattice] : llvm::zip(reads, readLattices)) {
+      (void)lattice->setValue(lattice->getValue().getScalarValue().withExpression(
+          analysis->getOrCreateSymbol(read.getResult())
+      ));
+    }
+    for (unsigned visit = 0; visit < 3; ++visit) {
+      ASSERT_TRUE(succeeded(revisit(asserts.back())));
+      EXPECT_EQ(StringRef(buildStringViaPrint(*smt)).count("(assert "), 1U);
+      for (auto *lattice : readLattices) {
+        EXPECT_EQ(lattice->getValue().getScalarValue().getInterval(), narrowed);
+      }
+    }
+
+    // Once equality is cached, further interval restrictions must still reach both aliases.
+    Interval singleton = Interval::Degenerate(field, field.felt(3));
+    (void)boundLattice->setValue(boundLattice->getValue().getScalarValue().withInterval(singleton));
+    ASSERT_TRUE(succeeded(revisit(asserts.front())));
+    EXPECT_EQ(StringRef(buildStringViaPrint(*smt)).count("(assert "), 1U);
+    for (auto [read, lattice] : llvm::zip(reads, readLattices)) {
+      const auto &value = lattice->getValue().getScalarValue();
+      EXPECT_EQ(value.getInterval(), singleton);
+      EXPECT_EQ(value.getExpr(), analysis->getOrCreateSymbol(read.getResult()));
+    }
+    smt->addConstraint(smt->mkNot(smt->mkEqual(
+        readLattices.front()->getValue().getScalarValue().getExpr(),
+        readLattices.back()->getValue().getScalarValue().getExpr()
+    )));
+    EXPECT_EQ(smt->check(), std::optional<bool>(false));
+  }
+}
+
 // Unrelated array reads cannot change repeated reads of the same dynamic selection.
 TEST_F(IntervalStorageTests, InterveningArrayReadsPreserveDynamicAliases) {
   for (bool memberReads : {false, true}) {

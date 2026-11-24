@@ -1805,12 +1805,16 @@ void IntervalDataFlowAnalysis::applyInterval(Operation *valUser, Value val, Inte
       if (reader != valLattice) {
         llvm::SMTExprRef lhs = newLatticeVal.getExpr();
         llvm::SMTExprRef rhs = reader->getValue().getScalarValue().getExpr();
-        // Canonicalize the pair so visits from either read share one assertion.
-        if (std::less<llvm::SMTExprRef> {}(rhs, lhs)) {
-          std::swap(lhs, rhs);
-        }
-        if (assertedReadAliases.insert({lhs, rhs}).second) {
-          smtSolver->addConstraint(smtSolver->mkEqual(lhs, rhs));
+        // Incomplete read analysis can leave expressions uninitialized. Keep the pair uncached
+        // so a later visit can assert the equality once both expressions are available.
+        if (lhs && rhs) {
+          // Canonicalize the pair so visits from either read share one assertion.
+          if (std::less<llvm::SMTExprRef> {}(rhs, lhs)) {
+            std::swap(lhs, rhs);
+          }
+          if (assertedReadAliases.insert({lhs, rhs}).second) {
+            smtSolver->addConstraint(smtSolver->mkEqual(lhs, rhs));
+          }
         }
       }
       ExpressionValue refined = refineReducedInterval(reader->getValue().getScalarValue(), shared);
