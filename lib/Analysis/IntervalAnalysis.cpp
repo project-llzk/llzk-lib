@@ -14,6 +14,7 @@
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Array/Util/ArrayTypeHelper.h"
 #include "llzk/Dialect/POD/IR/Ops.h"
+#include "llzk/Dialect/Verif/IR/Ops.h"
 #include "llzk/Util/Debug.h"
 #include "llzk/Util/StreamHelper.h"
 #include "llzk/Util/SymbolHelper.h"
@@ -119,7 +120,7 @@ bool preservesReadStorage(Operation *op, Operation *read) {
     if (arrayAccess.isRead()) {
       return true;
     }
-    auto arrayRead = llvm::dyn_cast<ReadArrayOp>(read);
+    auto arrayRead = llvm::dyn_cast<ArrayAccessOpInterface>(read);
     if (!arrayRead || haveDisjointStorage(arrayAccess.getArrRef(), arrayRead.getArrRef())) {
       return true;
     }
@@ -144,21 +145,23 @@ bool preservesReadStorage(Operation *op, Operation *read) {
   if (llvm::isa<CreateArrayOp, CreateStructOp, pod::NewPodOp, pod::WritePodOp>(op)) {
     return true;
   }
-  // Assertions and constraint emissions are observable, but cannot change read values.
-  if (llvm::isa<boolean::AssertOp, EmitEqualityOp, EmitContainmentOp>(op)) {
-    return true;
-  }
-  const bool recursive = op->hasTrait<OpTrait::HasRecursiveMemoryEffects>();
-  if (auto effectInterface = llvm::dyn_cast<MemoryEffectOpInterface>(op)) {
-    SmallVector<MemoryEffects::EffectInstance> effects;
-    effectInterface.getEffects(effects);
-    if (llvm::any_of(effects, [](const auto &effect) {
-      return !llvm::isa<MemoryEffects::Read>(effect.getEffect());
-    })) {
+  // These checks may terminate execution, but their direct effects cannot change read values.
+  // Keep inspecting regions below, even when the operation itself only performs a check.
+  if (!llvm::isa<
+          boolean::AssertOp, EmitEqualityOp, EmitContainmentOp, IntToFeltOp, FeltToIndexOp,
+          verif::ConditionOpInterface, verif::AssumeDetOp>(op)) {
+    const bool recursive = op->hasTrait<OpTrait::HasRecursiveMemoryEffects>();
+    if (auto effectInterface = llvm::dyn_cast<MemoryEffectOpInterface>(op)) {
+      SmallVector<MemoryEffects::EffectInstance> effects;
+      effectInterface.getEffects(effects);
+      if (llvm::any_of(effects, [](const auto &effect) {
+        return !llvm::isa<MemoryEffects::Read>(effect.getEffect());
+      })) {
+        return false;
+      }
+    } else if (!recursive) {
       return false;
     }
-  } else if (!recursive) {
-    return false;
   }
   // Direct effects can be empty even when an operation's regions contain writes.
   for (Region &region : op->getRegions()) {
@@ -259,8 +262,8 @@ bool haveSameReadValue(Value lhs, Value rhs) {
     // Equal array copies can diverge before either scalar read. Protect each copy from
     // its creation through its use, in addition to the interval between the scalar reads.
     return success(
-        !llvm::isa<ArrayType>(a.getType()) ||
-        (hasReadOnlyPath(a.getDefiningOp(), left) && hasReadOnlyPath(b.getDefiningOp(), right))
+        !llvm::isa<ArrayType>(a.getType()) || (hasReadPreservingPath(a.getDefiningOp(), left) &&
+                                               hasReadPreservingPath(b.getDefiningOp(), right))
     );
   };
   if (!OperationEquivalence::isEquivalentTo(

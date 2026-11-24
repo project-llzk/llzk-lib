@@ -52,7 +52,7 @@ module attributes {llzk.lang} {
     array.write %cells[%i] = %replacement : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
     function.return
   }
-  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %condition: i1, %input: !felt.type, %replacement: !struct.type<@Cell>, %otherArray: !array.type<2 x !felt.type>, %otherCells: !array.type<2 x !struct.type<@Cell>>) attributes {function.allow_non_native_field_ops} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %cells: !array.type<2 x !struct.type<@Cell>>, %i: index, %j: index, %condition: i1, %input: !felt.type, %replacement: !struct.type<@Cell>, %otherArray: !array.type<2 x !felt.type>, %otherCells: !array.type<2 x !struct.type<@Cell>>) attributes {function.allow_constraint, function.allow_non_native_field_ops, function.allow_verif_ops} {
     %zero = arith.constant 0 : index
     %one = arith.constant 1 : index
     %two = arith.constant 2 : index
@@ -307,6 +307,41 @@ TEST_F(IntervalReadAliasTests, QuantifierWritesBlockNestedReadAliases) {
   };
   for (auto [name, body] : cases) {
     SCOPED_TRACE(name.str());
+    for (bool memberReads : {false, true}) {
+      for (bool constants : {false, true}) {
+        checkAliases(body, memberReads, true, constants, false);
+      }
+    }
+  }
+}
+
+// A check may terminate execution, but reads on continuing paths still see the same storage.
+TEST_F(IntervalReadAliasTests, TerminationOnlyChecksPreserveReadAliases) {
+  const StringRef checks[] = {
+      "%checked = cast.tofelt %i : index", "%checked = cast.toindex %input",
+      "verif.assert %condition",           "verif.prove %condition",
+      "verif.ensure_constrain %condition", "verif.det.assume %input : !felt.type"
+  };
+  const StringRef paths[] = {
+      "// CHECK\n // READ", "// CHECK\n scf.if %condition { // READ\n }",
+      "scf.if %condition { // CHECK\n // READ\n }",
+      "scf.if %condition { // CHECK\n } scf.if %condition { // READ\n }",
+      "scf.for %iv = %zero to %two step %one { // READ\n // CHECK\n }"
+  };
+  for (StringRef check : checks) {
+    SCOPED_TRACE(check.str());
+    for (StringRef path : paths) {
+      SCOPED_TRACE(path.str());
+      std::string body = path.str();
+      body.replace(body.find("// CHECK"), StringRef("// CHECK").size(), check.str());
+      for (bool memberReads : {false, true}) {
+        for (bool constants : {false, true}) {
+          checkAliases(body, memberReads, true, constants, true);
+        }
+      }
+    }
+    // A termination-only check must not hide a subsequent storage mutation.
+    std::string body = check.str() + "\n // WRITE\n scf.if %condition { // READ\n }";
     for (bool memberReads : {false, true}) {
       for (bool constants : {false, true}) {
         checkAliases(body, memberReads, true, constants, false);
