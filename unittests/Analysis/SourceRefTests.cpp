@@ -1591,3 +1591,98 @@ module attributes {llzk.lang} {
   EXPECT_EQ(fromB.size(), 1U);
   EXPECT_TRUE(graph.getConstrainingValues(isolated).empty());
 }
+
+TEST_F(SourceRefTests, DependencyStateDropsFullyOverwrittenLoopArrayZeros) {
+  auto runCase = [&](bool completeCopy, bool resolvedField) {
+    std::string source = R"mlir(
+module attributes {llzk.lang} {
+  struct.def @LoopArray {
+    function.def @compute(%in: !array.type<2 x !felt.type<"babybear">>) -> !struct.type<@LoopArray>
+        attributes {function.allow_non_native_field_ops} {
+      %self = struct.new : !struct.type<@LoopArray>
+      %storage = llzk.nondet : !array.type<2 x !felt.type<"babybear">>
+      %zero0 = felt.const 0 : !felt.type<"babybear">
+      %index0 = arith.constant 0 : index
+      array.write %storage[%index0] = %zero0 : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %zero1 = felt.const 0 : !felt.type<"babybear">
+      %index1 = arith.constant 1 : index
+      array.write %storage[%index1] = %zero1 : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      %lower = felt.const 0 : !felt.type<"babybear">
+      %loop:2 = scf.while (%array = %storage, %index = %lower)
+          : (!array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">)
+          -> (!array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">) {
+        %upper = felt.const 2 : !felt.type<"babybear">
+        %condition = bool.cmp lt(%index, %upper) : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.condition(%condition) %array, %index
+            : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      } do {
+      ^bb0(%array: !array.type<2 x !felt.type<"babybear">>, %index: !felt.type<"babybear">):
+        %arrayIndex = cast.toindex %index : !felt.type<"babybear">
+        %value = array.read %in[%arrayIndex] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+        array.write %array[%arrayIndex] = %value : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+        %one = felt.const 1 : !felt.type<"babybear">
+        %next = felt.add %index, %one : !felt.type<"babybear">, !felt.type<"babybear">
+        scf.yield %array, %next : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      }
+      %readIndex = arith.constant 0 : index
+      %value = array.read %loop#0[%readIndex] : !array.type<2 x !felt.type<"babybear">>, !felt.type<"babybear">
+      function.return %self : !struct.type<@LoopArray>
+    }
+    function.def @constrain(
+        %self: !struct.type<@LoopArray>, %in: !array.type<2 x !felt.type<"babybear">>) {
+      function.return
+    }
+  }
+}
+)mlir";
+
+    if (!completeCopy) {
+      // A stride of two leaves element one at its initialized value.
+      source.replace(
+          source.find("%one = felt.const 1"), std::string("%one = felt.const 1").size(),
+          "%one = felt.const 2"
+      );
+      source.replace(
+          source.find("%readIndex = arith.constant 0"),
+          std::string("%readIndex = arith.constant 0").size(), "%readIndex = arith.constant 1"
+      );
+    }
+    if (!resolvedField) {
+      // An unresolved upper bound cannot prove the loop overwrites every element.
+      const std::string fieldName = "<\"babybear\">";
+      for (size_t pos = source.find(fieldName); pos != std::string::npos;
+           pos = source.find(fieldName, pos)) {
+        source.erase(pos, fieldName.size());
+      }
+    }
+    auto mod = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
+    ASSERT_TRUE(mod);
+    auto structDef = *mod->getOps<StructDefOp>().begin();
+    auto computeFn = structDef.getComputeFuncOp();
+    llvm::SmallVector<array::ReadArrayOp> reads;
+    computeFn.walk([&](array::ReadArrayOp op) { reads.push_back(op); });
+    ASSERT_EQ(reads.size(), 2U);
+
+    ModuleAnalysisManager mam(*mod, nullptr);
+    AnalysisManager am = mam;
+    ConstraintDependencyGraphModuleAnalysis analysis(mod->getOperation());
+    ASSERT_TRUE(succeeded(analysis.ensureAnalysisRun(am)));
+    SourceRefSet dependencies =
+        SourceRefAnalysis::getDependencyState(analysis.getSolver(), reads.back().getResult())
+            .foldToScalar();
+
+    if (completeCopy && resolvedField) {
+      EXPECT_TRUE(dependencies.contains(
+          SourceRef(computeFn.getArgument(0), {SourceRefIndex(DynamicAPInt(0))})
+      )) << buildStringViaInsertionOp(dependencies);
+    }
+    bool hasZero = llvm::any_of(dependencies, [](const SourceRef &dependency) {
+      auto constant = dependency.getConstantValue(Field::getField("babybear"));
+      return succeeded(constant) && *constant == 0;
+    });
+    EXPECT_EQ(hasZero, !completeCopy || !resolvedField) << buildStringViaInsertionOp(dependencies);
+  };
+  runCase(/*completeCopy=*/true, /*resolvedField=*/true);
+  runCase(/*completeCopy=*/false, /*resolvedField=*/true);
+  runCase(/*completeCopy=*/true, /*resolvedField=*/false);
+}
