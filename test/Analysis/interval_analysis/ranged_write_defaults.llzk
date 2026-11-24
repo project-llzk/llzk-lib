@@ -1,0 +1,36 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Conditional and unconditional dynamic writes can both miss a later selected element.
+module attributes {llzk.lang} {
+  struct.def @RangedWritesKeepDefaults {
+    function.def @product(%array: !array.type<2 x !felt.type>, %condition: i1, %i: index, %j: index, %k: index) -> !struct.type<@RangedWritesKeepDefaults> {
+      %self = struct.new : !struct.type<@RangedWritesKeepDefaults>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      scf.if %condition {
+        array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+      }
+      array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
+      %concrete = array.read %array[%zero] : !array.type<2 x !felt.type>, !felt.type
+      %ranged = array.read %array[%k] : !array.type<2 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@RangedWritesKeepDefaults>
+    }
+  }
+}
+
+// CHECK-LABEL: @RangedWritesKeepDefaults StructIntervals { }
+
+// CHECK-LABEL: @RangedWritesKeepDefaults SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

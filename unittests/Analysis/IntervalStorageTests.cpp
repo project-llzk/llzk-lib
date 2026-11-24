@@ -14,11 +14,16 @@
 #include "llzk/Analysis/IntervalAnalysis.h"
 #include "llzk/Dialect/Array/IR/Ops.h"
 #include "llzk/Dialect/Bool/IR/Ops.h"
+#include "llzk/Dialect/Felt/IR/Ops.h"
+#include "llzk/Dialect/POD/IR/Ops.h"
 #include "llzk/Dialect/Struct/IR/Ops.h"
 #include "llzk/Util/StreamHelper.h"
 
+#include <mlir/Analysis/DataFlowFramework.h>
+#include <mlir/Dialect/SCF/IR/SCF.h>
 #include <mlir/Parser/Parser.h>
 
+#include <functional>
 #include <gtest/gtest.h>
 #include <tuple>
 #include <utility>
@@ -27,6 +32,33 @@ using namespace mlir;
 using namespace llzk;
 
 namespace {
+
+/// Observe real solver visits without changing their order, operands, or results.
+class ObservedIntervalAnalysis : public IntervalDataFlowAnalysis {
+public:
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ObservedIntervalAnalysis)
+
+  /// Attach an observer to the production transfer function.
+  ObservedIntervalAnalysis(
+      DataFlowSolver &dataflowSolver, llvm::SMTSolverRef smt, const Field &prime,
+      std::function<void(Operation *, ArrayRef<IntervalAnalysisLattice *>)> observer
+  )
+      : IntervalDataFlowAnalysis(dataflowSolver, std::move(smt), prime, false, true),
+        observe(std::move(observer)) {}
+
+  /// Record the result of each normal visit without changing solver scheduling.
+  LogicalResult visitOperation(
+      Operation *op, ArrayRef<const IntervalAnalysisLattice *> operands,
+      ArrayRef<IntervalAnalysisLattice *> results
+  ) override {
+    auto status = IntervalDataFlowAnalysis::visitOperation(op, operands, results);
+    observe(op, results);
+    return status;
+  }
+
+private:
+  std::function<void(Operation *, ArrayRef<IntervalAnalysisLattice *>)> observe;
+};
 
 /// Exercise stored intervals and symbolic identities through the public analysis API.
 class IntervalStorageTests : public LLZKTest {
@@ -80,6 +112,47 @@ protected:
       }
     }
     EXPECT_EQ(smt->check(), std::optional<bool>(!shouldAlias));
+  }
+
+  /// Complete references, then initialize interval analysis normally through the solver.
+  void
+  run(ModuleOp mod,
+      const std::function<void(IntervalDataFlowAnalysis &, DataFlowSolver &)> &check) {
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod)));
+    auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, true);
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(mod, [&](DataFlowAnalysis &candidate) {
+      return &candidate == analysis;
+    })));
+    check(*analysis, solver);
+  }
+
+  /// Check a scalar result after the solver has propagated storage changes to its users.
+  void expectValue(
+      DataFlowSolver &solver, Value value, const UnreducedInterval &expected,
+      bool checkUnreduced = true
+  ) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    const auto &actual = lattice->getValue().getScalarValue();
+    auto reduced = expected.reduce(field);
+    EXPECT_TRUE(checkCond(reduced, actual.getInterval(), reduced == actual.getInterval()));
+    if (checkUnreduced) {
+      EXPECT_EQ(actual.getOptionalUnreducedInterval(), expected);
+    }
+  }
+
+  /// Check both reduced and unreduced storage bounds without relying on aggregate SSA lattices.
+  void
+  expectStored(IntervalDataFlowAnalysis &analysis, const SourceRef &ref, const Interval &expected) {
+    auto it = analysis.getWriteResults().find(ref);
+    ASSERT_NE(it, analysis.getWriteResults().end()) << debug::toStringOne(ref);
+    const auto &actual = it->second.getInterval();
+    EXPECT_TRUE(checkCond(expected, actual, expected == actual));
+    EXPECT_EQ(it->second.getOptionalUnreducedInterval(), expected.firstUnreduced());
   }
 };
 
@@ -708,6 +781,368 @@ module attributes {llzk.lang} {
       checkReadConstraints(source, constants, singleton);
     }
   }
+}
+
+// Neither a ranged target nor one of several possible aliases is guaranteed to be written.
+TEST_F(IntervalStorageTests, AmbiguousArrayWritesKeepNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !felt.type>, %matrix: !array.type<2,2 x !felt.type>, %left: !array.type<2 x !felt.type>, %right: !array.type<2 x !felt.type>, %condition: i1, %chooseLeft: i1, %i: index, %j: index) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %firstRow = array.extract %matrix[%i] : !array.type<2,2 x !felt.type>
+    %secondRow = array.extract %matrix[%j] : !array.type<2,2 x !felt.type>
+    %choice = scf.if %chooseLeft -> (!array.type<2 x !felt.type>) {
+      scf.yield %left : !array.type<2 x !felt.type>
+    } else {
+      scf.yield %right : !array.type<2 x !felt.type>
+    }
+    scf.if %condition {
+      array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %firstRow[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %left[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %right[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %secondRow[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    array.write %choice[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
+    if (!optionalFirst) {
+      for (auto write : llvm::make_early_inc_range(fn.getOps<array::WriteArrayOp>())) {
+        write->moveBefore(conditional);
+      }
+    }
+    run(*mod, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+      auto range = SourceRefIndex::forArrayDimension(2);
+      expectStored(analysis, SourceRef(fn.getArgument(0), {range}), Interval::Entire(field));
+      expectStored(
+          analysis, SourceRef(fn.getArgument(1), {range, SourceRefIndex(0)}),
+          Interval::Entire(field)
+      );
+      for (unsigned arg : {2U, 3U}) {
+        expectStored(
+            analysis, SourceRef(fn.getArgument(arg), {SourceRefIndex(0)}), Interval::Entire(field)
+        );
+      }
+    });
+  }
+}
+
+// A write through a merged POD can miss either candidate, including aggregate-valued fields.
+TEST_F(IntervalStorageTests, AmbiguousPodWritesKeepNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+!Inner = !pod.type<[@value: !felt.type]>
+!P = !pod.type<[@value: !felt.type, @nested: !Inner]>
+module attributes {llzk.lang} {
+  function.def @test(%left: !P, %right: !P, %condition: i1, %chooseLeft: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %sevenPod = pod.new { @value = %seven } : !Inner
+    %ninePod = pod.new { @value = %nine } : !Inner
+    %choice = scf.if %chooseLeft -> (!P) {
+      scf.yield %left : !P
+    } else {
+      scf.yield %right : !P
+    }
+    scf.if %condition {
+      pod.write %left[@value] = %seven : !P, !felt.type
+      pod.write %right[@value] = %seven : !P, !felt.type
+      pod.write %left[@nested] = %sevenPod : !P, !Inner
+      pod.write %right[@nested] = %sevenPod : !P, !Inner
+    }
+    pod.write %choice[@value] = %nine : !P, !felt.type
+    pod.write %choice[@nested] = %ninePod : !P, !Inner
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto conditional = llvm::to_vector(fn.getOps<scf::IfOp>()).back();
+    if (!optionalFirst) {
+      for (auto write : llvm::make_early_inc_range(fn.getOps<pod::WritePodOp>())) {
+        write->moveBefore(conditional);
+      }
+    }
+    run(*mod, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+      SourceRefIndex value(StringAttr::get(&ctx, "value"));
+      SourceRefIndex nested(StringAttr::get(&ctx, "nested"));
+      for (unsigned arg : {0U, 1U}) {
+        expectStored(analysis, SourceRef(fn.getArgument(arg), {value}), Interval::Entire(field));
+        expectStored(
+            analysis, SourceRef(fn.getArgument(arg), {nested, value}), Interval::Entire(field)
+        );
+      }
+    });
+  }
+}
+
+// An unconditional write must remove the no-write alternative in either visitation order.
+TEST_F(IntervalStorageTests, UnconditionalWritesRemoveNoWriteDefaults) {
+  for (bool optionalFirst : {false, true}) {
+    SCOPED_TRACE(optionalFirst ? "optional writes first" : "unconditional writes first");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %pod = pod.new : !P
+    %array = array.new : !array.type<2 x !felt.type>
+    scf.if %condition {
+      pod.write %pod[@value] = %seven : !P, !felt.type
+      pod.write %pod[@other] = %seven : !P, !felt.type
+      array.write %array[%zero] = %seven : !array.type<2 x !felt.type>, !felt.type
+      array.write %array[%one] = %seven : !array.type<2 x !felt.type>, !felt.type
+    }
+    pod.write %pod[@value] = %nine : !P, !felt.type
+    array.write %array[%zero] = %nine : !array.type<2 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto podValue = *fn.getOps<pod::NewPodOp>().begin();
+    auto arrayValue = *fn.getOps<array::CreateArrayOp>().begin();
+    auto conditional = *fn.getOps<scf::IfOp>().begin();
+    auto isWrite = [](Operation *op) { return isa<pod::WritePodOp, array::WriteArrayOp>(op); };
+    if (!optionalFirst) {
+      for (Operation &op : llvm::make_early_inc_range(fn.getBody().front())) {
+        if (isWrite(&op)) {
+          op.moveBefore(conditional);
+        }
+      }
+    }
+    run(*mod, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+      auto joined = UnreducedInterval(7, 9).reduce(field);
+      expectStored(
+          analysis,
+          SourceRef(podValue->getResult(0), {SourceRefIndex(StringAttr::get(&ctx, "value"))}),
+          joined
+      );
+      expectStored(analysis, SourceRef(arrayValue->getResult(0), {SourceRefIndex(0)}), joined);
+      // A guaranteed write to one field does not eliminate defaults at other locations.
+      expectStored(
+          analysis,
+          SourceRef(podValue->getResult(0), {SourceRefIndex(StringAttr::get(&ctx, "other"))}),
+          Interval::Entire(field)
+      );
+      expectStored(
+          analysis, SourceRef(arrayValue->getResult(0), {SourceRefIndex(1)}),
+          Interval::Entire(field)
+      );
+    });
+  }
+}
+
+// A later contribution must re-expand existing reads and every dependent calculation.
+TEST_F(IntervalStorageTests, GrowingWritesReexpandReadersAndUsers) {
+  for (bool optional : {false, true}) {
+    SCOPED_TRACE(optional ? "optional third write" : "unconditional third write");
+    for (bool late : {false, true}) {
+      SCOPED_TRACE(late ? "third write after readers" : "third write before readers");
+      auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%pod: !P, %array: !array.type<1 x !felt.type>, %condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = felt.const 1
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %eleven = felt.const 11
+    scf.if %condition {
+      pod.write %pod[@value] = %seven : !P, !felt.type
+      array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+    }
+    pod.write %pod[@value] = %nine : !P, !felt.type
+    array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+    scf.if %condition {
+      pod.write %pod[@value] = %eleven : !P, !felt.type
+      array.write %array[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+    }
+    %podRead = pod.read %pod[@value] : !P, !felt.type
+    %arrayRead = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    %podSum = felt.add %podRead, %one
+    %arraySum = felt.add %arrayRead, %one
+    %podNeg = felt.neg %podSum
+    %arrayNeg = felt.neg %arraySum
+    %podSelect = arith.select %condition, %podSum, %one : !felt.type
+    %arraySelect = arith.select %condition, %arraySum, %one : !felt.type
+    %podNext = felt.add %podSelect, %one
+    %arrayNext = felt.add %arraySelect, %one
+    function.return
+  }
+}
+)mlir");
+      ASSERT_TRUE(mod);
+      auto fn = *mod->getOps<function::FuncDefOp>().begin();
+      auto branches = llvm::to_vector(fn.getOps<scf::IfOp>());
+      auto isWrite = [](Operation *op) { return isa<pod::WritePodOp, array::WriteArrayOp>(op); };
+      SmallVector<Operation *> thirdWrites, calculations;
+      for (Operation &op : fn.getBody().front()) {
+        if (isa<pod::ReadPodOp, array::ReadArrayOp, felt::AddFeltOp, felt::NegFeltOp,
+                arith::SelectOp>(op)) {
+          calculations.push_back(&op);
+        }
+      }
+      for (Operation &op : *branches.back().thenBlock()) {
+        if (isWrite(&op)) {
+          thirdWrites.push_back(&op);
+        }
+      }
+      if (!optional) {
+        for (Operation *op : thirdWrites) {
+          op->moveBefore(branches.back());
+        }
+      }
+      auto checkValues = [&](DataFlowSolver &solver, int high) {
+        SmallVector<UnreducedInterval> expected {
+            {7, high}, {8, high + 1}, {-high - 1, -8}, {1, high + 1}, {2, high + 2}
+        };
+        ASSERT_EQ(calculations.size(), 2 * expected.size());
+        for (auto [i, op] : llvm::enumerate(calculations)) {
+          SCOPED_TRACE(debug::toStringOne(*op));
+          expectValue(solver, op->getResult(0), expected[i / 2]);
+        }
+      };
+      if (late) {
+        if (optional) {
+          branches.back()->moveBefore(fn.getBody().front().getTerminator());
+        } else {
+          for (Operation *write : thirdWrites) {
+            write->moveBefore(fn.getBody().front().getTerminator());
+          }
+        }
+      }
+      run(*mod, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+        auto joined = UnreducedInterval(7, 11).reduce(field);
+        expectStored(
+            analysis,
+            SourceRef(fn.getArgument(0), {SourceRefIndex(StringAttr::get(&ctx, "value"))}), joined
+        );
+        expectStored(analysis, SourceRef(fn.getArgument(1), {SourceRefIndex(0)}), joined);
+        checkValues(solver, 11);
+      });
+    }
+  }
+}
+
+// The public worklist API may revisit a read without any new forward information.
+TEST_F(IntervalStorageTests, RevisitedReadsPreserveConstraintRefinements) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<1 x !felt.type>, %condition: i1)
+      attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %feltZero = felt.const 0
+    %seven = felt.const 7
+    %nine = felt.const 9
+    array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+    scf.if %condition {
+      array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+    }
+    %read = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    %nonzero = bool.cmp ne(%read, %feltZero)
+    bool.assert %nonzero
+    %alias = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    %check = bool.cmp eq(%alias, %seven)
+    bool.assert %check
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto read = *fn.getOps<array::ReadArrayOp>().begin();
+  run(*mod, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+    expectValue(solver, read.getResult(), UnreducedInterval(7, 7), false);
+    solver.enqueue({solver.getProgramPointAfter(read), &analysis});
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [](DataFlowAnalysis &) { return false; })));
+    expectValue(solver, read.getResult(), UnreducedInterval(7, 7), false);
+  });
+}
+
+// Expansion must not restore constraints in a function with no dependency on that storage.
+TEST_F(IntervalStorageTests, GrowingReadsDoNotRevisitUnrelatedConstraints) {
+  SmallVector<unsigned> unrelatedVisits;
+  for (bool expands : {false, true}) {
+    SCOPED_TRACE(expands);
+    auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  function.def @unrelated(%input: !felt.type) attributes {function.allow_constraint} {
+    %seven = felt.const 7
+    %check = bool.cmp eq(%input, %seven)
+    bool.assert %check
+    function.return
+  }
+  function.def @test(%array: !array.type<1 x !felt.type>, %input: !felt.type, %independent: !felt.type)
+      attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %twenty = felt.const 20
+    %independentCheck = bool.cmp eq(%independent, %twenty)
+    bool.assert %independentCheck
+    array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+    %read = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+    %sum = felt.add %read, %input
+    constrain.eq %sum, %twenty : !felt.type
+    array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto functions = llvm::to_vector(mod->getOps<function::FuncDefOp>());
+    auto fn = functions.back();
+    auto writes = llvm::to_vector(fn.getOps<array::WriteArrayOp>());
+    if (!expands) {
+      writes.back().setOperand(writes.back()->getNumOperands() - 1, writes.front().getRvalue());
+    }
+    auto smt = llvm::CreateZ3Solver();
+    DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+    llzk::dataflow::loadRequiredAnalyses(solver);
+    solver.load<SourceRefAnalysis>();
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+    unsigned visits = 0;
+    bool sawInitialRead = false, sawExpandedRead = false;
+    auto *analysis = solver.load<ObservedIntervalAnalysis>(
+        smt, field, [&](Operation *op, ArrayRef<IntervalAnalysisLattice *> results) {
+      visits += op->getParentOfType<function::FuncDefOp>() == functions.front() ||
+                isa<boolean::CmpOp, boolean::AssertOp>(op);
+      if (isa<array::ReadArrayOp>(op)) {
+        const auto &interval = results.front()->getValue().getScalarValue().getInterval();
+        sawInitialRead |= interval == Interval::Degenerate(field, field.felt(7));
+        sawExpandedRead |= interval == UnreducedInterval(7, 9).reduce(field);
+      }
+    }
+    );
+    ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod, [&](DataFlowAnalysis &candidate) {
+      return &candidate == analysis;
+    })));
+    EXPECT_TRUE(sawInitialRead);
+    EXPECT_EQ(sawExpandedRead, expands);
+    unrelatedVisits.push_back(visits);
+    expectValue(solver, functions.front().getArgument(0), UnreducedInterval(7, 7), false);
+    expectValue(solver, fn.getArgument(2), UnreducedInterval(20, 20), false);
+    expectValue(solver, fn.getArgument(1), UnreducedInterval(expands ? 11 : 13, 13), false);
+  }
+  ASSERT_EQ(unrelatedVisits.size(), 2U);
+  EXPECT_EQ(unrelatedVisits[0], unrelatedVisits[1]);
 }
 
 } // namespace
