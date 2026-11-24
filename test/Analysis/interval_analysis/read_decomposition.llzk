@@ -751,3 +751,54 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: @ConstructedSameSSAValue SSAIntervals {
 // CHECK:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
 // CHECK:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire
+
+// -----
+
+// A disjoint write preserves the decomposition of repeated concrete reads.
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  struct.def @ConcreteDisjointWrite {
+    function.def @product(%array: !array.type<2 x !struct.type<@Cell>>, %i: index) -> !struct.type<@ConcreteDisjointWrite> {
+      %self = struct.new : !struct.type<@ConcreteDisjointWrite>
+      %index = arith.constant 0 : index
+      %zero = felt.const 0
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %left = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %scratch = array.new : !array.type<2 x !felt.type>
+      array.write %scratch[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+      %right = array.read %array[%index] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+      %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+      %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+      %xMinusSeven = felt.sub %x, %seven
+      %yMinusNine = felt.sub %y, %nine
+      %product = felt.mul %xMinusSeven, %yMinusNine
+      constrain.eq %product, %zero : !felt.type
+      function.return %self : !struct.type<@ConcreteDisjointWrite>
+    }
+  }
+}
+
+// CHECK-LABEL: @ConcreteDisjointWrite SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(0)
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ]
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeA:[ 0, 2 ]
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.sub] in TypeF:[ 2013265919, 0 ]
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.mul] in Degenerate(0)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
