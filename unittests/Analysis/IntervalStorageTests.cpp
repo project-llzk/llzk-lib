@@ -1413,4 +1413,547 @@ module attributes {llzk.lang} {
   });
 }
 
+// Storage notifications must cross every copy, including materialized array roots and reads.
+TEST_F(IntervalStorageTests, DelayedWritesReachEveryAggregateCopy) {
+  for (bool delayedWrite : {false, true}) {
+    SCOPED_TRACE(delayedWrite);
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+!V = !pod.type<[@values: !array.type<2 x !W>]>
+module attributes {llzk.lang} {
+  function.def @test() {
+    %index = arith.constant 1 : index
+    %seven = felt.const 7
+    %source = pod.new : !P
+    pod.write %source[@value] = %seven : !P, !felt.type
+    %copy1 = pod.new { @child = %source } : !W
+    %alias = pod.read %copy1[@child] : !W, !P
+    %copy2 = pod.new { @child = %alias } : !W
+    %array = array.new %copy2, %copy2 : !array.type<2 x !W>
+    %copy3 = pod.new { @values = %array } : !V
+    %values = pod.read %copy3[@values] : !V, !array.type<2 x !W>
+    %element = array.read %values[%index] : !array.type<2 x !W>, !W
+    %child = pod.read %element[@child] : !W, !P
+    %value = pod.read %child[@value] : !P, !felt.type
+    %scalarCopy = pod.new { @value = %value } : !P
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto write = *fn.getOps<pod::WritePodOp>().begin();
+    auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+    auto array = *fn.getOps<array::CreateArrayOp>().begin();
+    SourceRefIndex child(StringAttr::get(&ctx, "child"));
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    SourceRefIndex values(StringAttr::get(&ctx, "values"));
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
+      for (Operation &op : fn.getBody().front()) {
+        if (delayedWrite && &op == write.getOperation()) {
+          continue;
+        }
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+      if (delayedWrite) {
+        ASSERT_TRUE(succeeded(visit(write)));
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+      auto expected = Interval::Degenerate(field, field.felt(7));
+      expectStored(analysis, SourceRef(pods[0]->getResult(0), {value}), expected);
+      for (unsigned i : {1U, 2U}) {
+        expectStored(analysis, SourceRef(pods[i]->getResult(0), {child, value}), expected);
+      }
+      for (int64_t index : {0, 1}) {
+        expectStored(
+            analysis, SourceRef(array->getResult(0), {SourceRefIndex(index), child, value}),
+            expected
+        );
+        expectStored(
+            analysis,
+            SourceRef(pods[3]->getResult(0), {values, SourceRefIndex(index), child, value}),
+            expected
+        );
+      }
+      expectStored(analysis, SourceRef(pods[4]->getResult(0), {value}), expected);
+    });
+  }
+}
+
+// A copied leaf that expands must also widen its scalar users and their publications.
+TEST_F(IntervalStorageTests, GrowingCopiesReexpandDownstreamCalculations) {
+  for (bool late : {false, true}) {
+    SCOPED_TRACE(late ? "write after calculations" : "write before calculations");
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = arith.constant 0 : index
+    %one = felt.const 1
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %source = pod.new { @value = %seven } : !P
+    %copy = pod.new { @child = %source } : !W
+    %alias = pod.read %copy[@child] : !W, !P
+    pod.write %alias[@value] = %nine : !P, !felt.type
+    %array = array.new %alias : !array.type<1 x !P>
+    %element = array.read %array[%zero] : !array.type<1 x !P>, !P
+    %read = pod.read %element[@value] : !P, !felt.type
+    %sum = felt.add %read, %one
+    %negative = felt.neg %sum
+    %selected = arith.select %condition, %sum, %one : !felt.type
+    %out = pod.new { @value = %selected } : !P
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto write = *fn.getOps<pod::WritePodOp>().begin();
+    auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+    auto array = *fn.getOps<array::CreateArrayOp>().begin();
+    auto read = llvm::to_vector(fn.getOps<pod::ReadPodOp>()).back();
+    auto sum = *fn.getOps<felt::AddFeltOp>().begin();
+    auto negative = *fn.getOps<felt::NegFeltOp>().begin();
+    auto selected = *fn.getOps<arith::SelectOp>().begin();
+    SourceRefIndex child(StringAttr::get(&ctx, "child"));
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    auto checkValues = [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver, int high) {
+      auto stored = UnreducedInterval(7, high).reduce(field);
+      expectStored(
+          analysis, SourceRef(pods.front()->getResult(0), {value}),
+          Interval::Degenerate(field, field.felt(7))
+      );
+      expectStored(analysis, SourceRef(pods[1]->getResult(0), {child, value}), stored);
+      expectStored(analysis, SourceRef(array->getResult(0), {SourceRefIndex(0), value}), stored);
+      expectValue(solver, read.getResult(), UnreducedInterval(7, high));
+      expectValue(solver, sum.getResult(), UnreducedInterval(8, high + 1));
+      expectValue(solver, negative.getResult(), UnreducedInterval(-high - 1, -8));
+      expectValue(solver, selected.getResult(), UnreducedInterval(1, high + 1));
+      expectStored(
+          analysis, SourceRef(pods.back()->getResult(0), {value}),
+          UnreducedInterval(1, high + 1).reduce(field)
+      );
+    };
+    runOrdered(
+        *mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &solver) {
+      for (Operation &op : fn.getBody().front()) {
+        if (late && &op == write.getOperation()) {
+          continue;
+        }
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+      checkValues(analysis, solver, late ? 7 : 9);
+      if (late) {
+        ASSERT_TRUE(succeeded(visit(write)));
+      }
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &solver) {
+      checkValues(analysis, solver, 9);
+    }
+    );
+  }
+}
+
+// Replace a copy's stale default without discarding independent writes to its destination.
+TEST_F(IntervalStorageTests, RecomputedCopiesReplaceDefaultsAndPreserveOtherWrites) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %source = pod.new : !P
+    scf.if %condition {
+      pod.write %source[@value] = %seven : !P, !felt.type
+    }
+    pod.write %source[@value] = %seven : !P, !felt.type
+    %copy = pod.new { @child = %source } : !W
+    %alias = pod.read %copy[@child] : !W, !P
+    scf.if %condition {
+      pod.write %alias[@value] = %nine : !P, !felt.type
+    }
+    %out = pod.new { @child = %alias } : !W
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto guaranteed = *fn.getOps<pod::WritePodOp>().begin();
+  auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+  SourceRefIndex child(StringAttr::get(&ctx, "child"));
+  SourceRefIndex value(StringAttr::get(&ctx, "value"));
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &) {
+    for (Operation &op : fn.getBody().front()) {
+      if (&op == guaranteed.getOperation()) {
+        continue;
+      }
+      if (auto conditional = dyn_cast<scf::IfOp>(op)) {
+        ASSERT_TRUE(succeeded(visit(&conditional.thenBlock()->front())));
+      } else {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+    expectStored(
+        analysis, SourceRef(pods.back()->getResult(0), {child, value}), Interval::Entire(field)
+    );
+    ASSERT_TRUE(succeeded(visit(guaranteed)));
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+    expectStored(
+        analysis, SourceRef(pods.front()->getResult(0), {value}),
+        Interval::Degenerate(field, field.felt(7))
+    );
+    for (unsigned i : {1U, 2U}) {
+      expectStored(
+          analysis, SourceRef(pods[i]->getResult(0), {child, value}),
+          UnreducedInterval(7, 9).reduce(field)
+      );
+    }
+  });
+}
+
+// A revisited yield replaces its stale default while preserving the other branch's contribution.
+TEST_F(IntervalStorageTests, RecomputedYieldsReplaceDefaultsAndPreserveOtherBranches) {
+  for (bool separateSource : {false, true}) {
+    SCOPED_TRACE(separateSource ? "distinct branch sources" : "same branch source");
+    std::string source = R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %source = pod.new : !P
+    scf.if %condition {
+      pod.write %source[@value] = %seven : !P, !felt.type
+    }
+    pod.write %source[@value] = %seven : !P, !felt.type
+    %other = pod.new { @value = %nine } : !P
+    %result = scf.if %condition -> (!P) {
+      scf.yield %source : !P
+    } else {
+      scf.yield ELSE_SOURCE : !P
+    }
+    function.return
+  }
+}
+)mlir";
+    source.replace(
+        source.find("ELSE_SOURCE"), std::string("ELSE_SOURCE").size(),
+        separateSource ? "%other" : "%source"
+    );
+    auto mod = parseModule(source);
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto guaranteed = *fn.getOps<pod::WritePodOp>().begin();
+    auto conditionals = llvm::to_vector(fn.getOps<scf::IfOp>());
+    auto sourcePod = *fn.getOps<pod::NewPodOp>().begin();
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    SourceRef resultRef(conditionals.back()->getResult(0), {value});
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op == guaranteed.getOperation()) {
+          continue;
+        }
+        if (&op == conditionals.front().getOperation()) {
+          ASSERT_TRUE(succeeded(visit(&conditionals.front().thenBlock()->front())));
+        } else if (&op == conditionals.back().getOperation()) {
+          ASSERT_TRUE(succeeded(visit(conditionals.back().thenBlock()->getTerminator())));
+          ASSERT_TRUE(succeeded(visit(conditionals.back().elseBlock()->getTerminator())));
+        } else {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      expectStored(analysis, resultRef, Interval::Entire(field));
+      ASSERT_TRUE(succeeded(visit(guaranteed)));
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+      expectStored(
+          analysis, SourceRef(sourcePod->getResult(0), {value}),
+          Interval::Degenerate(field, field.felt(7))
+      );
+      expectStored(
+          analysis, resultRef,
+          separateSource ? UnreducedInterval(7, 9).reduce(field)
+                         : Interval::Degenerate(field, field.felt(7))
+      );
+    });
+  }
+}
+
+// One yield can forward several possible sources; all must contribute to each result leaf.
+TEST_F(IntervalStorageTests, YieldRemapsPreserveAliasedSources) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!A = !array.type<1 x !felt.type>
+module attributes {llzk.lang} {
+  function.def @test(%condition: i1) {
+    %zero = arith.constant 0 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %left = pod.new { @value = %seven } : !P
+    %right = pod.new { @value = %nine } : !P
+    %leftArray = array.new : !A
+    %rightArray = array.new : !A
+    array.write %leftArray[%zero] = %seven : !A, !felt.type
+    array.write %rightArray[%zero] = %nine : !A, !felt.type
+    %selected, %selectedArray = scf.if %condition -> (!P, !A) {
+      scf.yield %left, %leftArray : !P, !A
+    } else {
+      scf.yield %right, %rightArray : !P, !A
+    }
+    %result, %resultArray = scf.execute_region -> (!P, !A) {
+      scf.yield %selected, %selectedArray : !P, !A
+    }
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto result = *fn.getOps<scf::ExecuteRegionOp>().begin();
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
+    for (Operation &op : fn.getBody().front()) {
+      if (isa<scf::IfOp, scf::ExecuteRegionOp>(op)) {
+        for (Region &region : op.getRegions()) {
+          ASSERT_TRUE(succeeded(visit(region.front().getTerminator())));
+        }
+      } else {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+    auto expected = UnreducedInterval(7, 9).reduce(field);
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    expectStored(analysis, SourceRef(result->getResult(0), {value}), expected);
+    expectStored(analysis, SourceRef(result->getResult(1), {SourceRefIndex(0)}), expected);
+  });
+}
+
+// Notify overlapping prefixes in both directions; disjoint writes must not alter copies.
+TEST_F(IntervalStorageTests, AggregateSubscribersObserveOverlappingWrites) {
+  for (unsigned selection : {0U, 1U, 2U}) {
+    SCOPED_TRACE(selection); // Ranged reader, ranged writer, disjoint concrete selections.
+    auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type, @other: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  function.def @test(%array: !array.type<2 x !P>, %i: index) {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %first = array.read %array[%zero] : !array.type<2 x !P>, !P
+    %second = array.read %array[%one] : !array.type<2 x !P>, !P
+    %dynamic = array.read %array[%i] : !array.type<2 x !P>, !P
+    pod.write %first[@value] = %seven : !P, !felt.type
+    pod.write %second[@value] = %seven : !P, !felt.type
+    pod.write %first[@other] = %seven : !P, !felt.type
+    pod.write %second[@other] = %seven : !P, !felt.type
+    pod.write %second[@value] = %nine : !P, !felt.type
+    %copy = pod.new { @child = %dynamic } : !W
+    %alias = pod.read %copy[@child] : !W, !P
+    %out = pod.new { @child = %alias } : !W
+    function.return
+  }
+}
+)mlir");
+    ASSERT_TRUE(mod);
+    auto fn = *mod->getOps<function::FuncDefOp>().begin();
+    auto reads = llvm::to_vector(fn.getOps<array::ReadArrayOp>());
+    auto lateWrite = llvm::to_vector(fn.getOps<pod::WritePodOp>()).back();
+    auto copies = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+    if (selection != 0) {
+      copies.front()->setOperand(0, reads.front().getResult());
+    }
+    if (selection == 1) {
+      lateWrite->setOperand(0, reads.back().getResult());
+    }
+    SourceRefIndex child(StringAttr::get(&ctx, "child"));
+    SourceRefIndex value(StringAttr::get(&ctx, "value"));
+    SourceRefIndex other(StringAttr::get(&ctx, "other"));
+    runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &) {
+      for (Operation &op : fn.getBody().front()) {
+        if (&op != lateWrite.getOperation()) {
+          ASSERT_TRUE(succeeded(visit(&op)));
+        }
+      }
+      for (auto copy : copies) {
+        expectStored(
+            analysis, SourceRef(copy->getResult(0), {child, value}),
+            Interval::Degenerate(field, field.felt(7))
+        );
+      }
+      ASSERT_TRUE(succeeded(visit(lateWrite)));
+    }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+      auto expected = selection == 2 ? Interval::Degenerate(field, field.felt(7))
+                                     : UnreducedInterval(7, 9).reduce(field);
+      for (auto copy : copies) {
+        expectStored(analysis, SourceRef(copy->getResult(0), {child, value}), expected);
+        expectStored(
+            analysis, SourceRef(copy->getResult(0), {child, other}),
+            Interval::Degenerate(field, field.felt(7))
+        );
+      }
+    });
+  }
+}
+
+// Scalar initializer publications must refine when their SSA producer is analyzed later.
+TEST_F(IntervalStorageTests, ScalarInitializersReplaceRecomputedValues) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P, @values: !array.type<1 x !felt.type>]>
+module attributes {llzk.lang} {
+  function.def @test() {
+    %three = felt.const 3
+    %four = felt.const 4
+    %sum = felt.add %three, %four
+    %pod = pod.new { @value = %sum } : !P
+    %array = array.new %sum : !array.type<1 x !felt.type>
+    %out = pod.new { @child = %pod, @values = %array } : !W
+    function.return
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto sum = *fn.getOps<felt::AddFeltOp>().begin();
+  auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+  auto array = *fn.getOps<array::CreateArrayOp>().begin();
+  SourceRefIndex child(StringAttr::get(&ctx, "child"));
+  SourceRefIndex value(StringAttr::get(&ctx, "value"));
+  SourceRefIndex values(StringAttr::get(&ctx, "values"));
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &analysis, const Visit &visit, DataFlowSolver &) {
+    for (Operation &op : fn.getBody().front()) {
+      if (&op != sum.getOperation()) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+    expectStored(analysis, SourceRef(pods.front()->getResult(0), {value}), Interval::Entire(field));
+    ASSERT_TRUE(succeeded(visit(sum)));
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+    auto expected = Interval::Degenerate(field, field.felt(7));
+    expectStored(analysis, SourceRef(pods.front()->getResult(0), {value}), expected);
+    expectStored(analysis, SourceRef(array->getResult(0), {SourceRefIndex(0)}), expected);
+    expectStored(analysis, SourceRef(pods.back()->getResult(0), {child, value}), expected);
+    expectStored(
+        analysis, SourceRef(pods.back()->getResult(0), {values, SourceRefIndex(0)}), expected
+    );
+  });
+}
+
+// Delayed fields also cross aggregate assignments and component member storage.
+TEST_F(IntervalStorageTests, DelayedFieldsReachAggregateAssignments) {
+  auto mod = parseModule(R"mlir(
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  struct.def @Box {
+    struct.member @stored : !W
+    function.def @compute() -> !struct.type<@Box> {
+      %self = struct.new : !struct.type<@Box>
+      %seven = felt.const 7
+      %source = pod.new : !P
+      pod.write %source[@value] = %seven : !P, !felt.type
+      %assigned = pod.new : !W
+      pod.write %assigned[@child] = %source : !W, !P
+      struct.writem %self[@stored] = %assigned : !struct.type<@Box>, !W
+      %member = struct.readm %self[@stored] : !struct.type<@Box>, !W
+      %child = pod.read %member[@child] : !W, !P
+      %copy = pod.new { @child = %child } : !W
+      function.return %self : !struct.type<@Box>
+    }
+    function.def @constrain(%self: !struct.type<@Box>) {
+      function.return
+    }
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto box = *mod->getOps<component::StructDefOp>().begin();
+  auto member = *box.getOps<component::MemberDefOp>().begin();
+  auto fn = *box.getOps<function::FuncDefOp>().begin();
+  auto self = *fn.getOps<component::CreateStructOp>().begin();
+  auto write = *fn.getOps<pod::WritePodOp>().begin();
+  auto pods = llvm::to_vector(fn.getOps<pod::NewPodOp>());
+  SourceRefIndex child(StringAttr::get(&ctx, "child"));
+  SourceRefIndex value(StringAttr::get(&ctx, "value"));
+  runOrdered(*mod, [&](IntervalDataFlowAnalysis &, const Visit &visit, DataFlowSolver &) {
+    for (Operation &op : fn.getBody().front()) {
+      if (&op != write.getOperation()) {
+        ASSERT_TRUE(succeeded(visit(&op)));
+      }
+    }
+    ASSERT_TRUE(succeeded(visit(write)));
+  }, [&](IntervalDataFlowAnalysis &analysis, DataFlowSolver &) {
+    auto expected = Interval::Degenerate(field, field.felt(7));
+    for (unsigned i : {1U, 2U}) {
+      expectStored(analysis, SourceRef(pods[i]->getResult(0), {child, value}), expected);
+    }
+    expectStored(
+        analysis, SourceRef(self->getResult(0), {SourceRefIndex(member), child, value}), expected
+    );
+  });
+}
+
+// Materializing array value storage must not replace known component handle identities.
+TEST_F(IntervalStorageTests, ArrayCopiesPreserveComponentConstraintIdentity) {
+  auto mod = parseModule(R"mlir(
+module attributes {llzk.lang} {
+  struct.def @Cell {
+    struct.member @value : !felt.type {llzk.pub}
+    function.def @compute() -> !struct.type<@Cell> {
+      %self = struct.new : !struct.type<@Cell>
+      function.return %self : !struct.type<@Cell>
+    }
+    function.def @constrain(%self: !struct.type<@Cell>) {
+      function.return
+    }
+  }
+  function.def @test(%a: !struct.type<@Cell>, %b: !struct.type<@Cell>) -> (!felt.type, !felt.type)
+      attributes {function.allow_constraint} {
+    %zero = arith.constant 0 : index
+    %one = arith.constant 1 : index
+    %seven = felt.const 7
+    %nine = felt.const 9
+    %array = array.new %a, %b : !array.type<2 x !struct.type<@Cell>>
+    %left = array.read %array[%zero] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %right = array.read %array[%one] : !array.type<2 x !struct.type<@Cell>>, !struct.type<@Cell>
+    %x = struct.readm %left[@value] : !struct.type<@Cell>, !felt.type
+    %y = struct.readm %right[@value] : !struct.type<@Cell>, !felt.type
+    %leftCheck = bool.cmp eq(%x, %seven)
+    bool.assert %leftCheck
+    %rightCheck = bool.cmp eq(%y, %nine)
+    bool.assert %rightCheck
+    function.return %x, %y : !felt.type, !felt.type
+  }
+}
+)mlir");
+  ASSERT_TRUE(mod);
+  auto smt = llvm::CreateZ3Solver();
+  DataFlowSolver solver(DataFlowConfig().setInterprocedural(false));
+  llzk::dataflow::loadRequiredAnalyses(solver);
+  solver.load<SourceRefAnalysis>();
+  auto *analysis = solver.load<IntervalDataFlowAnalysis>(smt, field, false, false);
+  ASSERT_TRUE(succeeded(solver.initializeAndRun(*mod)));
+  auto fn = *mod->getOps<function::FuncDefOp>().begin();
+  auto cell = *mod->getOps<component::StructDefOp>().begin();
+  auto member = *cell.getOps<component::MemberDefOp>().begin();
+  for (auto [i, value] : llvm::enumerate(fn.getBody().front().getTerminator()->getOperands())) {
+    const auto *lattice = solver.lookupState<IntervalAnalysisLattice>(value);
+    ASSERT_NE(lattice, nullptr);
+    auto expected = Interval::Degenerate(field, field.felt(i == 0 ? 7 : 9));
+    const auto &actual = lattice->getValue().getScalarValue().getInterval();
+    EXPECT_TRUE(checkCond(expected, actual, expected == actual));
+    auto readers =
+        analysis->getReadResults().find(SourceRef(fn.getArgument(i), {SourceRefIndex(member)}));
+    ASSERT_NE(readers, analysis->getReadResults().end());
+    EXPECT_TRUE(llvm::any_of(readers->second, [&](const IntervalAnalysisLattice *reader) {
+      return reader == lattice;
+    }));
+  }
+}
+
 } // namespace
