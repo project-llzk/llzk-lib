@@ -21,6 +21,25 @@ class FunctionDialectAttr<string name, string attrMnemonic,
   let mnemonic = attrMnemonic;
 }
 
+def LLZK_DeterministicAttr : FunctionDialectAttr<"Deterministic", "deterministic"> {
+  let summary = "A unit attribute marking repeatable function results";
+  let description = [{
+    The unit attribute `function.deterministic` may be attached to any `function.def`,
+    including struct `compute` and `constrain` functions, free functions, and
+    external function declarations. It promises that repeated calls with the
+    same arguments return the same results.
+
+    It does not imply that the function is free of side effects.
+
+    Example:
+
+    ```llzk
+    function.def private @external_fn(!felt.type) -> !felt.type
+        attributes {function.deterministic}
+    ```
+  }];
+}
+
 def LLZK_AllowConstraintAttr
     : FunctionDialectAttr<"AllowConstraint", "allow_constraint"> {
   let summary =
