@@ -114,14 +114,12 @@ static inline bool canLoopsBeFused(scf::ForOp a, scf::ForOp b) {
 /// same-block dominance proof accepted by this pass. Block arguments are available by definition;
 /// operation results must be defined earlier in the insertion block.
 static bool operandsDominateInsertion(Operation *op, Operation *insertionPoint) {
-  for (Value operand : op->getOperands()) {
+  return llvm::all_of(op->getOperands(), [insertionPoint](Value operand) {
     if (Operation *def = operand.getDefiningOp()) {
-      if (def->getBlock() != insertionPoint->getBlock() || !def->isBeforeInBlock(insertionPoint)) {
-        return false;
-      }
+      return def->getBlock() == insertionPoint->getBlock() && def->isBeforeInBlock(insertionPoint);
     }
-  }
-  return true;
+    return true;
+  });
 }
 
 /// Return whether `write` targets the same member as `read` and is eligible as its compute-side
@@ -157,12 +155,9 @@ static bool canHoistMemberRead(
     return false;
   }
 
-  for (Operation *user : read.getVal().getUsers()) {
-    if (!constrainIf->isAncestor(user)) {
-      return false;
-    }
-  }
-  return true;
+  return llvm::all_of(read.getVal().getUsers(), [constrainIf](Operation *user) {
+    return constrainIf->isAncestor(user);
+  });
 }
 
 /// Return whether `op` may move with the constrain branch across compute-side operations.
