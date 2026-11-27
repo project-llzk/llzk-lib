@@ -24,13 +24,12 @@
 #include <mlir/TableGen/Dialect.h>
 #include <mlir/TableGen/GenInfo.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/TableGen/Record.h>
 #include <llvm/TableGen/TableGenBackend.h>
-
-#include <algorithm>
 
 using namespace mlir;
 using namespace mlir::tblgen;
@@ -72,7 +71,7 @@ static bool emitDialectCAPITests(const llvm::RecordKeeper &records, llvm::raw_os
   // Get the C++ namespace from the dialect definition. It's like "::llzk::boolean"
   // so replace all ':' with '_' to form the handle suffix.
   std::string cppNamespaceStr = dialect.getCppNamespace().str();
-  std::replace(cppNamespaceStr.begin(), cppNamespaceStr.end(), ':', '_');
+  llvm::replace(cppNamespaceStr, ':', '_');
 
   // Generate the test file
   emitSourceFileHeader("Dialect C API Tests", os, records);

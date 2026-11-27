@@ -78,7 +78,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "namespaced_inference"} {
 // CHECK:      module @Bar attributes {llzk.lang} {
 // CHECK:        struct.def @Box__spec_1 {
-// CHECK:        function.def @size__spec_0(%{{[0-9a-zA-Z_\.]+}}: !struct.type<@Box__spec_1>) -> index attributes {poly.arguments = [2 : index], poly.origin = @Bar::@Use::@size} {
+// CHECK:        function.def @size__spec_0(%{{[0-9a-zA-Z_.-]+}}: !struct.type<@Box__spec_1>) -> index attributes {poly.arguments = [2 : index], poly.origin = @Bar::@Use::@size} {
 // CHECK:          arith.constant 2 : index
 // CHECK:      struct.def @Main__spec_0 {
 // CHECK:        function.call @Bar::@size__spec_0(
@@ -111,7 +111,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 // CHECK:      struct.def @Main__spec_0 {
 // CHECK:          function.call @id__spec_0(
 // CHECK:          function.call @id__spec_0(
-// CHECK:      function.def @id__spec_0(%{{[0-9a-zA-Z_\.]+}}: index) -> index attributes {poly.arguments = [index, 7 : index], poly.origin = @Pick::@id} {
+// CHECK:      function.def @id__spec_0(%{{[0-9a-zA-Z_.-]+}}: index) -> index attributes {poly.arguments = [index, 7 : index], poly.origin = @Pick::@id} {
 // CHECK-NOT:  function.def @id__spec_1
 
 // -----
@@ -190,7 +190,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 }
 
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "dead_function"} {
-// CHECK:        function.def @loop(%{{[0-9a-zA-Z_\.]+}}: index) {
+// CHECK:        function.def @loop(%{{[0-9a-zA-Z_.-]+}}: index) {
 // CHECK:        struct.def @Main__spec_0 {
 // CHECK:          function.call @loop(
 // CHECK-NOT:    function.def @loop__spec_0
@@ -226,7 +226,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "inferred"} {
 // CHECK:        struct.def @Main__spec_0 {
 // CHECK:          function.call @size__spec_0(
-// CHECK:        function.def @size__spec_0(%{{[0-9a-zA-Z_\.]+}}: !array.type<3 x !felt.type>) -> index attributes {poly.arguments = [3 : index], poly.origin = @Outer::@size} {
+// CHECK:        function.def @size__spec_0(%{{[0-9a-zA-Z_.-]+}}: !array.type<3 x !felt.type>) -> index attributes {poly.arguments = [3 : index], poly.origin = @Outer::@size} {
 // CHECK:          function.call @size__spec_1() : () -> index
 // CHECK:        function.def @size__spec_1() -> index attributes {poly.arguments = [3 : index], poly.origin = @Inner::@size} {
 // CHECK:          arith.constant 3 : index
@@ -265,7 +265,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "namespaced_type"} {
 // CHECK:      module @Bar attributes {llzk.lang} {
 // CHECK:        struct.def @Foo__spec_1 {
-// CHECK:        function.def @id__spec_0(%{{[0-9a-zA-Z_\.]+}}: !struct.type<@Foo__spec_1>) -> !struct.type<@Foo__spec_1> attributes {poly.arguments = [!struct.type<@Bar::@Foo>], poly.origin = @Bar::@Identity::@id} {
+// CHECK:        function.def @id__spec_0(%{{[0-9a-zA-Z_.-]+}}: !struct.type<@Foo__spec_1>) -> !struct.type<@Foo__spec_1> attributes {poly.arguments = [!struct.type<@Bar::@Foo>], poly.origin = @Bar::@Identity::@id} {
 // CHECK:      struct.def @Main__spec_0 {
 // CHECK:        function.call @Bar::@id__spec_0(
 // CHECK-NOT:  function.def @id__spec_1
@@ -316,7 +316,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>, test.scenario = "
 // CHECK:        struct.def @Main__spec_0 {
 // CHECK:          scf.if
 // CHECK:            function.call @make__spec_0({{.*}}) : (index) -> !struct.type<@Child__spec_1>
-// CHECK:        function.def @make__spec_0(%{{[0-9a-zA-Z_\.]+}}: index) -> !struct.type<@Child__spec_1> attributes {function.allow_witness, poly.arguments = [2 : index], poly.origin = @Functions::@make} {
+// CHECK:        function.def @make__spec_0(%{{[0-9a-zA-Z_.-]+}}: index) -> !struct.type<@Child__spec_1> attributes {function.allow_witness, poly.arguments = [2 : index], poly.origin = @Functions::@make} {
 // CHECK:          scf.for
 // CHECK:          function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
 // CHECK-NOT:    function.def @make__spec_1

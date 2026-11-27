@@ -193,7 +193,7 @@ static int runMain(int argc, char **argv) {
                    << "; use --output-scope=full-witness\n";
       return EXIT_FAILURE;
     }
-    // WTNS contains every R1CS wire, including ordinary private felt members.
+    // WTNS contains every R1CS wire, including private members marked as signals.
     options.outputScope = llzk::witgen::OutputScope::R1CSWitness;
   }
 

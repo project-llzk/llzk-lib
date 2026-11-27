@@ -1,0 +1,153 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Dynamic singleton indices always initialize the selected element, including
+// multidimensional accesses. Earlier reads retain their defaults.
+module attributes {llzk.lang} {
+  struct.def @SingletonArrayWrites {
+    function.def @product(%array: !array.type<1 x !felt.type>, %matrix: !array.type<1,1 x !felt.type>, %condition: i1, %i: index, %j: index) -> !struct.type<@SingletonArrayWrites> {
+      %self = struct.new : !struct.type<@SingletonArrayWrites>
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %before = array.read %array[%i] : !array.type<1 x !felt.type>, !felt.type
+      array.write %array[%i] = %nine : !array.type<1 x !felt.type>, !felt.type
+      %dynamic = array.read %array[%j] : !array.type<1 x !felt.type>, !felt.type
+      scf.if %condition {
+        array.write %matrix[%i, %j] = %seven : !array.type<1,1 x !felt.type>, !felt.type
+      }
+      array.write %matrix[%j, %i] = %nine : !array.type<1,1 x !felt.type>, !felt.type
+      %matrixDynamic = array.read %matrix[%i, %j] : !array.type<1,1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@SingletonArrayWrites>
+    }
+  }
+}
+
+// CHECK-LABEL: @SingletonArrayWrites StructIntervals { }
+// CHECK-LABEL: @SingletonArrayWrites SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Singleton prefixes also guarantee scalar POD writes and remapped aggregate leaves.
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@value: !felt.type, @child: !P]>
+module attributes {llzk.lang} {
+  struct.def @SingletonAggregateWrites {
+    function.def @product(%pods: !array.type<1 x !W>, %i: index) -> !struct.type<@SingletonAggregateWrites> {
+      %self = struct.new : !struct.type<@SingletonAggregateWrites>
+      %nine = felt.const 9
+      %replacement = pod.new { @value = %nine } : !P
+      %pod = array.read %pods[%i] : !array.type<1 x !W>, !W
+      pod.write %pod[@value] = %nine : !W, !felt.type
+      pod.write %pod[@child] = %replacement : !W, !P
+      %podValue = pod.read %pod[@value] : !W, !felt.type
+      %podChild = pod.read %pod[@child] : !W, !P
+      %podLeaf = pod.read %podChild[@value] : !P, !felt.type
+      function.return %self : !struct.type<@SingletonAggregateWrites>
+    }
+  }
+}
+
+// CHECK-LABEL: @SingletonAggregateWrites StructIntervals { }
+// CHECK-LABEL: @SingletonAggregateWrites SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [pod.read] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [pod.read] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// A singleton dimension does not disambiguate another dimension or a choice of array roots.
+// Finite multi-element and unbounded ranges must also keep their no-write alternatives.
+module attributes {llzk.lang} {
+  struct.def @AmbiguousTargetsKeepDefaults {
+    function.def @product(%array: !array.type<2 x !felt.type>, %unbounded: !array.type<? x !felt.type>, %matrix: !array.type<1,2 x !felt.type>, %left: !array.type<1 x !felt.type>, %right: !array.type<1 x !felt.type>, %condition: i1, %chooseLeft: i1, %i: index, %j: index) -> !struct.type<@AmbiguousTargetsKeepDefaults> {
+      %self = struct.new : !struct.type<@AmbiguousTargetsKeepDefaults>
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %choice = scf.if %chooseLeft -> (!array.type<1 x !felt.type>) {
+        scf.yield %left : !array.type<1 x !felt.type>
+      } else {
+        scf.yield %right : !array.type<1 x !felt.type>
+      }
+      scf.if %condition {
+        array.write %array[%i] = %seven : !array.type<2 x !felt.type>, !felt.type
+        array.write %unbounded[%i] = %seven : !array.type<? x !felt.type>, !felt.type
+        array.write %matrix[%i, %j] = %seven : !array.type<1,2 x !felt.type>, !felt.type
+        array.write %left[%i] = %seven : !array.type<1 x !felt.type>, !felt.type
+        array.write %right[%i] = %seven : !array.type<1 x !felt.type>, !felt.type
+      }
+      array.write %array[%j] = %nine : !array.type<2 x !felt.type>, !felt.type
+      array.write %unbounded[%j] = %nine : !array.type<? x !felt.type>, !felt.type
+      array.write %matrix[%j, %i] = %nine : !array.type<1,2 x !felt.type>, !felt.type
+      array.write %choice[%j] = %nine : !array.type<1 x !felt.type>, !felt.type
+      %arrayRead = array.read %array[%i] : !array.type<2 x !felt.type>, !felt.type
+      %unboundedRead = array.read %unbounded[%i] : !array.type<? x !felt.type>, !felt.type
+      %matrixRead = array.read %matrix[%i, %j] : !array.type<1,2 x !felt.type>, !felt.type
+      %leftRead = array.read %left[%j] : !array.type<1 x !felt.type>, !felt.type
+      %rightRead = array.read %right[%i] : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@AmbiguousTargetsKeepDefaults>
+    }
+  }
+}
+
+// CHECK-LABEL: @AmbiguousTargetsKeepDefaults StructIntervals { }
+// CHECK-LABEL: @AmbiguousTargetsKeepDefaults SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// An optional write to a unique element still leaves the original value possible.
+module attributes {llzk.lang} {
+  struct.def @ConditionalSingletonWrite {
+    function.def @product(%array: !array.type<1 x !felt.type>, %condition: i1, %i: index, %j: index) -> !struct.type<@ConditionalSingletonWrite> {
+      %self = struct.new : !struct.type<@ConditionalSingletonWrite>
+      %zero = arith.constant 0 : index
+      %nine = felt.const 9
+      scf.if %condition {
+        array.write %array[%i] = %nine : !array.type<1 x !felt.type>, !felt.type
+      }
+      %concrete = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %dynamic = array.read %array[%j] : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@ConditionalSingletonWrite>
+    }
+  }
+}
+
+// CHECK-LABEL: @ConditionalSingletonWrite StructIntervals { }
+// CHECK-LABEL: @ConditionalSingletonWrite SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

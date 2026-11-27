@@ -70,7 +70,7 @@ static MlirOperation create_module_with_owned_op(MlirContext ctx, MlirOperation 
 
 template <int64_t N> static llvm::SmallVector<MlirAttribute, N> empty_arg_attrs(MlirContext ctx) {
   return llvm::SmallVector<MlirAttribute, N>(
-      N, mlirDictionaryAttrGet(ctx, 0, (const MlirNamedAttribute *)NULL)
+      N, mlirDictionaryAttrGet(ctx, 0, (const MlirNamedAttribute *)nullptr)
   );
 }
 
@@ -216,7 +216,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_arg_name_attr) {
   MlirNamedAttribute arg0Attrs[] = {create_arg_name_named_attr(context, "input 0")};
   MlirAttribute in_attrs[] = {
       mlirDictionaryAttrGet(context, 1, arg0Attrs),
-      mlirDictionaryAttrGet(context, 0, (const MlirNamedAttribute *)NULL)
+      mlirDictionaryAttrGet(context, 0, (const MlirNamedAttribute *)nullptr)
   };
   MlirNamedAttribute attrs[] = {create_private_visibility_attr(context)};
   auto op = create_func_def_op(
@@ -320,7 +320,7 @@ TEST_F(FuncDialectTest, llzk_func_def_op_get_fully_qualified_name) {
   // only "call" the method on a condition that is actually impossible but the compiler
   // cannot see that.
   auto f = test_function();
-  if (f.op.ptr == (void *)NULL) {
+  if (f.op.ptr == (void *)nullptr) {
     llzkFunction_FuncDefOpGetFullyQualifiedName(f.op, true);
   }
 }
@@ -352,7 +352,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build) {
       auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
       return llzkFunction_CallOpBuild(
           builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
-          callee_name, 0, (const MlirValue *)NULL
+          callee_name, 0, (const MlirValue *)nullptr
       );
     }
   } helper;
@@ -365,7 +365,9 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee) {
         const FuncDialectTest &testClass, MlirOpBuilder builder, MlirLocation location
     ) override {
       auto f = testClass.test_function0();
-      return llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+      return llzkFunction_CallOpBuildToCallee(
+          builder, location, f.op, 0, (const MlirValue *)nullptr
+      );
     }
   } helper;
   helper.run(*this);
@@ -383,10 +385,10 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands) {
       auto f = testClass.test_function0();
       auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
       affineOperandsBuilder.nDimsPerMap = -1;
-      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
+      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, nullptr);
       return llzkFunction_CallOpBuildWithMapOperands(
           builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
-          callee_name, affineOperandsBuilder, 0, (const MlirValue *)NULL
+          callee_name, affineOperandsBuilder, 0, (const MlirValue *)nullptr
       );
     }
   } helper;
@@ -406,7 +408,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_map_operands_and_dims) {
       auto callee_name = mlirFlatSymbolRefAttrGet(testClass.context, f.nameRef());
       return llzkFunction_CallOpBuildWithMapOperands(
           builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
-          callee_name, affineOperandsBuilder, 0, (const MlirValue *)NULL
+          callee_name, affineOperandsBuilder, 0, (const MlirValue *)nullptr
       );
     }
   } helper;
@@ -424,9 +426,9 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands) {
     ) override {
       auto f = testClass.test_function0();
       affineOperandsBuilder.nDimsPerMap = -1;
-      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, NULL);
+      affineOperandsBuilder.dimsPerMap.attr = mlirDenseI32ArrayGet(testClass.context, 0, nullptr);
       return llzkFunction_CallOpBuildToCalleeWithMapOperands(
-          builder, location, f.op, affineOperandsBuilder, 0, (const MlirValue *)NULL
+          builder, location, f.op, affineOperandsBuilder, 0, (const MlirValue *)nullptr
       );
     }
   } helper;
@@ -444,7 +446,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_map_operands_and_dims)
     ) override {
       auto f = testClass.test_function0();
       return llzkFunction_CallOpBuildToCalleeWithMapOperands(
-          builder, location, f.op, affineOperandsBuilder, 0, (const MlirValue *)NULL
+          builder, location, f.op, affineOperandsBuilder, 0, (const MlirValue *)nullptr
       );
     }
   } helper;
@@ -463,7 +465,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_with_template_params) {
       templateParam = testClass.createIndexAttribute(42);
       return llzkFunction_CallOpBuildWithTemplateParams(
           builder, location, llzk::checkedCast<intptr_t>(f.out_types.size()), f.out_types.data(),
-          callee_name, 1, &templateParam, 0, (const MlirValue *)NULL
+          callee_name, 1, &templateParam, 0, (const MlirValue *)nullptr
       );
     }
 
@@ -488,7 +490,7 @@ TEST_F(FuncDialectTest, llzk_call_op_build_to_callee_with_template_params) {
       auto f = testClass.test_function0();
       templateParam = testClass.createIndexAttribute(42);
       return llzkFunction_CallOpBuildToCalleeWithTemplateParams(
-          builder, location, f.op, 1, &templateParam, 0, (const MlirValue *)NULL
+          builder, location, f.op, 1, &templateParam, 0, (const MlirValue *)nullptr
       );
     }
 
@@ -511,7 +513,9 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
     ) override {
       auto f = testClass.test_function0();
       this->func_type = create_func_type(testClass.context, f.in_types, f.out_types);
-      return llzkFunction_CallOpBuildToCallee(builder, location, f.op, 0, (const MlirValue *)NULL);
+      return llzkFunction_CallOpBuildToCallee(
+          builder, location, f.op, 0, (const MlirValue *)nullptr
+      );
     }
     void doOtherChecks(MlirOperation op) override {
       auto out_type = llzkFunction_CallOpGetTypeSignature(op);
@@ -529,7 +533,7 @@ TEST_F(FuncDialectTest, llzk_call_op_get_callee_type) {
       ) override {                                                                                 \
         auto f = testClass.test_function0();                                                       \
         return llzkFunction_CallOpBuildToCallee(                                                   \
-            builder, location, f.op, 0, (const MlirValue *)NULL                                    \
+            builder, location, f.op, 0, (const MlirValue *)nullptr                                 \
         );                                                                                         \
       }                                                                                            \
       void doOtherChecks(MlirOperation op) override { EXPECT_EQ(func(op), expected); }             \
@@ -561,8 +565,9 @@ TEST_F(FuncDialectTest, llzk_call_op_callee_is_product_positive) {
   auto *parentOp = unwrap(builder)->getInsertionBlock()->getParentOp();
   auto callee = llvm::cast<llzk::function::FuncDefOp>(parentOp);
 
-  MlirOperation call =
-      llzkFunction_CallOpBuildToCallee(builder, location, wrap(callee), 0, (const MlirValue *)NULL);
+  MlirOperation call = llzkFunction_CallOpBuildToCallee(
+      builder, location, wrap(callee), 0, (const MlirValue *)nullptr
+  );
 
   EXPECT_TRUE(llzkFunction_CallOpCalleeIsProduct(call));
   EXPECT_TRUE(llzkFunction_CallOpCalleeIsStructProduct(call));
@@ -693,7 +698,8 @@ std::unique_ptr<FuncDefOpBuildFuncHelper> FuncDefOpBuildFuncHelper::get() {
       }
       auto result = llzkFunction_FuncDefOpBuild(
           builder, location, mlirIdentifierGet(ctx, mlirStringRefCreateFromCString("funcName")),
-          mlirTypeAttrGet(wrap(fTy)), mlirArrayAttrGet(ctx, 0, NULL), mlirArrayAttrGet(ctx, 0, NULL)
+          mlirTypeAttrGet(wrap(fTy)), mlirArrayAttrGet(ctx, 0, nullptr),
+          mlirArrayAttrGet(ctx, 0, nullptr)
       );
       // Use C++ API to avoid indirectly testing other LLZK C API functions here.
       {

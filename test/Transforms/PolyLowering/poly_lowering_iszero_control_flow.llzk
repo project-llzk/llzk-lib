@@ -44,9 +44,9 @@ module attributes {llzk.lang = "circom", llzk.main = !struct.type<@IsZero>} {
 }
 
 // CHECK-LABEL: struct.def @IsZero {
-// CHECK:         function.def @compute(%[[IN:[0-9a-zA-Z_\.]+]]: !felt.type<"goldilocks">) -> !struct.type<@IsZero>
-// CHECK:           %[[ZERO:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"goldilocks">
-// CHECK:           %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@IsZero>
-// CHECK:           %[[CONDITION:[0-9a-zA-Z_\.]+]] = bool.cmp ne(%[[IN]], %[[ZERO]]) : !felt.type<"goldilocks">, !felt.type<"goldilocks">
-// CHECK:           %[[INV:[0-9a-zA-Z_\.]+]] = scf.if %[[CONDITION]] -> (!felt.type<"goldilocks">) {
+// CHECK:         function.def @compute(%[[IN:[0-9a-zA-Z_.-]+]]: !felt.type<"goldilocks">) -> !struct.type<@IsZero>
+// CHECK:           %[[ZERO:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"goldilocks">
+// CHECK:           %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@IsZero>
+// CHECK:           %[[CONDITION:[0-9a-zA-Z_.-]+]] = bool.cmp ne(%[[IN]], %[[ZERO]]) : !felt.type<"goldilocks">, !felt.type<"goldilocks">
+// CHECK:           %[[INV:[0-9a-zA-Z_.-]+]] = scf.if %[[CONDITION]] -> (!felt.type<"goldilocks">) {
 // CHECK:           function.return %[[SELF]] : !struct.type<@IsZero>

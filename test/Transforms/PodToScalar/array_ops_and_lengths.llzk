@@ -15,14 +15,14 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @extract_then_insert
-// CHECK-SAME:    (%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !array.type<2,2 x !felt.type>)
+// CHECK-SAME:    (%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<2,2 x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !array.type<2,2 x !felt.type>)
 // CHECK-SAME:    -> (!array.type<2,2 x index>, !array.type<2,2 x !felt.type>) {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2,2 x index>
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_2]]] : <2,2 x !felt.type>
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = array.new : <2,2 x index>
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = array.new : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_0]]{{\[}}%[[VAL_2]]] : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = array.extract %[[VAL_1]]{{\[}}%[[VAL_2]]] : <2,2 x !felt.type>
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = array.new : <2,2 x index>
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = array.new : <2,2 x !felt.type>
 // CHECK-NEXT:      array.insert %[[VAL_6]]{{\[}}%[[VAL_3]]] = %[[VAL_4]] : <2,2 x index>, <2 x index>
 // CHECK-NEXT:      array.insert %[[VAL_7]]{{\[}}%[[VAL_3]]] = %[[VAL_5]] : <2,2 x !felt.type>, <2 x !felt.type>
 // CHECK-NEXT:      function.return %[[VAL_6]], %[[VAL_7]] : !array.type<2,2 x index>, !array.type<2,2 x !felt.type>
@@ -38,8 +38,8 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_multi_leaf(%[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<2 x index>, %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<2 x !felt.type>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_X]], %[[DIM]] : <2 x index>
+// CHECK-NEXT:    function.def @len_multi_leaf(%[[ARR_X:[0-9a-zA-Z_.-]+]]: !array.type<2 x index>, %[[ARR_Y:[0-9a-zA-Z_.-]+]]: !array.type<2 x !felt.type>, %[[DIM:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[ARR_X]], %[[DIM]] : <2 x index>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -55,9 +55,9 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x index>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x none>
+// CHECK-NEXT:    function.def @len_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_.-]+]]: !array.type<2,3 x index>, %[[DIM:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_.-]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -76,9 +76,9 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_none_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<2,3 x none>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_\.]+]] = array.new  : <2 x none>
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x none>
+// CHECK-NEXT:    function.def @len_none_leaf_array_dynamic_dim(%[[ARR:[0-9a-zA-Z_.-]+]]: !array.type<2,3 x none>, %[[DIM:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[SHAPE:[0-9a-zA-Z_.-]+]] = array.new  : <2 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[SHAPE]], %[[DIM]] : <2 x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -92,9 +92,9 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_empty_leaf_static_create(%[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new  : <4 x none>
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <4 x none>
+// CHECK-NEXT:    function.def @len_empty_leaf_static_create(%[[DIM:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_.-]+]] = array.new  : <4 x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[ARR]], %[[DIM]] : <4 x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -108,11 +108,11 @@ module attributes {llzk.lang} {
     function.return %len : index
   }
 }
-// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$MAP:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_empty_leaf_array(%[[N:[0-9a-zA-Z_\.]+]]: index, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_\.]+]] = array.new{()[%[[N]]]} : <#[[$MAP]] x none>
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <#[[$MAP]] x none>
+// CHECK-NEXT:    function.def @len_empty_leaf_array(%[[N:[0-9a-zA-Z_.-]+]]: index, %[[DIM:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[ARR:[0-9a-zA-Z_.-]+]] = array.new{()[%[[N]]]} : <#[[$MAP]] x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[ARR]], %[[DIM]] : <#[[$MAP]] x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -125,8 +125,8 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_empty_leaf_static_arg(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<4 x none>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <4 x none>
+// CHECK-NEXT:    function.def @len_empty_leaf_static_arg(%[[ARR:[0-9a-zA-Z_.-]+]]: !array.type<4 x none>, %[[DIM:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[ARR]], %[[DIM]] : <4 x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -141,10 +141,10 @@ module attributes {llzk.lang} {
     function.return %len : index
   }
 }
-// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$MAP:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_empty_leaf_affine_arg(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x none>, %[[DIM:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR]], %[[DIM]] : <#[[$MAP]] x none>
+// CHECK-NEXT:    function.def @len_empty_leaf_affine_arg(%[[ARR:[0-9a-zA-Z_.-]+]]: !array.type<#[[$MAP]] x none>, %[[DIM:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[ARR]], %[[DIM]] : <#[[$MAP]] x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -167,14 +167,14 @@ module attributes {llzk.lang} {
     function.return %len : index
   }
 }
-// CHECK: #[[$MAP:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$MAP:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_empty_leaf_affine_sink(%[[ARR0:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x none>, %[[DIM0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[LEN0:[0-9a-zA-Z_\.]+]] = array.len %[[ARR0]], %[[DIM0]] : <#[[$MAP]] x none>
+// CHECK-NEXT:    function.def @len_empty_leaf_affine_sink(%[[ARR0:[0-9a-zA-Z_.-]+]]: !array.type<#[[$MAP]] x none>, %[[DIM0:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN0:[0-9a-zA-Z_.-]+]] = array.len %[[ARR0]], %[[DIM0]] : <#[[$MAP]] x none>
 // CHECK-NEXT:      function.return %[[LEN0]] : index
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @len_empty_leaf_affine_call(%[[ARR1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$MAP]] x none>, %[[DIM1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[LEN1:[0-9a-zA-Z_\.]+]] = function.call @len_empty_leaf_affine_sink(%[[ARR1]], %[[DIM1]]) : (!array.type<#[[$MAP]] x none>, index) -> index
+// CHECK-NEXT:    function.def @len_empty_leaf_affine_call(%[[ARR1:[0-9a-zA-Z_.-]+]]: !array.type<#[[$MAP]] x none>, %[[DIM1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[LEN1:[0-9a-zA-Z_.-]+]] = function.call @len_empty_leaf_affine_sink(%[[ARR1]], %[[DIM1]]) : (!array.type<#[[$MAP]] x none>, index) -> index
 // CHECK-NEXT:      function.return %[[LEN1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -196,11 +196,11 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @write_then_len(
-// CHECK-SAME:    %[[SRC_ITEMS_VALS:[0-9a-zA-Z_\.]+]]: !array.type<?,3 x index>,
-// CHECK-SAME:    %[[SRC_ITEMS_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
-// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    %[[SRC_ITEMS_VALS:[0-9a-zA-Z_.-]+]]: !array.type<?,3 x index>,
+// CHECK-SAME:    %[[SRC_ITEMS_SHAPE:[0-9a-zA-Z_.-]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_.-]+]]: index
 // CHECK-SAME:    ) -> index {
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[SRC_ITEMS_SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[SRC_ITEMS_SHAPE]], %[[DIM]] : <? x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -222,8 +222,8 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @write_then_len_single_rank_leaf(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<? x index>, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = array.len %[[VAL_0]], %[[VAL_1]] : <? x index>
+// CHECK-NEXT:    function.def @write_then_len_single_rank_leaf(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<? x index>, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = array.len %[[VAL_0]], %[[VAL_1]] : <? x index>
 // CHECK-NEXT:      function.return %[[VAL_2]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -240,12 +240,12 @@ module attributes {llzk.lang} {
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @len_arg(
-// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
-// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_\.]+]]: !array.type<? x index>,
-// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_\.]+]]: !array.type<? x none>,
-// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_\.]+]]: index
+// CHECK-SAME:    %[[ARR_X:[0-9a-zA-Z_.-]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[ARR_Y:[0-9a-zA-Z_.-]+]]: !array.type<? x index>,
+// CHECK-SAME:    %[[ARR_SHAPE:[0-9a-zA-Z_.-]+]]: !array.type<? x none>,
+// CHECK-SAME:    %[[DIM:[0-9a-zA-Z_.-]+]]: index
 // CHECK-SAME:    ) -> index {
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = array.len %[[ARR_SHAPE]], %[[DIM]] : <? x none>
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = array.len %[[ARR_SHAPE]], %[[DIM]] : <? x none>
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

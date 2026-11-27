@@ -1,0 +1,26 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+module attributes {llzk.lang} {
+  function.def @zero_step(%lb: index, %ub: index, %step: index, %seed: index) -> index {
+    %result = scf.for %iv = %lb to %ub step %step iter_args(%acc = %seed) -> index {
+      %next = arith.addi %acc, %iv : index
+      scf.yield %next : index
+    // expected-error @+1 {{loopbounds step must be nonzero}}
+    } {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 0>}
+    function.return %result : index
+  }
+}
+
+// -----
+
+module attributes {llzk.lang} {
+  function.def @while_zero_step(%cond: i1) {
+    scf.while : () -> () {
+      scf.condition(%cond)
+    } do {
+      scf.yield
+    // expected-error @+1 {{loopbounds step must be nonzero}}
+    } attributes {llzk.loopbounds = #llzk.loopbounds<0 to 3 step 0>}
+    function.return
+  }
+}

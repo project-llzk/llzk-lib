@@ -341,23 +341,13 @@ inline static PodType splittablePod(Type t) {
 /// Return `true` iff the given range contains any top-level PodType that this pass can split into
 /// scalars.
 inline static bool containsSplittablePodType(ArrayRef<Type> types) {
-  for (Type t : types) {
-    if (splittablePod(t)) {
-      return true;
-    }
-  }
-  return false;
+  return llvm::any_of(types, [](Type t) { return splittablePod(t); });
 }
 
 /// Return `true` iff the given range contains any top-level PodType that this pass can split into
 /// scalars.
 template <typename T> inline static bool containsSplittablePodType(ValueTypeRange<T> types) {
-  for (Type t : types) {
-    if (splittablePod(t)) {
-      return true;
-    }
-  }
-  return false;
+  return llvm::any_of(types, [](Type t) { return splittablePod(t); });
 }
 
 /// If the input ArrayType has a POD element type, return the input, else nullptr.
@@ -1303,13 +1293,10 @@ static bool equivalentArrayInstantiationInfo(
     return false;
   }
 
-  for (auto [lhsGroup, rhsGroup] : llvm::zip_equal(lhs.mapOperandStorage, rhs.mapOperandStorage)) {
-    if (lhsGroup != rhsGroup) {
-      return false;
-    }
-  }
-
-  return true;
+  return llvm::all_of_zip(
+      lhs.mapOperandStorage, rhs.mapOperandStorage,
+      [](const auto &lhsGroup, const auto &rhsGroup) { return lhsGroup == rhsGroup; }
+  );
 }
 
 /// Describe whether a set of leaf arrays shares one recoverable instantiation.
@@ -1955,7 +1942,7 @@ static bool canResolveVirtualPodRead(ReadPodOp op, const VirtualPodValueMap &vir
   if (!leafValues) {
     return false;
   }
-  Type recType = llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+  Type recType = op.getPodRefType().getRecordMap().lookup(op.getRecordName());
   if (auto nestedPodTy = llvm::dyn_cast<PodType>(recType)) {
     SmallVector<StringAttr> recordChain {op.getRecordNameAttr()};
     bool supported = true;
@@ -1979,8 +1966,7 @@ static bool canResolveVirtualPodWrite(WritePodOp op, const VirtualPodValueMap &v
       isInsideSupportedScfRegion(op.getOperation())) {
     return false;
   }
-  Type recordType =
-      llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+  Type recordType = op.getPodRefType().getRecordMap().lookup(op.getRecordName());
   if (auto nestedPodTy = llvm::dyn_cast<PodType>(recordType)) {
     const VirtualPodLeafMap *sourceLeaves = lookupVirtualPodLeafMap(op.getValue(), virtualPods);
     SmallVector<StringAttr> recordChain;
@@ -2470,7 +2456,7 @@ public:
     if (legal(op)) {
       return failure();
     }
-    ArrayType arrTy = llvm::cast<ArrayType>(op.getType());
+    ArrayType arrTy = op.getType();
     SmallVector<RecordChain> splitIds;
     SmallVector<Type> splitTypes;
     splitPodArrayTypeTo(arrTy, splitTypes, &splitIds);
@@ -3866,7 +3852,7 @@ public:
     SmallVector<Type> splitResultTypes;
     splitPodArrayTypeTo(op.getResult().getType(), splitResultTypes);
     if (splitResultTypes.empty()) {
-      ArrayType resultTy = llvm::cast<ArrayType>(op.getResult().getType());
+      ArrayType resultTy = op.getResult().getType();
       replaceOpWithNewOp<ExtractArrayOp>(
           rewriter, op, getPodArrayShapeCarrierType(resultTy),
           getSingleConvertedValue(adaptor.getArrRef()), flattenConvertedValues(adaptor.getIndices())
@@ -3876,7 +3862,7 @@ public:
 
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     SmallVector<Value> replacements;
-    ArrayType resultTy = llvm::cast<ArrayType>(op.getResult().getType());
+    ArrayType resultTy = op.getResult().getType();
     replacements.reserve(splitResultTypes.size() + (needsPodArrayShapeCarrier(resultTy) ? 1 : 0));
     auto splitArrRefs = adaptor.getArrRef().take_front(splitResultTypes.size());
     for (auto [splitArrRange, splitResultType] : llvm::zip_equal(splitArrRefs, splitResultTypes)) {
@@ -3914,7 +3900,7 @@ public:
       return failure();
     }
 
-    if (hasZeroLeafPodArraySplit(llvm::cast<ArrayType>(op.getRvalue().getType()))) {
+    if (hasZeroLeafPodArraySplit(op.getRvalue().getType())) {
       preserveDiscardableAttrs(
           op, InsertArrayOp::create(
                   rewriter, op.getLoc(), getSingleConvertedValue(adaptor.getArrRef()),
@@ -3926,8 +3912,8 @@ public:
       return success();
     }
 
-    ArrayType destArrTy = llvm::cast<ArrayType>(op.getArrRef().getType());
-    ArrayType rvalueTy = llvm::cast<ArrayType>(op.getRvalue().getType());
+    ArrayType destArrTy = op.getArrRef().getType();
+    ArrayType rvalueTy = op.getRvalue().getType();
     SmallVector<Value> indices = flattenConvertedValues(adaptor.getIndices());
     size_t leafCount = getSplitPodArrayLeafCount(rvalueTy);
     auto splitArrRefs = adaptor.getArrRef().take_front(leafCount);
@@ -5068,8 +5054,7 @@ public:
       return failure();
     }
 
-    Type recordType =
-        llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+    Type recordType = op.getPodRefType().getRecordMap().lookup(op.getRecordName());
     assert(recordType && "record must exist in POD type");
     if (failed(updateVirtualPodRecordLeafValues(
             op.getLoc(), op.getRecordNameAttr(), recordType, adaptor.getValue(),
@@ -5106,8 +5091,7 @@ public:
     }
 
     SmallVector<StringAttr> prefix {op.getRecordNameAttr()};
-    Type recordType =
-        llvm::cast<PodType>(op.getPodRefType()).getRecordMap().lookup(op.getRecordName());
+    Type recordType = op.getPodRefType().getRecordMap().lookup(op.getRecordName());
     assert(recordType && "record must exist in POD type");
 
     if (PodType nestedPodTy = llvm::dyn_cast<PodType>(recordType)) {

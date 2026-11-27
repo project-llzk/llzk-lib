@@ -26,7 +26,7 @@ protected:
 
   mlir::OwningOpRef<mlir::ModuleOp> mod;
 
-  OpTests() : LLZKTest(), mod() {}
+  OpTests() = default;
 
   void SetUp() override {
     // Create a new module for each test

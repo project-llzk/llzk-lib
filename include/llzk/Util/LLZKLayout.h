@@ -25,6 +25,15 @@ class raw_ostream;
 
 namespace llzk {
 
+namespace component {
+class MemberDefOp;
+} // namespace component
+
+/// Whether a member directly declares signal storage: explicit signals and
+/// public members of main are included. Unmarked component containers may still
+/// contain nested signals, which callers enumerate independently.
+bool isLayoutSignalMember(component::MemberDefOp member, bool isMain);
+
 /// Structural path root for storage in the main instance.
 inline constexpr char LAYOUT_MAIN_ROOT[] = "main";
 /// Structural path root for a constrain argument, followed by its position.
@@ -66,6 +75,11 @@ struct LLZKLayout {
 /// constrain arguments are felt scalars or arrays of felt. Does not evaluate or
 /// rewrite function bodies.
 mlir::FailureOr<LLZKLayout> buildLLZKLayout(mlir::ModuleOp module);
+
+/// Print a path produced by buildLLZKLayout, retaining optional argument display names.
+void printLLZKLayoutPath(
+    mlir::ArrayAttr path, llvm::ArrayRef<mlir::StringAttr> argumentNames, llvm::raw_ostream &output
+);
 
 /// Print the logical signal section of the .llzk-layout format.
 /// Paths must follow the structural format produced by buildLLZKLayout.

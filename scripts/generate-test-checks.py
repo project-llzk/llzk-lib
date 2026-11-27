@@ -187,7 +187,7 @@ def process_line(line_chunks, variable_namer):
         else:
             # Otherwise, generate a new variable.
             variable = variable_namer.generate_name(ssa_name)
-            output_line += "%[[" + variable + ":[0-9a-zA-Z_\\.]+]]"
+            output_line += "%[[" + variable + ":[0-9a-zA-Z_.-]+]]"
 
         # Append the non named group.
         output_line += chunk[len(ssa_name) :]
@@ -305,7 +305,7 @@ def process_attribute_definition(line, attribute_namer, output_segment, check_pr
         attribute_name = attribute_namer.generate_name(m.group(1))
         line = (
             '// ' + check_prefix + ': #[[' + attribute_name
-            + ':[0-9a-zA-Z_\\.]+]] =' + line[len(m.group(0)):] + '\n'
+            + ':[0-9a-zA-Z_.-]+]] =' + line[len(m.group(0)):] + '\n'
         )
         output_segment.append(line)
     return bool(m)
@@ -831,7 +831,7 @@ class GenerateTestChecksTests(unittest.TestCase):
         self.assertEqual(first_contents, source.read_bytes())
         self.assertEqual(
             first_contents,
-            b"// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\\.]+]] = "
+            b"// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = "
             b"affine_map<(d0) -> (d0)>\n"
             b"// Preserve this source comment.\r\n"
             b"\r\n"

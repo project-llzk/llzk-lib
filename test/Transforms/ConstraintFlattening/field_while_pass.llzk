@@ -33,8 +33,8 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK-LABEL: struct.def @Main {
-// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"bn128">
+// CHECK:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Main>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

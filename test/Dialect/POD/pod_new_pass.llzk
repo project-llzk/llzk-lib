@@ -5,7 +5,7 @@ function.def @new_empty_pod() -> !pod.type<[]> {
   function.return %r: !pod.type<[]>
 }
 //CHECK-LABEL:  function.def @new_empty_pod() -> !pod.type<[]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = pod.new : <[]>
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = pod.new : <[]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[]>
 //CHECK-NEXT:   }
 
@@ -16,7 +16,7 @@ function.def @new_uninit_pod() -> !pod.type<[@n: index]> {
   function.return %r: !pod.type<[@n: index]>
 }
 //CHECK-LABEL:  function.def @new_uninit_pod() -> !pod.type<[@n: index]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = pod.new : <[@n: index]>
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = pod.new : <[@n: index]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: index]>
 //CHECK-NEXT:   }
 
@@ -31,17 +31,17 @@ function.def @new_uninit_pod() -> !pod.type<[@n: !at]> {
   %r = pod.new (%a)[%b], ()[%c], (%d) : <[@n: !at]>
   function.return %r: !pod.type<[@n: !at]>
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
-// CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
+// CHECK: #[[$M1:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M2:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 + 2)>
 
-//CHECK-LABEL:  function.def @new_uninit_pod() 
+//CHECK-LABEL:  function.def @new_uninit_pod()
 //CHECK-SAME:       -> !pod.type<[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]> {
-//CHECK-NEXT:     %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-//CHECK-NEXT:     %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-//CHECK-NEXT:     %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
-//CHECK-NEXT:     %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = pod.new 
+//CHECK-NEXT:     %[[V0:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+//CHECK-NEXT:     %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+//CHECK-NEXT:     %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 6 : index
+//CHECK-NEXT:     %[[V3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = pod.new
 //CHECK-SAME:       (%[[V0]]){{\[}}%[[V1]]], (){{\[}}%[[V2]]], (%[[V3]]) :
 //CHECK-SAME:       <[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]>
@@ -54,8 +54,8 @@ function.def @new_init_pod(%n: index) -> !pod.type<[@n: index]> {
   function.return %r: !pod.type<[@n: index]>
 }
 //CHECK-LABEL:  function.def @new_init_pod(
-//CHECK-SAME:       %[[A1:[0-9a-zA-Z_\.]+]]: index) -> !pod.type<[@n: index]> {
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = pod.new { @n = %[[A1]] } : <[@n: index]>
+//CHECK-SAME:       %[[A1:[0-9a-zA-Z_.-]+]]: index) -> !pod.type<[@n: index]> {
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = pod.new { @n = %[[A1]] } : <[@n: index]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: index]>
 //CHECK-NEXT:   }
 
@@ -70,18 +70,18 @@ function.def @new_init_pod(%arr: !at) -> !pod.type<[@n: !at]> {
   %r = pod.new { @n = %arr } (%a)[%b], ()[%c], (%d) : <[@n: !at]>
   function.return %r: !pod.type<[@n: !at]>
 }
-// CHECK: #[[$M0:[0-9a-zA-Z_\.]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
-// CHECK: #[[$M1:[0-9a-zA-Z_\.]+]] = affine_map<()[s0] -> (s0)>
-// CHECK: #[[$M2:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0 + 2)>
+// CHECK: #[[$M0:[0-9a-zA-Z_.-]+]] = affine_map<(d0)[s0] -> (d0 * 5 + s0)>
+// CHECK: #[[$M1:[0-9a-zA-Z_.-]+]] = affine_map<()[s0] -> (s0)>
+// CHECK: #[[$M2:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0 + 2)>
 
 //CHECK-LABEL:  function.def @new_init_pod(
-//CHECK-SAME:       %[[A1:[0-9a-zA-Z_\.]+]]: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>) 
+//CHECK-SAME:       %[[A1:[0-9a-zA-Z_.-]+]]: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>)
 //CHECK-SAME:       -> !pod.type<[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]> {
-//CHECK-NEXT:     %[[V0:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-//CHECK-NEXT:     %[[V1:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-//CHECK-NEXT:     %[[V2:[0-9a-zA-Z_\.]+]] = arith.constant 6 : index
-//CHECK-NEXT:     %[[V3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_\.]+]] = pod.new { @n = %[[A1]] }
+//CHECK-NEXT:     %[[V0:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+//CHECK-NEXT:     %[[V1:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+//CHECK-NEXT:     %[[V2:[0-9a-zA-Z_.-]+]] = arith.constant 6 : index
+//CHECK-NEXT:     %[[V3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+//CHECK-NEXT:     %[[T1:[0-9a-zA-Z_.-]+]] = pod.new { @n = %[[A1]] }
 //CHECK-SAME:       (%[[V0]]){{\[}}%[[V1]]], (){{\[}}%[[V2]]], (%[[V3]]) :
 //CHECK-SAME:       <[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]>
 //CHECK-NEXT:     function.return %[[T1]] : !pod.type<[@n: !array.type<#[[$M0]],#[[$M1]],#[[$M2]] x !felt.type>]>

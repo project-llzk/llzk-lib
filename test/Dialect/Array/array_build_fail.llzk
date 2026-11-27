@@ -155,3 +155,16 @@ function.def @cannot_have_elements_before_affine_map_instantiation() -> !at {
   %r = array.new %b { (%a) }: !at
   function.return %r: !at
 }
+
+// -----
+
+// Explicit inferred attributes are ignored, with an intact warning for each one.
+// The supplied sizes are inconsistent; successful verification also checks that
+// the parser replaces them with the sizes computed from the operands.
+function.def @ignored_inferred_attributes() {
+  // expected-warning@+3 {{Ignoring attribute 'mapOpGroupSizes' because it must be computed automatically.}}
+  // expected-warning@+2 {{Ignoring attribute 'numDimsPerMap' because it must be computed automatically.}}
+  // expected-warning@+1 {{Ignoring attribute 'operandSegmentSizes' because it must be computed automatically.}}
+  %array = array.new : !array.type<1 x index> {mapOpGroupSizes = array<i32: 7>, numDimsPerMap = array<i32: 7>, operandSegmentSizes = array<i32: 7, 7>}
+  function.return
+}

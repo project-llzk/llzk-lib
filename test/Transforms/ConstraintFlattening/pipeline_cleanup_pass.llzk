@@ -30,12 +30,12 @@ module attributes {llzk.lang, llzk.main = !struct.type<@T::@Main<[4]>>} {
 }
 
 // CHECK-LABEL:    struct.def @Main__spec_0 {
-// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:      function.def @compute(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.new : <@Main__spec_0>
 // CHECK-NEXT:        function.return %[[VAL_9]] : !struct.type<@Main__spec_0>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Main__spec_0>, %[[VAL_11:[0-9a-zA-Z_\.]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = felt.const  2 : <"bn128">
+// CHECK-NEXT:      function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Main__spec_0>, %[[VAL_11:[0-9a-zA-Z_.-]+]]: !felt.type<"bn128">) attributes {function.allow_constraint, function.allow_non_native_field_ops} {
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = felt.const  2 : <"bn128">
 // CHECK-NEXT:        constrain.eq %[[VAL_11]], %[[VAL_12]] : !felt.type<"bn128">, !felt.type<"bn128">
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

@@ -1,0 +1,122 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// A later guaranteed write cannot remove the original-value alternative of an earlier read.
+!P = !pod.type<[@value: !felt.type]>
+module attributes {llzk.lang} {
+  struct.def @ReadsBeforeWrites {
+    struct.member @value : !felt.type
+    function.def @product(%array: !array.type<1 x !felt.type>, %pod: !P, %condition: i1) -> !struct.type<@ReadsBeforeWrites> {
+      %self = struct.new : !struct.type<@ReadsBeforeWrites>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      scf.if %condition {
+        array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+        pod.write %pod[@value] = %seven : !P, !felt.type
+        struct.writem %self[@value] = %seven : !struct.type<@ReadsBeforeWrites>, !felt.type
+      }
+      %beforeArray = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %beforePod = pod.read %pod[@value] : !P, !felt.type
+      %beforeMember = struct.readm %self[@value] : !struct.type<@ReadsBeforeWrites>, !felt.type
+      array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+      pod.write %pod[@value] = %nine : !P, !felt.type
+      struct.writem %self[@value] = %nine : !struct.type<@ReadsBeforeWrites>, !felt.type
+      %afterArray = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %afterPod = pod.read %pod[@value] : !P, !felt.type
+      %afterMember = struct.readm %self[@value] : !struct.type<@ReadsBeforeWrites>, !felt.type
+      function.return %self : !struct.type<@ReadsBeforeWrites>
+    }
+  }
+}
+
+// CHECK-LABEL: @ReadsBeforeWrites StructIntervals { }
+
+// CHECK-LABEL: @ReadsBeforeWrites SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [array.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [pod.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [struct.readm] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [pod.read] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [struct.readm] in TypeA:[ 7, 9 ] ( unreduced: Unreduced:[ 7, 9 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// A storage revisit with unchanged forward bounds must preserve its constraint refinement,
+// even when the comparison remains true and therefore does not reschedule bool.assert.
+module attributes {llzk.lang} {
+  struct.def @UnchangedReadKeepsRefinement {
+    function.def @product(%array: !array.type<1 x !felt.type>, %condition: i1) -> !struct.type<@UnchangedReadKeepsRefinement> {
+      %self = struct.new : !struct.type<@UnchangedReadKeepsRefinement>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      scf.if %condition {
+        array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+      }
+      %read = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %check = bool.cmp eq(%read, %seven)
+      bool.assert %check
+      array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@UnchangedReadKeepsRefinement>
+    }
+  }
+}
+
+// CHECK-LABEL: @UnchangedReadKeepsRefinement StructIntervals { }
+
+// CHECK-LABEL: @UnchangedReadKeepsRefinement SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [array.read] in Degenerate(7)
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [bool.cmp] in Degenerate(1) ( unreduced: Unreduced:[ 1, 1 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Aggregate POD assignments also retain defaults at ranged destinations.
+!P = !pod.type<[@value: !felt.type]>
+!W = !pod.type<[@child: !P]>
+module attributes {llzk.lang} {
+  struct.def @RangedPodRemapDefaults {
+    function.def @product(%pods: !array.type<2 x !W>, %i: index, %j: index, %condition: i1) -> !struct.type<@RangedPodRemapDefaults> {
+      %self = struct.new : !struct.type<@RangedPodRemapDefaults>
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %first = pod.new { @value = %seven } : !P
+      %second = pod.new { @value = %nine } : !P
+      %selected = array.read %pods[%i] : !array.type<2 x !W>, !W
+      scf.if %condition {
+        pod.write %selected[@child] = %first : !W, !P
+      }
+      pod.write %selected[@child] = %second : !W, !P
+      %other = array.read %pods[%j] : !array.type<2 x !W>, !W
+      %child = pod.read %other[@child] : !W, !P
+      %leaf = pod.read %child[@value] : !P, !felt.type
+      function.return %self : !struct.type<@RangedPodRemapDefaults>
+    }
+  }
+}
+
+// CHECK-LABEL: @RangedPodRemapDefaults StructIntervals { }
+
+// CHECK-LABEL: @RangedPodRemapDefaults SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [pod.read] in Entire ( unreduced: Unreduced:[ 0, 2013265920 ] )
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

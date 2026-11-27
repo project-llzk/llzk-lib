@@ -1,0 +1,253 @@
+// RUN: llzk-opt -split-input-file -llzk-print-interval-analysis="field=babybear print-compute-intervals print-ssa-intervals print-unreduced-intervals" %s -o /dev/null 2>&1 | FileCheck %s --match-full-lines --implicit-check-not=error:
+
+// Backward bounds must include every write: read [7,11], sum 20, input [9,13].
+// The final write precedes the read and constraints.
+module attributes {llzk.lang} {
+  struct.def @GrowthBeforeRead {
+    function.def @product(%array: !array.type<1 x !felt.type>, %condition: i1, %input: !felt.type) -> !struct.type<@GrowthBeforeRead>
+        attributes {function.allow_constraint} {
+      %self = struct.new : !struct.type<@GrowthBeforeRead>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %eleven = felt.const 11
+      %twenty = felt.const 20
+      scf.if %condition {
+        array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+      }
+      array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+      scf.if %condition {
+        array.write %array[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+      }
+      %read = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %sum = felt.add %read, %input
+      constrain.eq %sum, %twenty : !felt.type
+      function.return %self : !struct.type<@GrowthBeforeRead>
+    }
+  }
+}
+
+// CHECK-LABEL: @GrowthBeforeRead StructIntervals { }
+// CHECK-LABEL: @GrowthBeforeRead SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in TypeA:[ 9, 13 ]
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(11) ( unreduced: Unreduced:[ 11, 11 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(20) ( unreduced: Unreduced:[ 20, 20 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 11 ] ( unreduced: Unreduced:[ 7, 11 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.add] in Degenerate(20)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Backward bounds must include every write: read [7,11], sum 20, input [9,13].
+// The final write follows the read and constraints.
+module attributes {llzk.lang} {
+  struct.def @GrowthAfterConstraints {
+    function.def @product(%array: !array.type<1 x !felt.type>, %condition: i1, %input: !felt.type) -> !struct.type<@GrowthAfterConstraints>
+        attributes {function.allow_constraint} {
+      %self = struct.new : !struct.type<@GrowthAfterConstraints>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %eleven = felt.const 11
+      %twenty = felt.const 20
+      scf.if %condition {
+        array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+      }
+      array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+      %read = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %sum = felt.add %read, %input
+      constrain.eq %sum, %twenty : !felt.type
+      scf.if %condition {
+        array.write %array[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+      }
+      function.return %self : !struct.type<@GrowthAfterConstraints>
+    }
+  }
+}
+
+// CHECK-LABEL: @GrowthAfterConstraints StructIntervals { }
+// CHECK-LABEL: @GrowthAfterConstraints SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in TypeA:[ 9, 13 ]
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(11) ( unreduced: Unreduced:[ 11, 11 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(20) ( unreduced: Unreduced:[ 20, 20 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 11 ] ( unreduced: Unreduced:[ 7, 11 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.add] in Degenerate(20)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Backward bounds must include every write: read [7,11], sum 20, input [9,13].
+// The final write falls between the read and its constrained sum.
+module attributes {llzk.lang} {
+  struct.def @GrowthBetweenReadAndConstraint {
+    function.def @product(%array: !array.type<1 x !felt.type>, %condition: i1, %input: !felt.type) -> !struct.type<@GrowthBetweenReadAndConstraint>
+        attributes {function.allow_constraint} {
+      %self = struct.new : !struct.type<@GrowthBetweenReadAndConstraint>
+      %zero = arith.constant 0 : index
+      %seven = felt.const 7
+      %nine = felt.const 9
+      %eleven = felt.const 11
+      %twenty = felt.const 20
+      scf.if %condition {
+        array.write %array[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+      }
+      array.write %array[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+      %read = array.read %array[%zero] : !array.type<1 x !felt.type>, !felt.type
+      scf.if %condition {
+        array.write %array[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+      }
+      %sum = felt.add %read, %input
+      constrain.eq %sum, %twenty : !felt.type
+      function.return %self : !struct.type<@GrowthBetweenReadAndConstraint>
+    }
+  }
+}
+
+// CHECK-LABEL: @GrowthBetweenReadAndConstraint StructIntervals { }
+// CHECK-LABEL: @GrowthBetweenReadAndConstraint SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in TypeA:[ 9, 13 ]
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(11) ( unreduced: Unreduced:[ 11, 11 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(20) ( unreduced: Unreduced:[ 20, 20 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 11 ] ( unreduced: Unreduced:[ 7, 11 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.add] in Degenerate(20)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Repeated growth must recompute constrained calculations from current forward bounds.
+// Left is [7,11]; derived, right, and input are [8,12].
+// The final writes grow the left storage before the right storage.
+module attributes {llzk.lang} {
+  struct.def @RepeatedGrowthLeftThenRight {
+    function.def @product(%a: !array.type<1 x !felt.type>, %b: !array.type<1 x !felt.type>, %input: !felt.type, %condition: i1) -> !struct.type<@RepeatedGrowthLeftThenRight>
+        attributes {function.allow_constraint} {
+      %self = struct.new : !struct.type<@RepeatedGrowthLeftThenRight>
+      %zero = arith.constant 0 : index
+      %one = felt.const 1
+      %seven = felt.const 7
+      %eight = felt.const 8
+      %nine = felt.const 9
+      %eleven = felt.const 11
+      %twelve = felt.const 12
+      %fourteen = felt.const 14
+      %twenty = felt.const 20
+      array.write %a[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+      array.write %b[%zero] = %eight : !array.type<1 x !felt.type>, !felt.type
+      scf.if %condition {
+        array.write %a[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+        array.write %b[%zero] = %twelve : !array.type<1 x !felt.type>, !felt.type
+      }
+      %left = array.read %a[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %derived = felt.add %left, %one
+      %right = array.read %b[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %first = felt.add %derived, %input
+      constrain.eq %first, %twenty : !felt.type
+      %second = felt.add %right, %input
+      constrain.eq %second, %twenty : !felt.type
+      array.write %a[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+      array.write %b[%zero] = %fourteen : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@RepeatedGrowthLeftThenRight>
+    }
+  }
+}
+
+// CHECK-LABEL: @RepeatedGrowthLeftThenRight StructIntervals { }
+// CHECK-LABEL: @RepeatedGrowthLeftThenRight SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in TypeA:[ 8, 12 ]
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(1) ( unreduced: Unreduced:[ 1, 1 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(8) ( unreduced: Unreduced:[ 8, 8 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(11) ( unreduced: Unreduced:[ 11, 11 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(12) ( unreduced: Unreduced:[ 12, 12 ] )
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(14) ( unreduced: Unreduced:[ 14, 14 ] )
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(20) ( unreduced: Unreduced:[ 20, 20 ] )
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 11 ] ( unreduced: Unreduced:[ 7, 11 ] )
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_.-]+]] [felt.add] in TypeA:[ 8, 12 ] ( unreduced: Unreduced:[ 8, 12 ] )
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 8, 12 ]
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] [felt.add] in Degenerate(20)
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_.-]+]] [felt.add] in Degenerate(20)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }
+
+// -----
+
+// Repeated growth must recompute constrained calculations from current forward bounds.
+// Left is [7,11]; derived, right, and input are [8,12].
+// The final writes grow the right storage before the left storage.
+module attributes {llzk.lang} {
+  struct.def @RepeatedGrowthRightThenLeft {
+    function.def @product(%a: !array.type<1 x !felt.type>, %b: !array.type<1 x !felt.type>, %input: !felt.type, %condition: i1) -> !struct.type<@RepeatedGrowthRightThenLeft>
+        attributes {function.allow_constraint} {
+      %self = struct.new : !struct.type<@RepeatedGrowthRightThenLeft>
+      %zero = arith.constant 0 : index
+      %one = felt.const 1
+      %seven = felt.const 7
+      %eight = felt.const 8
+      %nine = felt.const 9
+      %eleven = felt.const 11
+      %twelve = felt.const 12
+      %fourteen = felt.const 14
+      %twenty = felt.const 20
+      array.write %a[%zero] = %seven : !array.type<1 x !felt.type>, !felt.type
+      array.write %b[%zero] = %eight : !array.type<1 x !felt.type>, !felt.type
+      scf.if %condition {
+        array.write %a[%zero] = %nine : !array.type<1 x !felt.type>, !felt.type
+        array.write %b[%zero] = %twelve : !array.type<1 x !felt.type>, !felt.type
+      }
+      %left = array.read %a[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %derived = felt.add %left, %one
+      %right = array.read %b[%zero] : !array.type<1 x !felt.type>, !felt.type
+      %first = felt.add %derived, %input
+      constrain.eq %first, %twenty : !felt.type
+      %second = felt.add %right, %input
+      constrain.eq %second, %twenty : !felt.type
+      array.write %b[%zero] = %fourteen : !array.type<1 x !felt.type>, !felt.type
+      array.write %a[%zero] = %eleven : !array.type<1 x !felt.type>, !felt.type
+      function.return %self : !struct.type<@RepeatedGrowthRightThenLeft>
+    }
+  }
+}
+
+// CHECK-LABEL: @RepeatedGrowthRightThenLeft StructIntervals { }
+// CHECK-LABEL: @RepeatedGrowthRightThenLeft SSAIntervals {
+// CHECK-NEXT:      product {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] in TypeA:[ 8, 12 ]
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] in Entire
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] [arith.constant] in Degenerate(0) ( unreduced: Unreduced:[ 0, 0 ] )
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(1) ( unreduced: Unreduced:[ 1, 1 ] )
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(7) ( unreduced: Unreduced:[ 7, 7 ] )
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(8) ( unreduced: Unreduced:[ 8, 8 ] )
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(9) ( unreduced: Unreduced:[ 9, 9 ] )
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(11) ( unreduced: Unreduced:[ 11, 11 ] )
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(12) ( unreduced: Unreduced:[ 12, 12 ] )
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(14) ( unreduced: Unreduced:[ 14, 14 ] )
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] [felt.const] in Degenerate(20) ( unreduced: Unreduced:[ 20, 20 ] )
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 7, 11 ] ( unreduced: Unreduced:[ 7, 11 ] )
+// CHECK-NEXT:          %[[VAL_12:[0-9a-zA-Z_.-]+]] [felt.add] in TypeA:[ 8, 12 ] ( unreduced: Unreduced:[ 8, 12 ] )
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] [array.read] in TypeA:[ 8, 12 ]
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] [felt.add] in Degenerate(20)
+// CHECK-NEXT:          %[[VAL_15:[0-9a-zA-Z_.-]+]] [felt.add] in Degenerate(20)
+// CHECK-NEXT:      }
+// CHECK-NEXT:  }

@@ -210,7 +210,7 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayRejectsDynamicShape) {
 
   auto arrayValue = std::make_shared<witgen::ArrayValue>();
   arrayValue->type = arrayType;
-  arrayValue->elements.push_back(Field::getField(GetParam()).reduce(1));
+  arrayValue->elements.emplace_back(Field::getField(GetParam()).reduce(1));
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -226,10 +226,10 @@ TEST_P(WitgenFieldTests, SerializeJSONArrayNestedOutput) {
   arrayValue->type = arrayType;
   auto field = Field::getField(GetParam());
   // Canonicalization must reach every leaf of nested aggregate outputs.
-  arrayValue->elements.push_back(field.prime() + 1);
-  arrayValue->elements.push_back(-field.prime() + 2);
-  arrayValue->elements.push_back(-field.prime() * 2 + 3);
-  arrayValue->elements.push_back(field.prime() * 2 + 4);
+  arrayValue->elements.emplace_back(field.prime() + 1);
+  arrayValue->elements.emplace_back(-field.prime() + 2);
+  arrayValue->elements.emplace_back(-field.prime() * 2 + 3);
+  arrayValue->elements.emplace_back(field.prime() * 2 + 4);
 
   SymbolTableCollection tables;
   auto value = witgen::serializeJSONValue(arrayValue, arrayType, tables, nullptr);
@@ -266,7 +266,7 @@ TEST_P(WitgenFieldTests, SerializeFeltCanonicalizesWithoutChangingRuntimeValue) 
   for (const auto &[raw, expected] : cases) {
     witgen::WitnessVal runtimeValue = raw;
     auto json = witgen::serializeJSONValue(runtimeValue, feltType, tables, nullptr);
-    ASSERT_TRUE(json) << llvm::toString(json.takeError());
+    ASSERT_TRUE(static_cast<bool>(json)) << llvm::toString(json.takeError());
     EXPECT_EQ(json->getAsString(), expected);
     EXPECT_EQ(std::get<llvm::DynamicAPInt>(runtimeValue), raw);
   }
@@ -301,7 +301,7 @@ TEST_P(WitgenFieldTests, WtnsRejectsNoncanonicalWitnessValues) {
       GetParam()
   );
   auto module = parseSourceString<ModuleOp>(source, ParserConfig(&ctx));
-  ASSERT_TRUE(module);
+  ASSERT_TRUE(static_cast<bool>(module));
   const Field &field = Field::getField(GetParam());
   llvm::SmallString<128> outputPath;
   ASSERT_FALSE(llvm::sys::fs::createTemporaryFile("llzk-noncanonical", "wtns", outputPath));

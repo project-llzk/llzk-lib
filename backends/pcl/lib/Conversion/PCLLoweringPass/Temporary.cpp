@@ -42,7 +42,7 @@ class TemporariesBuilder {
   ModuleOp root;
 
   /// Gets the prefix associated with the operation type.
-  Prefix getPrefix(Operation *op) {
+  static Prefix getPrefix(Operation *op) {
     return TypeSwitch<Operation *, Prefix>(op)
         .CASE(llzk::NonDetOp, "__nondet")
         .CASE(arith::SelectOp, "__arith_select")

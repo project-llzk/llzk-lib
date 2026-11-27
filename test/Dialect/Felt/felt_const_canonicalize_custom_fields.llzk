@@ -8,7 +8,7 @@ module attributes {llzk.lang, llzk.fields = #felt.field<"small_prime", 7>} {
   }
 }
 // CHECK-LABEL:   function.def @custom_field() -> !felt.type<"small_prime"> {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  3 : <"small_prime">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"small_prime">
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"small_prime">
 // CHECK-NEXT:    }
 
@@ -22,6 +22,6 @@ module attributes {llzk.lang, llzk.fields = #felt.field<"521_bit", 6864797660130
   }
 }
 // CHECK-LABEL:   function.def @custom_field() -> !felt.type<"521_bit"> {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = felt.const  0 : <"521_bit">
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = felt.const  0 : <"521_bit">
 // CHECK-NEXT:      function.return %[[VAL_0]] : !felt.type<"521_bit">
 // CHECK-NEXT:    }

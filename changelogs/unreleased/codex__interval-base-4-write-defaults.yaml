@@ -1,0 +1,3 @@
+fixed:
+  - Interval Analysis: Remove stale no-write defaults independently of visitation order, retaining defaults for reads before initialization and writes to ambiguous targets.
+  - Interval Analysis: Recompute affected reads, calculations, and constraint refinements when stored intervals grow, while preserving valid refinements on unchanged reads.

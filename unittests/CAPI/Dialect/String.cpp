@@ -20,7 +20,7 @@
 
 TEST_F(CAPITest, llzk_string_type_get) {
   auto type = llzkString_StringTypeGet(context);
-  EXPECT_NE(type.ptr, (void *)NULL);
+  EXPECT_NE(type.ptr, (void *)nullptr);
 }
 
 TEST_F(CAPITest, llzk_type_is_a_string_type_pass) {

@@ -56,26 +56,26 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @unused_asserts(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn254">
+// CHECK-NEXT:    function.def @unused_asserts(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = cast.tofelt %[[VAL_0]] : index, !felt.type<"babybear">
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = cast.toindex %[[VAL_1]] : !felt.type<"bn254">
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @unused_nonasserts(%[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:    function.def @unused_nonasserts(%[[VAL_4:[0-9a-zA-Z_.-]+]]: index, %[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type<"bn254">) attributes {function.allow_non_native_field_ops} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @safe_constant_asserts() attributes {function.allow_non_native_field_ops} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @unused_boolean_asserts(%[[VAL_6:[0-9a-zA-Z_\.]+]]: i1) {
+// CHECK-NEXT:    function.def @unused_boolean_asserts(%[[VAL_6:[0-9a-zA-Z_.-]+]]: i1) {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @unused_small_field_asserts(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:    function.def @unused_small_field_asserts(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear">) attributes {function.allow_non_native_field_ops} {
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
-// CHECK-NEXT:    function.def @unused_fieldless_asserts(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_8]] : !felt.type
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = cast.toindex %[[VAL_8]] : !felt.type
+// CHECK-NEXT:    function.def @unused_fieldless_asserts(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_non_native_field_ops} {
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = cast.toindex %[[VAL_8]] : !felt.type
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = cast.toindex %[[VAL_8]] : !felt.type
 // CHECK-NEXT:      function.return
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

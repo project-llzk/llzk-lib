@@ -25,6 +25,8 @@ struct StorageDescription {
   component::StructDefOp definition;
   mlir::ArrayAttr family;
   llvm::SmallVector<int64_t> indices;
+  /// Concrete declared member shape, which may refine a dynamic read type.
+  mlir::Type memberType;
   bool signal = false;
 };
 
@@ -114,7 +116,7 @@ class ConstraintStorage {
       return constraintError(site, "run llzk-expose-child-members before reading child storage");
     }
     auto rolled = lookupTopLevelSymbol<component::StructDefOp>(
-        tables, llvm::cast<component::StructType>(read.getComponent().getType()).getNameRef(), site
+        tables, read.getComponent().getType().getNameRef(), site
     );
     if (mlir::failed(rolled)) {
       return mlir::failure();
@@ -130,8 +132,9 @@ class ConstraintStorage {
           site, "concrete family member cannot be represented through the rolled storage type"
       );
     }
+    info.memberType = member.getType();
     info.family = member->getAttrOfType<mlir::ArrayAttr>(FAMILY_ATTR);
-    info.signal = bool(member.getSignal()) || (parent.definition == main && member.hasPublicAttr());
+    info.signal = member.getSignal() || (parent.definition == main && member.hasPublicAttr());
     return mlir::success();
   }
 

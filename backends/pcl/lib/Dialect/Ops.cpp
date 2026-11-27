@@ -236,7 +236,7 @@ struct RewriteXTimesMinus1ToNegX : public OpRewritePattern<MulOp> {
   }
 
 private:
-  FailureOr<Value> matchOperands(MulOp op, PrimeAttr prime) const {
+  static FailureOr<Value> matchOperands(MulOp op, PrimeAttr prime) {
     auto lhs = matchOperandsImpl(op.getLhs(), op.getRhs(), prime);
     if (succeeded(lhs)) {
       return lhs;
@@ -244,7 +244,7 @@ private:
     return matchOperandsImpl(op.getRhs(), op.getLhs(), prime);
   }
 
-  FailureOr<Value> matchOperandsImpl(Value lhs, Value rhs, PrimeAttr prime) const {
+  static FailureOr<Value> matchOperandsImpl(Value lhs, Value rhs, PrimeAttr prime) {
     auto feltAttr = getAttr(lhs);
     if (!feltAttr) {
       return failure();
@@ -257,7 +257,7 @@ private:
     return rhs;
   }
 
-  FeltAttr getAttr(Value v) const {
+  static FeltAttr getAttr(Value v) {
     Attribute attr;
     if (!matchPattern(v, m_Constant(&attr))) {
       return FeltAttr();
@@ -317,7 +317,7 @@ struct ZeroMinusXToNegX : public OpRewritePattern<SubOp> {
   }
 
 private:
-  FeltAttr getLhsAttr(SubOp op) const {
+  static FeltAttr getLhsAttr(SubOp op) {
     Attribute attr;
     if (!matchPattern(op.getLhs(), m_Constant(&attr))) {
       return FeltAttr();
@@ -384,7 +384,7 @@ struct FoldEqBoolean : public OpRewritePattern<CmpEqOp> {
 
 private:
   /// Matches the assertion to a pattern.
-  FailureOr<FoldedEq> matchAssertion(CmpEqOp op) const {
+  static FailureOr<FoldedEq> matchAssertion(CmpEqOp op) {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
     if (succeeded(lhsMatch)) {
       return lhsMatch;
@@ -394,7 +394,7 @@ private:
   }
 
   /// Simpler pattern that assumes only LHS can be the constant.
-  FailureOr<FoldedEq> matchAssertionImpl(Value lhs, Value rhs) const {
+  static FailureOr<FoldedEq> matchAssertionImpl(Value lhs, Value rhs) {
     Attribute attr;
     auto rhsAsBool = llvm::dyn_cast_if_present<AsFeltOp>(rhs.getDefiningOp());
 
@@ -461,7 +461,7 @@ struct FoldEqOfZeroAndSum : public OpRewritePattern<CmpEqOp> {
 private:
   /// Picks the operands of the add op `X` and `Y` for creating
   /// the new eq operation as `(= X Y)`
-  std::pair<Value, Value> pickOperands(AddOp op, PatternRewriter &rewriter) const {
+  static std::pair<Value, Value> pickOperands(AddOp op, PatternRewriter &rewriter) {
     auto X = op.getLhs();
     auto Y = op.getRhs();
     auto Xop = llvm::dyn_cast_if_present<NegOp>(X.getDefiningOp());
@@ -478,7 +478,7 @@ private:
   }
 
   /// Matches the assertion to a pattern.
-  AddOp matchAssertion(CmpEqOp op) const {
+  static AddOp matchAssertion(CmpEqOp op) {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
     if (lhsMatch) {
       return lhsMatch;
@@ -488,7 +488,7 @@ private:
   }
 
   /// Simpler pattern that assumes only LHS can be the constant.
-  AddOp matchAssertionImpl(Value lhs, Value rhs) const {
+  static AddOp matchAssertionImpl(Value lhs, Value rhs) {
     Attribute attr;
 
     if (!matchPattern(lhs, m_Constant(&attr))) {
@@ -520,7 +520,7 @@ struct FoldEqOfZeroAndSub : public OpRewritePattern<CmpEqOp> {
 
 private:
   /// Matches the assertion to a pattern.
-  SubOp matchAssertion(CmpEqOp op) const {
+  static SubOp matchAssertion(CmpEqOp op) {
     auto lhsMatch = matchAssertionImpl(op.getLhs(), op.getRhs());
     if (lhsMatch) {
       return lhsMatch;
@@ -530,7 +530,7 @@ private:
   }
 
   /// Simpler pattern that assumes only LHS can be the constant.
-  SubOp matchAssertionImpl(Value lhs, Value rhs) const {
+  static SubOp matchAssertionImpl(Value lhs, Value rhs) {
     Attribute attr;
 
     if (!matchPattern(lhs, m_Constant(&attr))) {

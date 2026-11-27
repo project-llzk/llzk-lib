@@ -150,7 +150,7 @@ class ModuleEmitter {
   }
 
   /// Emits the s-expression that closes a module: `(end-module)`.
-  void emitModuleFooter(pcl::Sexps &S) { S.push(S.sexp({S.atom("end-module")})); }
+  static void emitModuleFooter(pcl::Sexps &S) { S.push(S.sexp({S.atom("end-module")})); }
 
   /// Emits an input declaration.
   template <typename T> void emitInput(pcl::Sexps &S, T name) {

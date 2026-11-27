@@ -31,7 +31,10 @@
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/Pass/AnalysisManager.h>
 
+#include <llvm/ADT/StringRef.h>
+
 #include <map>
+#include <string>
 
 namespace llzk {
 
@@ -165,13 +168,19 @@ public:
   /// @param am The module-level analysis manager that will be passed to
   /// `StructAnalysis::runAnalysis`. This analysis manager should be the same analysis manager used
   /// to construct this analysis.
-  virtual void runAnalysis(mlir::AnalysisManager &am) { constructChildAnalyses(am); }
+  /// @return Failure if the input is unsupported; no solver or result state is created then.
+  virtual mlir::LogicalResult runAnalysis(mlir::AnalysisManager &am) {
+    if (mlir::failed(validateInput(modOp))) {
+      return mlir::failure();
+    }
+    constructChildAnalyses(am);
+    return mlir::success();
+  }
 
   /// @brief Runs the analysis if the results do not already exist.
-  void ensureAnalysisRun(mlir::AnalysisManager &am) {
-    if (!constructed()) {
-      runAnalysis(am);
-    }
+  /// @return Failure if the input is unsupported.
+  mlir::LogicalResult ensureAnalysisRun(mlir::AnalysisManager &am) {
+    return constructed() ? mlir::success() : runAnalysis(am);
   }
 
   /// @brief Check if the results of this analysis have been created for the currently
@@ -199,6 +208,14 @@ public:
 
 protected:
   mlir::DataFlowSolver solver;
+
+  /// @brief Diagnose unsupported input before running dataflow or constructing results.
+  ///
+  /// The default implementation always returns success. Override this method to
+  /// perform any necessary validation on the input module before running the analysis.
+  virtual mlir::LogicalResult validateInput(mlir::ModuleOp /*module*/) const {
+    return mlir::success();
+  }
 
   /// @brief Initialize the shared dataflow solver with any common analyses required
   /// by the contained struct analyses.
@@ -234,9 +251,10 @@ protected:
         mlir::LogicalResult childAnalysisRes = childAnalysis.runAnalysis(solver, am, ctx);
 
         if (mlir::failed(childAnalysisRes)) {
-          auto error_message = "StructAnalysis failed to run for " + s.getName();
+          const std::string error_message =
+              ("StructAnalysis failed to run for " + s.getName()).str();
           s->emitError(error_message).report();
-          llvm::report_fatal_error(error_message);
+          llvm::report_fatal_error(llvm::StringRef(error_message));
         }
       }
 

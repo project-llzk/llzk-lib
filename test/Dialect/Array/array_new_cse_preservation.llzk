@@ -27,11 +27,11 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main>} {
 }
 
 // CHECK-LABEL: function.def @compute(
-// CHECK-SAME:    %[[A:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">
-// CHECK-SAME:    %[[B:[0-9a-zA-Z_\.]+]]: !felt.type<"babybear">
-// CHECK:         %[[X:[0-9a-zA-Z_\.]+]] = array.new %[[A]] : <1 x !felt.type<"babybear">>
-// CHECK:         %[[Y:[0-9a-zA-Z_\.]+]] = array.new %[[A]] : <1 x !felt.type<"babybear">>
+// CHECK-SAME:    %[[A:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear">
+// CHECK-SAME:    %[[B:[0-9a-zA-Z_.-]+]]: !felt.type<"babybear">
+// CHECK:         %[[X:[0-9a-zA-Z_.-]+]] = array.new %[[A]] : <1 x !felt.type<"babybear">>
+// CHECK:         %[[Y:[0-9a-zA-Z_.-]+]] = array.new %[[A]] : <1 x !felt.type<"babybear">>
 // CHECK:         array.write %[[X]]
 // CHECK-SAME:      = %[[B]]
-// CHECK:         %[[R:[0-9a-zA-Z_\.]+]] = array.read %[[Y]]
+// CHECK:         %[[R:[0-9a-zA-Z_.-]+]] = array.read %[[Y]]
 // CHECK:         struct.writem {{.*}}[@out] = %[[R]]

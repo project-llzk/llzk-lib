@@ -40,7 +40,7 @@ class BuildShortTypeString {
   std::string ret;
   llvm::raw_string_ostream ss;
 
-  BuildShortTypeString() : ret(), ss(ret) {}
+  BuildShortTypeString() : ss(ret) {}
   BuildShortTypeString &append(mlir::Type);
   BuildShortTypeString &append(mlir::ArrayRef<mlir::Attribute>);
   BuildShortTypeString &append(mlir::Attribute);
@@ -247,6 +247,14 @@ bool podTypesUnify(
 bool functionTypesUnify(
     mlir::FunctionType lhs, mlir::FunctionType rhs,
     mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}, UnificationMap *unifications = nullptr
+);
+
+/// Unify a complete signature with transitive, side-qualified symbolic bindings.
+/// Unlike UnificationMap's null entries, this distinguishes compatible unresolved bindings from
+/// conflicts, including alias chains and repeated parameters within aggregate arguments/results.
+bool functionTypesUnifyConsistently(
+    mlir::FunctionType lhs, mlir::FunctionType rhs,
+    mlir::ArrayRef<llvm::StringRef> rhsReversePrefix = {}
 );
 
 /// Return `true` iff the two Type instances are equivalent or could be equivalent after full

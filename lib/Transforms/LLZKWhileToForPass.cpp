@@ -20,8 +20,9 @@
 ///
 /// This pass begins by identifying the induction variable, lower and upper bounds, and step
 /// (`ForOp::parseInfo`), then materializes a for loop with these parameters and copies the `before`
-/// and `after` blocks into the body, drops the yielded induction variable, and remaps uses of the
-/// other yielded values (`transformWhileToFor`).
+/// and `after` blocks into the body, and remaps uses of the yielded values (`transformWhileToFor`).
+/// When the condition region is not pure, it is also executed after the for loop using the final
+/// yielded values, including the original induction variable. Otherwise, that variable is dropped.
 //===----------------------------------------------------------------------===//
 
 #include "llzk/Dialect/Bool/IR/Ops.h"
@@ -31,11 +32,15 @@
 #include "llzk/Dialect/LLZK/IR/Attrs.h"
 #include "llzk/Transforms/ConversionUtils.h"
 #include "llzk/Transforms/LLZKTransformationPasses.h"
+#include "llzk/Util/BuilderHelper.h"
+#include "llzk/Util/DynamicAPIntHelper.h"
 #include "llzk/Util/Field.h"
 
+#include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
 
 #include <llvm/Support/Debug.h>
+#include <llvm/Support/Error.h>
 
 #include <algorithm>
 #include <cassert>
@@ -58,6 +63,9 @@ namespace {
 struct ForOpInfo {
   // SSA values holding the loop bounds
   std::optional<Value> lb, ub, step;
+
+  // Overflow semantics for reconstructing a felt induction variable in the body.
+  llzk::cast::OverflowSemantics ivarOverflow = llzk::cast::OverflowSemantics::ASSERT;
 
   // Block argument index of the induction variable in the *before* block
   std::optional<size_t> ivarIndexBefore;
@@ -130,20 +138,58 @@ static inline ForOpInfo parseInfo(WhileOp op) {
   OpBuilder builder(op);
   // Materialize a felt bound before the loop in the supplied induction variable type.
   auto createBound = [&builder, &op](const llvm::DynamicAPInt &value, FeltType type) -> Value {
-    auto attr = FeltConstAttr::get(builder.getContext(), value, type);
-    return FeltConstantOp::create(builder, op.getLoc(), attr).getResult();
+    return FeltConstantOp::create(builder, op.getLoc(), type, value).getResult();
   };
 
   // We need an induction variable anyway, but if the loop has {llzk.loopbounds} we can skip trying
   // to parse the rest of the bounds and just materialize constants
   if (op->hasAttr(llzk::LoopBoundsAttr::name)) {
     auto bounds = op->getAttrOfType<llzk::LoopBoundsAttr>(llzk::LoopBoundsAttr::name);
-    auto ivarType = cast<FeltType>(op.getBeforeArguments()[*info.ivarIndexBefore].getType());
+    // Signed annotations must not become field representatives before conversion to index.
+    // This conversion only supports nonnegative bounds and a positive scf.for step.
+    if (bounds.getLower() < 0 || bounds.getUpper() < 0 || bounds.getStep() <= 0) {
+      reportFailureReason("loopbounds must have nonnegative bounds and a positive step");
+      return info;
+    }
+    // The sign checks above and checkedToInt64 enforce the nonnegative index storage range.
+    // Retain the converted values so validation and constant materialization cannot disagree.
+    SmallVector<int64_t, 3> indexBounds;
+    for (const auto &value : {bounds.getLower(), bounds.getUpper(), bounds.getStep()}) {
+      auto converted = llzk::checkedToInt64(value);
+      if (!converted) {
+        reportFailureReason("loopbounds values cannot be represented as nonnegative indices")
+            << ": " << llvm::toString(converted.takeError());
+        return info;
+      }
+      indexBounds.push_back(*converted);
+    }
+    // scf.for also requires the value after the final increment to fit, even though it is
+    // outside the iteration range. Compute it with mathematical integers to avoid overflow.
+    if (bounds.getLower() < bounds.getUpper()) {
+      auto tripCount = bounds.getTripCount();
+      auto end = bounds.getInductionValue(tripCount);
+      if (auto convertedEnd = llzk::checkedToInt64(end); !convertedEnd) {
+        reportFailureReason("loopbounds final induction value cannot be represented as an index")
+            << ": " << llvm::toString(convertedEnd.takeError());
+        return info;
+      }
+      // Only executed IVs need to fit the field, not the exclusive upper bound or final
+      // increment. Positive steps make the last executed IV the largest. Empty loops
+      // retain ASSERT because the body cast never executes, even with an unknown field.
+      if (auto type = dyn_cast<FeltType>(ivarBefore.getType());
+          type && (!type.hasField() ||
+                   bounds.getInductionValue(tripCount - 1) >= type.getField().prime())) {
+        info.ivarOverflow = llzk::cast::OverflowSemantics::WRAP;
+      }
+    }
 
-    // Make these constant felts for now; the actual for op builder will later clean it up
-    info.lb = createBound(bounds.getLower(), ivarType);
-    info.ub = createBound(bounds.getUpper(), ivarType);
-    info.step = createBound(bounds.getStep(), ivarType);
+    // Annotations are mathematical integers, independent of the induction variable's field.
+    auto createIndexBound = [&builder, &op](int64_t value) -> Value {
+      return arith::ConstantIndexOp::create(builder, op.getLoc(), value);
+    };
+    info.lb = createIndexBound(indexBounds[0]);
+    info.ub = createIndexBound(indexBounds[1]);
+    info.step = createIndexBound(indexBounds[2]);
     return info;
   }
 
@@ -185,16 +231,6 @@ static inline ForOpInfo parseInfo(WhileOp op) {
           // bounding hi also bounds lo and hi - lo.
           if (hi > std::numeric_limits<int64_t>::max()) {
             reportFailureReason("upper bound cannot be represented as a nonnegative index");
-            return info;
-          }
-          // A while loop also executes the condition region on its final check.
-          // Dropping that execution is only safe for pure preamble operations.
-          bool purePreamble =
-              llvm::all_of(op.getBefore().front().without_terminator(), [](Operation &preambleOp) {
-            return mlir::isPure(&preambleOp);
-          });
-          if (!purePreamble) {
-            reportFailureReason("condition region contains operations that are not pure");
             return info;
           }
           // Use canonical representatives, including when source literals are negative.
@@ -272,17 +308,22 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
   auto ub = copyIfNeeded(*info.ub);
   auto step = copyIfNeeded(*info.step);
 
-  // Store the original type of the scf.while's induction var so we can cast back if necessary
+  // Inferred bounds must share a type; annotated bounds are already index constants.
   llzk::ensure(
       lb.getType() == ub.getType() && lb.getType() == step.getType(),
       "cannot have differing types for loop bounds"
   );
-  Type ivarType = lb.getType();
-  if (isa<FeltType>(ivarType)) {
-    lb = toIndex(lb);
-    ub = toIndex(ub);
-    step = toIndex(step);
-  }
+  // Store the original type of the scf.while's induction var so we can cast back if necessary.
+  Type ivarType = op.getBeforeArguments()[*info.ivarIndexBefore].getType();
+  lb = toIndex(lb);
+  ub = toIndex(ub);
+  step = toIndex(step);
+
+  auto *whilePreamble = op.getBeforeBody();
+  bool preserveFinalCondition =
+      llvm::any_of(whilePreamble->without_terminator(), [](Operation &preambleOp) {
+    return !mlir::isPure(&preambleOp);
+  });
 
   SmallVector<Value> inits;
   for (auto [i, init] : llvm::enumerate(op.getInits())) {
@@ -290,6 +331,13 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
       continue;
     }
     inits.push_back(init);
+  }
+
+  if (preserveFinalCondition) {
+    // Carry the original IV separately for the final condition check. The body may yield a
+    // different value from the index IV's final increment, for example a constant or a wrapped
+    // felt. For an empty loop, the final check must instead receive the original initializer.
+    inits.push_back(op.getInits()[*info.ivarIndexBefore]);
   }
 
   // Build the skeleton of the for loop
@@ -300,77 +348,62 @@ transformWhileToFor(scf::WhileOp op, ForOpInfo info, RewriterBase &rewriter) {
 
   auto inductionVar = forOp.getInductionVar();
   if (isa<FeltType>(ivarType)) {
-    // If the induction var was a felt, we need to cast it back to felt in the scf.for body
-    // Note that this means the body of the scf.for might cast it back to index again anyway, but
-    // --canonicalize should fix that
-    inductionVar = llzk::cast::IntToFeltOp::create(rewriter, forOp.getLoc(), ivarType, inductionVar)
+    inductionVar = llzk::cast::IntToFeltOp::create(
+                       rewriter, forOp.getLoc(), ivarType, info.ivarOverflow, inductionVar
+    )
                        .getResult();
   }
 
-  // Start by mapping the `before` block to the loop body
-  // Each block arg of the before block should get mapped to the corresponding iter_arg, with the
-  // exception of the induction var which should get mapped to the induction var
-  auto *whilePreamble = op.getBeforeBody();
-  for (size_t i = 0; i < whilePreamble->getNumArguments(); i++) {
-    if (i == info.ivarIndexBefore) {
-      mapping.map(whilePreamble->getArgument(i), inductionVar);
-      continue;
-    }
-    mapping.map(
-        whilePreamble->getArgument(i), forOp.getRegionIterArg(i > info.ivarIndexBefore ? i - 1 : i)
+  // Substitute the index-driven IV while retaining the other loop-carried arguments.
+  SmallVector<Value> beforeArguments;
+  for (size_t i = 0; i < whilePreamble->getNumArguments(); ++i) {
+    beforeArguments.push_back(
+        i == info.ivarIndexBefore ? inductionVar
+                                  : forOp.getRegionIterArg(i > info.ivarIndexBefore ? i - 1 : i)
     );
   }
+  auto forwarded = llzk::cloneBlockWithMappedArguments(
+      rewriter, *whilePreamble, beforeArguments, op.getConditionOp().getArgs()
+  );
+  auto yielded = llzk::cloneBlockWithMappedArguments(
+      rewriter, *op.getAfterBody(), forwarded, op.getYieldedValues()
+  );
 
-  // Emit the preamble into the for loop body
-  for (auto &preambleOp : *whilePreamble) {
-    // Don't emit the scf.condition; rather, use it to update the mapping in preparation for the
-    // loop body
-    if (auto condOp = dyn_cast<scf::ConditionOp>(&preambleOp)) {
-      for (auto [value, blockArg] : llvm::zip(condOp.getArgs(), op.getAfterArguments())) {
-        // TODO: maybe this isn't transitive?
-        mapping.map(blockArg, mapping.lookupOrDefault(value));
-      }
-      continue;
+  // The index IV drives the next iteration; carry its original yield only for the final check.
+  SmallVector<Value> valuesToYield;
+  for (auto [i, value] : llvm::enumerate(yielded)) {
+    if (i != info.ivarIndexAfter) {
+      valuesToYield.push_back(value);
     }
-    rewriter.clone(preambleOp, mapping);
+  }
+  if (preserveFinalCondition) {
+    valuesToYield.push_back(yielded[*info.ivarIndexBefore]);
+  }
+  if (!valuesToYield.empty()) {
+    scf::YieldOp::create(rewriter, op.getYieldOp().getLoc(), valuesToYield);
   }
 
-  auto *whileBody = op.getAfterBody();
-
-  for (auto &bodyOp : *whileBody) {
-    // scf.yield is special here because we don't want to yield the induction var to the next
-    // iteration...
-    if (auto yieldOp = dyn_cast<scf::YieldOp>(&bodyOp)) {
-      SmallVector<Value> valuesToYield;
-      for (auto [i, val] : llvm::enumerate(yieldOp.getResults())) {
-        if (i == info.ivarIndexAfter) {
-          continue;
-        }
-        // ...but the other yielded values should point to the correct iter_arg
-        valuesToYield.push_back(mapping.lookupOrDefault(val));
-      }
-      if (!valuesToYield.empty()) {
-        scf::YieldOp::create(rewriter, yieldOp.getLoc(), valuesToYield);
-      }
-      continue;
-    }
-    rewriter.clone(bodyOp, mapping);
-  }
-
-  // scf.for doesn't explicitly yield its induction var from the final iteration, so we need to
-  // reconstruct it
+  // Match the original result list, retaining the final IV when the condition region needs it.
   SmallVector<Value> replacedValues;
   for (auto [i, result] : llvm::enumerate(op.getResults())) {
     if (i == info.ivarIndexBefore) {
-      // Note that the final value of the induction variable might not actually be the upper bound
-      // (e.g. if `step` doesn't divide `(ub - lb)`), but we've already guaranteed earlier that this
-      // value isn't being used so it doesn't matter what gets yielded here (the canonicalizer can
-      // clean it up). But we still have to yield something to preserve the shape of the op.
-      replacedValues.push_back(*info.ub);
+      // parseInfo guarantees this result is unused. The original initializer has its type,
+      // even when the annotated loop bounds were materialized as index constants.
+      replacedValues.push_back(
+          preserveFinalCondition ? forOp.getResults().back() : op.getInits()[*info.ivarIndexBefore]
+      );
       continue;
     }
 
     replacedValues.push_back(forOp.getResult(i > info.ivarIndexBefore ? i - 1 : i));
+  }
+
+  if (preserveFinalCondition) {
+    rewriter.setInsertionPointAfter(forOp);
+    // The helper uses a fresh mapping so values inside the for loop cannot escape its region.
+    llzk::cloneBlockWithMappedArguments(
+        rewriter, *whilePreamble, replacedValues, op.getConditionOp().getArgs()
+    );
   }
 
   rewriter.replaceOp(op, replacedValues);
@@ -382,7 +415,7 @@ class PassImpl : public llzk::impl::WhileToForPassBase<PassImpl> {
   using Base::Base;
 
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<llzk::cast::CastDialect>();
+    registry.insert<arith::ArithDialect, llzk::cast::CastDialect>();
   }
   void runOnOperation() override {
     Operation *op = getOperation();

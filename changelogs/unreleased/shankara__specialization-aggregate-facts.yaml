@@ -1,0 +1,2 @@
+fixed:
+  - Resolve specialization arguments stored in local PODs and arrays, preserving value-copy semantics and discarding facts across unknown writes, calls, and control flow.

@@ -1,0 +1,2 @@
+fixed:
+  - Interval Analysis: Avoid applying same-value product decomposition bounds to independent component selections or reads separated by potentially overlapping writes while preserving bounds for proven read aliases.

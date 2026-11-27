@@ -66,7 +66,7 @@ bool symbolKnownUseEmpty(mlir::StringAttr symbol, mlir::Region *from);
 bool symbolKnownUseEmpty(mlir::Operation *symbol, mlir::Region *from);
 
 /// Returns the name of the given symbol operation, or nullptr if no symbol is present.
-mlir::StringAttr getSymbolName(mlir::Operation *symbol);
+mlir::StringAttr getSymbolName(mlir::Operation *op);
 inline mlir::StringAttr getSymbolName(mlir::SymbolOpInterface symbol) {
   return getSymbolName(symbol.getOperation());
 }

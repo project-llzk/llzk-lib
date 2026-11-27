@@ -7,12 +7,14 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @new_empty() -> index {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -22,12 +24,14 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @new_only() -> index {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -38,12 +42,14 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @new_then_write(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
+// CHECK-NEXT:    function.def @new_then_write(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
 // CHECK-NEXT:      function.return %[[VAL_1]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -54,11 +60,13 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @new_then_write_then_read(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @new_then_write_then_read(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -68,12 +76,14 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    function.def @new_then_read_without_write() -> index {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = llzk.nondet : index
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = llzk.nondet : index
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -84,11 +94,13 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @requires_step0(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @requires_step0(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -97,11 +109,13 @@ module attributes {llzk.lang} {
     function.return %ret : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @single_record_arg(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> index {
+// CHECK-NEXT:    function.def @single_record_arg(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> index {
 // CHECK-NEXT:      function.return %[[VAL_0]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Leaf = !pod.type<[@a: index, @b: index, @c: index]>
@@ -154,17 +168,19 @@ module attributes {llzk.lang} {
     function.return %sum5 : index
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @nested_pod_type(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index, %[[VAL_4:[0-9a-zA-Z_\.]+]]: index, %[[VAL_5:[0-9a-zA-Z_\.]+]]: index) -> index {
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_0]], %[[VAL_5]] : index
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_2]] : index
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_7]], %[[VAL_4]] : index
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_8]], %[[VAL_1]] : index
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_9]], %[[VAL_4]] : index
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_10]], %[[VAL_5]] : index
+// CHECK-NEXT:    function.def @nested_pod_type(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index, %[[VAL_4:[0-9a-zA-Z_.-]+]]: index, %[[VAL_5:[0-9a-zA-Z_.-]+]]: index) -> index {
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_0]], %[[VAL_5]] : index
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_6]], %[[VAL_2]] : index
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_7]], %[[VAL_4]] : index
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_8]], %[[VAL_1]] : index
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_9]], %[[VAL_4]] : index
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_10]], %[[VAL_5]] : index
 // CHECK-NEXT:      function.return %[[VAL_11]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 !Inner = !pod.type<[@x: index, @y: index]>
@@ -202,28 +218,30 @@ module attributes {llzk.lang} {
     }
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @NestedMemberPod {
-// CHECK-DAG:       struct.member @p_a_x : index
-// CHECK-DAG:       struct.member @p_a_y : index
-// CHECK-DAG:       struct.member @p_b : index
-// CHECK-DAG:       struct.member @out : index
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index, %[[VAL_1:[0-9a-zA-Z_\.]+]]: index, %[[VAL_2:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@NestedMemberPod> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@NestedMemberPod>
-// CHECK-DAG:         struct.writem %[[VAL_3]][@p_b] = %[[VAL_2]] : <@NestedMemberPod>, index
-// CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_y] = %[[VAL_1]] : <@NestedMemberPod>, index
-// CHECK-DAG:         struct.writem %[[VAL_3]][@p_a_x] = %[[VAL_0]] : <@NestedMemberPod>, index
-// CHECK-DAG:         %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_b] : <@NestedMemberPod>, index
-// CHECK-DAG:         %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_3]][@p_a_x] : <@NestedMemberPod>, index
-// CHECK-NEXT:        %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_6]], %[[VAL_4]] : index
-// CHECK-NEXT:        struct.writem %[[VAL_3]][@out] = %[[VAL_7]] : <@NestedMemberPod>, index
+// CHECK-DAG:      struct.member @p_a_x : index
+// CHECK-DAG:      struct.member @p_a_y : index
+// CHECK-DAG:      struct.member @p_b : index
+// CHECK-DAG:      struct.member @out : index
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index, %[[VAL_1:[0-9a-zA-Z_.-]+]]: index, %[[VAL_2:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@NestedMemberPod> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@NestedMemberPod>
+// CHECK-DAG:        struct.writem %[[VAL_3]][@p_a_y] = %[[VAL_1]] : <@NestedMemberPod>, index
+// CHECK-DAG:        struct.writem %[[VAL_3]][@p_a_x] = %[[VAL_0]] : <@NestedMemberPod>, index
+// CHECK-DAG:        struct.writem %[[VAL_3]][@p_b] = %[[VAL_2]] : <@NestedMemberPod>, index
+// CHECK-DAG:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@p_a_x] : <@NestedMemberPod>, index
+// CHECK-DAG:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_3]][@p_b] : <@NestedMemberPod>, index
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_4]], %[[VAL_5]] : index
+// CHECK-NEXT:        struct.writem %[[VAL_3]][@out] = %[[VAL_6]] : <@NestedMemberPod>, index
 // CHECK-NEXT:        function.return %[[VAL_3]] : !struct.type<@NestedMemberPod>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@NestedMemberPod>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: index, %[[VAL_10:[0-9a-zA-Z_\.]+]]: index, %[[VAL_11:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@NestedMemberPod>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: index, %[[VAL_9:[0-9a-zA-Z_.-]+]]: index, %[[VAL_10:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
+
 // -----
 
 module attributes {llzk.lang} {
@@ -245,20 +263,21 @@ module attributes {llzk.lang} {
     function.return %component : !struct.type<@NeedsInput>
   }
 }
+
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    struct.def @NeedsInput {
 // CHECK-NEXT:      struct.member @m : index
-// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_\.]+]]: index) -> !struct.type<@NeedsInput> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@NeedsInput>
+// CHECK-NEXT:      function.def @compute(%[[VAL_0:[0-9a-zA-Z_.-]+]]: index) -> !struct.type<@NeedsInput> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@NeedsInput>
 // CHECK-NEXT:        struct.writem %[[VAL_1]][@m] = %[[VAL_0]] : <@NeedsInput>, index
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@NeedsInput>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@NeedsInput>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: index) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@NeedsInput>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: index) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.def @new_then_read_struct_without_write() -> !struct.type<@NeedsInput> {
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = llzk.nondet : !struct.type<@NeedsInput>
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = llzk.nondet : !struct.type<@NeedsInput>
 // CHECK-NEXT:      function.return %[[VAL_4]] : !struct.type<@NeedsInput>
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

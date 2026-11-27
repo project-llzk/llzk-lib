@@ -16,7 +16,7 @@ module attributes {llzk.lang, llzk.main = !struct.type<@Main<[]>>, test.scenario
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "plain"} {
 // CHECK:        struct.def @Main__spec_0 {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@Main__spec_0>
 // CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@Main__spec_0>
 // CHECK:        } {poly.arguments = [], poly.origin = @Main, poly.specialization_id = 0 : i64}
 
@@ -38,6 +38,6 @@ module attributes {llzk.lang, llzk.main = !struct.type<@MainTemplate::@Main>, te
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>, test.scenario = "template"} {
 // CHECK:        struct.def @Main__spec_0 {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@Main__spec_0>
 // CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@Main__spec_0>
 // CHECK:        } {poly.arguments = [], poly.origin = @MainTemplate::@Main, poly.specialization_id = 0 : i64}

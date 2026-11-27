@@ -14,7 +14,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    include.from "Transforms/ConstGlobalPropagation/Inputs/included_constant.llzk" as @constants
 // CHECK-NEXT:    function.def @read_constant() -> index {
-// CHECK-NEXT:      %[[N:[0-9a-zA-Z_\.]+]] = global.read const @constants::@N : index
+// CHECK-NEXT:      %[[N:[0-9a-zA-Z_.-]+]] = global.read const @constants::@N : index
 // CHECK-NEXT:      function.return %[[N]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }
@@ -23,7 +23,7 @@ module attributes {llzk.lang} {
 // INLINE-NEXT:    module @constants attributes {llzk.lang} {
 // INLINE-NEXT:    }
 // INLINE-NEXT:    function.def @read_constant() -> index {
-// INLINE-NEXT:      %[[N:[0-9a-zA-Z_\.]+]] = arith.constant 3 : index
+// INLINE-NEXT:      %[[N:[0-9a-zA-Z_.-]+]] = arith.constant 3 : index
 // INLINE-NEXT:      function.return %[[N]] : index
 // INLINE-NEXT:    }
 // INLINE-NEXT:  }

@@ -283,7 +283,7 @@ class PassImpl : public llzk::impl::RedundantOperationEliminationPassBase<PassIm
     DenseSet<Operation *> queuedDeadOps;
     auto enqueueDeadOpCandidate = [&](Value value) {
       Operation *definingOp = value.getDefiningOp();
-      if (!definingOp || redundantOpSet.count(definingOp) ||
+      if (!definingOp || redundantOpSet.contains(definingOp) ||
           !queuedDeadOps.insert(definingOp).second) {
         return;
       }

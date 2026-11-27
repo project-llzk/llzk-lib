@@ -23,11 +23,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    include.from "Inputs/template_signature_namespace.llzk" as @Lib
 // CHECK-NEXT:    poly.template @Caller {
 // CHECK-NEXT:      poly.param @T : !poly.tvar<@T>
-// CHECK-NEXT:      function.def @explicit(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:      function.def @explicit(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
 // CHECK-NEXT:        function.call @Lib::@Target::@accept<[@T]>(%[[VAL_0]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @inferred(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
+// CHECK-NEXT:      function.def @inferred(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Lib::@Target::@Box<[@T]>>) {
 // CHECK-NEXT:        function.call @Lib::@Target::@accept(%[[VAL_1]]) : (!struct.type<@Lib::@Target::@Box<[@T]>>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }

@@ -10,8 +10,8 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: module attributes {llzk.lang} {
-// CHECK-NEXT:    function.def @len_empty_leaf_static_arg_after_array_to_scalar(%[[ARR:[0-9a-zA-Z_\.]+]]: !array.type<4 x none>) -> index {
-// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
+// CHECK-NEXT:    function.def @len_empty_leaf_static_arg_after_array_to_scalar(%[[ARR:[0-9a-zA-Z_.-]+]]: !array.type<4 x none>) -> index {
+// CHECK-NEXT:      %[[LEN:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
 // CHECK-NEXT:      function.return %[[LEN]] : index
 // CHECK-NEXT:    }
 // CHECK-NEXT:  }

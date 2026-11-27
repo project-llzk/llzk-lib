@@ -48,12 +48,7 @@ class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
   void runOnOperation() override {
     markAllAnalysesPreserved();
 
-    auto modOp = llvm::dyn_cast<ModuleOp>(getOperation());
-    if (!modOp) {
-      constexpr const char *msg = "IntervalAnalysisPrinterPass error: should be run on ModuleOp!";
-      getOperation()->emitError(msg).report();
-      return;
-    }
+    ModuleOp modOp = getOperation();
 
     // Initialize to the fallback field value
     FieldRef selectedField = Field::getField("bn128");
@@ -93,7 +88,9 @@ class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
     mia.setPropagateInputConstraints(propagateInputConstraints);
     mia.setTrackUnreducedIntervals(printUnreducedIntervals);
     auto am = getAnalysisManager();
-    mia.ensureAnalysisRun(am);
+    if (failed(mia.ensureAnalysisRun(am))) {
+      return signalPassFailure();
+    }
     AsmState asmState(modOp);
 
     auto printValueInterval = [this, &asmState, &mia](raw_ostream &out, int indent, Value value) {
@@ -109,7 +106,7 @@ class PassImpl : public llzk::impl::IntervalAnalysisPrinterPassBase<PassImpl> {
       out.indent(indent);
       value.printAsOperand(out, asmState);
       if (auto opResult = llvm::dyn_cast<OpResult>(value)) {
-        out << " [" << opResult.getOwner()->getName().getStringRef() << "]";
+        out << " [" << opResult.getOwner()->getName().getStringRef() << ']';
       }
       out << " in " << expr.getInterval();
       if (printUnreducedIntervals && expr.hasUnreducedInterval()) {

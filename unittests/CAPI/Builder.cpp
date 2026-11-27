@@ -40,14 +40,14 @@ static void test_cb1(MlirOperation, MlirOpBuilderInsertPoint, void *) {}
 static void test_cb2(MlirBlock, MlirRegion, MlirBlock, void *) {}
 
 TEST_F(CAPITest, MlirOpBuilderCreateWithListener) {
-  auto listener = mlirOpBuilderListenerCreate(test_cb1, test_cb2, NULL);
+  auto listener = mlirOpBuilderListenerCreate(test_cb1, test_cb2, nullptr);
   auto builder = mlirOpBuilderCreateWithListener(context, listener);
   mlirOpBuilderDestroy(builder);
   mlirOpBuilderListenerDestroy(listener);
 }
 
 TEST_F(CAPITest, MlirOpBuilderListenerCreate) {
-  auto listener = mlirOpBuilderListenerCreate(test_cb1, test_cb2, NULL);
+  auto listener = mlirOpBuilderListenerCreate(test_cb1, test_cb2, nullptr);
   mlirOpBuilderListenerDestroy(listener);
 }
 

@@ -54,7 +54,7 @@ static inline bool hasEmptyParamList(StructType t) {
 /// Convert StructType with empty parameter list to one with no parameters.
 class EmptyParamListStructTypeConverter : public TypeConverter {
 public:
-  EmptyParamListStructTypeConverter() : TypeConverter() {
+  EmptyParamListStructTypeConverter() {
 
     addConversion([](Type inputTy) { return inputTy; });
 

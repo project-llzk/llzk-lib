@@ -105,21 +105,21 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
-// CHECK-NEXT:    func.func @A(%[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const  1
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const  5
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.const  10
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[ARG_0]], %[[VAL_0]]
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "__arith_select0" false
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.not %[[VAL_3]]
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_1]]
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_2]]
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.implies %[[VAL_3]], %[[VAL_6]]
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.implies %[[VAL_5]], %[[VAL_7]]
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.and %[[VAL_8]], %[[VAL_9]]
+// CHECK-NEXT:    func.func @A(%[[ARG_0:[0-9a-zA-Z_.-]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = pcl.const  1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.const  5
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = pcl.const  10
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = pcl.eq %[[ARG_0]], %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = pcl.var "__arith_select0" false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = pcl.not %[[VAL_3]]
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = pcl.implies %[[VAL_3]], %[[VAL_6]]
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = pcl.implies %[[VAL_5]], %[[VAL_7]]
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = pcl.and %[[VAL_8]], %[[VAL_9]]
 // CHECK-NEXT:      pcl.assert %[[VAL_10]]
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_11]]
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_11]]
 // CHECK-NEXT:      pcl.assert %[[VAL_12]]
 // CHECK-NEXT:      return %[[VAL_11]] : !pcl.felt
 // CHECK-NEXT:    }
@@ -131,7 +131,7 @@ module attributes {llzk.lang} {
 module attributes {llzk.lang} {
   struct.def @A {
     struct.member @out : !F {llzk.pub}
-    struct.member @__arith_select0 : !F 
+    struct.member @__arith_select0 : !F
     function.def @compute(%cond: !F) -> !struct.type<@A> attributes {function.allow_witness} {
       %self = struct.new : <@A>
       function.return %self : !struct.type<@A>
@@ -151,22 +151,22 @@ module attributes {llzk.lang} {
 }
 
 // CHECK-LABEL: module attributes {pcl.prime = #pcl.prime<2013265921>} {
-// CHECK-NEXT:    func.func @A(%[[ARG_0:[0-9a-zA-Z_\.]+]]: !pcl.felt) -> !pcl.felt {
-// CHECK-NEXT:      %[[VAR:[0-9a-zA-Z_\.]+]] = pcl.var "__arith_select0" false
-// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_\.]+]] = pcl.const  1
-// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_\.]+]] = pcl.const  5
-// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_\.]+]] = pcl.const  10
-// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_\.]+]] = pcl.eq %[[ARG_0]], %[[VAL_0]]
-// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_\.]+]] = pcl.var "__arith_select1" false
-// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_\.]+]] = pcl.not %[[VAL_3]]
-// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_1]]
-// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_2]]
-// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_\.]+]] = pcl.implies %[[VAL_3]], %[[VAL_6]]
-// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_\.]+]] = pcl.implies %[[VAL_5]], %[[VAL_7]]
-// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_\.]+]] = pcl.and %[[VAL_8]], %[[VAL_9]]
+// CHECK-NEXT:    func.func @A(%[[ARG_0:[0-9a-zA-Z_.-]+]]: !pcl.felt) -> !pcl.felt {
+// CHECK-NEXT:      %[[VAR:[0-9a-zA-Z_.-]+]] = pcl.var "__arith_select0" false
+// CHECK-NEXT:      %[[VAL_0:[0-9a-zA-Z_.-]+]] = pcl.const  1
+// CHECK-NEXT:      %[[VAL_1:[0-9a-zA-Z_.-]+]] = pcl.const  5
+// CHECK-NEXT:      %[[VAL_2:[0-9a-zA-Z_.-]+]] = pcl.const  10
+// CHECK-NEXT:      %[[VAL_3:[0-9a-zA-Z_.-]+]] = pcl.eq %[[ARG_0]], %[[VAL_0]]
+// CHECK-NEXT:      %[[VAL_4:[0-9a-zA-Z_.-]+]] = pcl.var "__arith_select1" false
+// CHECK-NEXT:      %[[VAL_5:[0-9a-zA-Z_.-]+]] = pcl.not %[[VAL_3]]
+// CHECK-NEXT:      %[[VAL_6:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_1]]
+// CHECK-NEXT:      %[[VAL_7:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_2]]
+// CHECK-NEXT:      %[[VAL_8:[0-9a-zA-Z_.-]+]] = pcl.implies %[[VAL_3]], %[[VAL_6]]
+// CHECK-NEXT:      %[[VAL_9:[0-9a-zA-Z_.-]+]] = pcl.implies %[[VAL_5]], %[[VAL_7]]
+// CHECK-NEXT:      %[[VAL_10:[0-9a-zA-Z_.-]+]] = pcl.and %[[VAL_8]], %[[VAL_9]]
 // CHECK-NEXT:      pcl.assert %[[VAL_10]]
-// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_\.]+]] = pcl.var "out" true
-// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_\.]+]] = pcl.eq %[[VAL_4]], %[[VAL_11]]
+// CHECK-NEXT:      %[[VAL_11:[0-9a-zA-Z_.-]+]] = pcl.var "out" true
+// CHECK-NEXT:      %[[VAL_12:[0-9a-zA-Z_.-]+]] = pcl.eq %[[VAL_4]], %[[VAL_11]]
 // CHECK-NEXT:      pcl.assert %[[VAL_12]]
 // CHECK-NEXT:      return %[[VAL_11]] : !pcl.felt
 // CHECK-NEXT:    }

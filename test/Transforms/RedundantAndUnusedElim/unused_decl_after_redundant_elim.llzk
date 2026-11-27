@@ -29,20 +29,20 @@ module attributes {llzk.lang} {
 // BASE-LABEL: module attributes {llzk.lang} {
 // BASE-NEXT:    struct.def @A {
 // BASE-NEXT:      function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
-// BASE-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// BASE-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@A>
 // BASE-NEXT:        function.return %[[VAL_0]] : !struct.type<@A>
 // BASE-NEXT:      }
-// BASE-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
+// BASE-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
 // BASE-NEXT:        function.return
 // BASE-NEXT:      }
 // BASE-NEXT:    }
 // BASE-NEXT:    struct.def @B {
 // BASE-NEXT:      struct.member @a : !struct.type<@A>
 // BASE-NEXT:      function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
-// BASE-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
+// BASE-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@B>
 // BASE-NEXT:        function.return %[[VAL_2]] : !struct.type<@B>
 // BASE-NEXT:      }
-// BASE-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
+// BASE-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
 // BASE-NEXT:        function.return
 // BASE-NEXT:      }
 // BASE-NEXT:    }
@@ -51,20 +51,20 @@ module attributes {llzk.lang} {
 // EXTRA-LABEL: module attributes {llzk.lang} {
 // EXTRA-NEXT:    struct.def @A {
 // EXTRA-NEXT:      function.def @compute() -> !struct.type<@A> attributes {function.allow_witness} {
-// EXTRA-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@A>
+// EXTRA-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@A>
 // EXTRA-NEXT:        function.return %[[VAL_0]] : !struct.type<@A>
 // EXTRA-NEXT:      }
-// EXTRA-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
+// EXTRA-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@A>) attributes {function.allow_constraint} {
 // EXTRA-NEXT:        function.return
 // EXTRA-NEXT:      }
 // EXTRA-NEXT:    }
 // EXTRA-NEXT:    struct.def @B {
 // COM: REMOVED:    struct.member @a : !struct.type<@A>
 // EXTRA-NEXT:      function.def @compute() -> !struct.type<@B> attributes {function.allow_witness} {
-// EXTRA-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = struct.new : <@B>
+// EXTRA-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = struct.new : <@B>
 // EXTRA-NEXT:        function.return %[[VAL_2]] : !struct.type<@B>
 // EXTRA-NEXT:      }
-// EXTRA-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_\.]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
+// EXTRA-NEXT:      function.def @constrain(%[[VAL_3:[0-9a-zA-Z_.-]+]]: !struct.type<@B>) attributes {function.allow_constraint} {
 // EXTRA-NEXT:        function.return
 // EXTRA-NEXT:      }
 // EXTRA-NEXT:    }

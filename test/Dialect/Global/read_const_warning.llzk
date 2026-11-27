@@ -17,11 +17,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    global.def const @g : !felt.type =  6546
 // CHECK-NEXT:    struct.def @Component03 {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Component03> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = global.read @g : !felt.type
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Component03>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = global.read @g : !felt.type
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@Component03>
 // CHECK-NEXT:        function.return %[[VAL_1]] : !struct.type<@Component03>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Component03>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Component03>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

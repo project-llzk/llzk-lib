@@ -1,0 +1,103 @@
+// RUN: llzk-opt -split-input-file -llzk-flatten -verify-diagnostics %s
+
+// Different field names do not identify the same POD record.
+module attributes {llzk.lang} {
+  poly.template @DifferentNames {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@a: !array.type<?,2 x !felt.type>]>' because sibling member 'second' is written with incompatible type '!pod.type<[@b: !array.type<3,? x !felt.type>]>'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@b: !array.type<3,? x !felt.type>]>' because sibling member 'first' is written with incompatible type '!pod.type<[@a: !array.type<?,2 x !felt.type>]>'}}
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@DifferentNames::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@DifferentNames::@Holder<[@T]>>
+        %a = llzk.nondet : !pod.type<[@a: !array.type<?,2 x !felt.type>]>
+        %b = llzk.nondet : !pod.type<[@b: !array.type<3,? x !felt.type>]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DifferentNames::@Holder<[@T]>>, !pod.type<[@a: !array.type<?,2 x !felt.type>]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %b : !struct.type<@DifferentNames::@Holder<[@T]>>, !pod.type<[@b: !array.type<3,? x !felt.type>]>
+        function.return %self : !struct.type<@DifferentNames::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@DifferentNames::@Holder<[@T]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Record order is part of the POD shape.
+module attributes {llzk.lang} {
+  poly.template @DifferentOrder {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@a: !array.type<?,2 x !felt.type>, @b: index]>' because sibling member 'second' is written with incompatible type '!pod.type<[@b: index, @a: !array.type<3,? x !felt.type>]>'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@b: index, @a: !array.type<3,? x !felt.type>]>' because sibling member 'first' is written with incompatible type '!pod.type<[@a: !array.type<?,2 x !felt.type>, @b: index]>'}}
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@DifferentOrder::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@DifferentOrder::@Holder<[@T]>>
+        %a = llzk.nondet : !pod.type<[@a: !array.type<?,2 x !felt.type>, @b: index]>
+        %b = llzk.nondet : !pod.type<[@b: index, @a: !array.type<3,? x !felt.type>]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DifferentOrder::@Holder<[@T]>>, !pod.type<[@a: !array.type<?,2 x !felt.type>, @b: index]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %b : !struct.type<@DifferentOrder::@Holder<[@T]>>, !pod.type<[@b: index, @a: !array.type<3,? x !felt.type>]>
+        function.return %self : !struct.type<@DifferentOrder::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@DifferentOrder::@Holder<[@T]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// A common refinement must not add or drop records.
+module attributes {llzk.lang} {
+  poly.template @DifferentCounts {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@a: !array.type<?,2 x !felt.type>]>' because sibling member 'second' is written with incompatible type '!pod.type<[@a: !array.type<3,? x !felt.type>, @b: index]>'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@a: !array.type<3,? x !felt.type>, @b: index]>' because sibling member 'first' is written with incompatible type '!pod.type<[@a: !array.type<?,2 x !felt.type>]>'}}
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@DifferentCounts::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@DifferentCounts::@Holder<[@T]>>
+        %a = llzk.nondet : !pod.type<[@a: !array.type<?,2 x !felt.type>]>
+        %b = llzk.nondet : !pod.type<[@a: !array.type<3,? x !felt.type>, @b: index]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DifferentCounts::@Holder<[@T]>>, !pod.type<[@a: !array.type<?,2 x !felt.type>]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %b : !struct.type<@DifferentCounts::@Holder<[@T]>>, !pod.type<[@a: !array.type<3,? x !felt.type>, @b: index]>
+        function.return %self : !struct.type<@DifferentCounts::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@DifferentCounts::@Holder<[@T]>>) { function.return }
+    }
+  }
+}
+
+// -----
+
+// Matching records still require compatible leaf types.
+module attributes {llzk.lang} {
+  poly.template @DifferentLeaves {
+    poly.param @T
+    struct.def @Holder {
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@a: !array.type<?,2 x !felt.type>]>' because sibling member 'second' is written with incompatible type '!pod.type<[@a: !array.type<3,? x index>]>'}}
+      struct.member @first : !poly.tvar<@T>
+      // expected-error@+1 {{cannot refine '!poly.tvar<@T>' to '!pod.type<[@a: !array.type<3,? x index>]>' because sibling member 'first' is written with incompatible type '!pod.type<[@a: !array.type<?,2 x !felt.type>]>'}}
+      struct.member @second : !poly.tvar<@T>
+      function.def @compute() -> !struct.type<@DifferentLeaves::@Holder<[@T]>> {
+        %self = struct.new : !struct.type<@DifferentLeaves::@Holder<[@T]>>
+        %a = llzk.nondet : !pod.type<[@a: !array.type<?,2 x !felt.type>]>
+        %b = llzk.nondet : !pod.type<[@a: !array.type<3,? x index>]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@first] = %a : !struct.type<@DifferentLeaves::@Holder<[@T]>>, !pod.type<[@a: !array.type<?,2 x !felt.type>]>
+        // expected-note@+1 {{incompatible write is here}}
+        struct.writem %self[@second] = %b : !struct.type<@DifferentLeaves::@Holder<[@T]>>, !pod.type<[@a: !array.type<3,? x index>]>
+        function.return %self : !struct.type<@DifferentLeaves::@Holder<[@T]>>
+      }
+      function.def @constrain(%self: !struct.type<@DifferentLeaves::@Holder<[@T]>>) { function.return }
+    }
+  }
+}

@@ -1,0 +1,427 @@
+// RUN: llzk-opt %s --split-input-file --llzk-monomorphize-templates --verify-diagnostics -o /dev/null
+
+// Unknown pod alias writes invalidate original leaves (True).
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %condition = arith.constant true
+        %original = pod.new { @n = %one } : !pod.type<[@n: index]>
+        %other = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %alias = arith.select %condition, %original, %other : !pod.type<[@n: index]>
+        pod.write %alias[@n] = %two : !pod.type<[@n: index]>, index
+        %value = pod.read %original[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+
+// Unknown pod alias writes invalidate original leaves (False).
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %fz = felt.const 0
+        %condition = bool.cmp eq(%input, %fz)
+        %original = pod.new { @n = %one } : !pod.type<[@n: index]>
+        %other = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %alias = arith.select %condition, %original, %other : !pod.type<[@n: index]>
+        pod.write %alias[@n] = %two : !pod.type<[@n: index]>, index
+        %value = pod.read %original[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+
+// Unknown array alias writes invalidate original leaves (True).
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %condition = arith.constant true
+        %original = array.new %one : !array.type<1 x index>
+        %other = array.new %zero : !array.type<1 x index>
+        %alias = arith.select %condition, %original, %other : !array.type<1 x index>
+        array.write %alias[%zero] = %two : !array.type<1 x index>, index
+        %value = array.read %original[%zero] : !array.type<1 x index>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+// -----
+
+// Unknown array alias writes invalidate original leaves (False).
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %fz = felt.const 0
+        %condition = bool.cmp eq(%input, %fz)
+        %original = array.new %one : !array.type<1 x index>
+        %other = array.new %zero : !array.type<1 x index>
+        %alias = arith.select %condition, %original, %other : !array.type<1 x index>
+        array.write %alias[%zero] = %two : !array.type<1 x index>, index
+        %value = array.read %original[%zero] : !array.type<1 x index>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Invalid or unknown affine-array coordinates invalidate stored facts.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %slots = array.new{(%two)} : !array.type<affine_map<(d0) -> (d0)> x index>
+        array.write %slots[%zero] = %one : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        array.write %slots[%two] = %two : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        %value = array.read %slots[%zero] : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Invalid or unknown affine-array coordinates invalidate stored facts.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %slots = array.new{(%two)} : !array.type<affine_map<(d0) -> (d0)> x index>
+        array.write %slots[%zero] = %one : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        array.write %slots[%unknown] = %two : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        %value = array.read %slots[%zero] : !array.type<affine_map<(d0) -> (d0)> x index>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Subarray insertion through an unknown alias invalidates original leaves.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %fz = felt.const 0
+        %condition = bool.cmp eq(%input, %fz)
+        %original = array.new %one : !array.type<1,1 x index>
+        %other = array.new %zero : !array.type<1,1 x index>
+        %row = array.new %two : !array.type<1 x index>
+        %alias = arith.select %condition, %original, %other : !array.type<1,1 x index>
+        array.insert %alias[%zero] = %row : !array.type<1,1 x index>, !array.type<1 x index>
+        %value = array.read %original[%zero, %zero] : !array.type<1,1 x index>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Subarray insertion through an unknown alias invalidates original leaves.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_non_native_field_ops} {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %unknown = cast.toindex %input : !felt.type
+        %fz = felt.const 0
+        %condition = bool.cmp eq(%input, %fz)
+        %original = array.new %one : !array.type<1,1 x index>
+        %other = array.new %zero : !array.type<1,1 x index>
+        %row = array.new %two : !array.type<1 x index>
+        %alias = arith.select %condition, %original, %other : !array.type<1,1 x index>
+        array.insert %alias[%unknown] = %row : !array.type<1,1 x index>, !array.type<1 x index>
+        %value = array.read %original[%zero, %zero] : !array.type<1,1 x index>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}
+
+// -----
+
+// Passing an unknown alias to an effectful call invalidates original leaves.
+module attributes {llzk.lang, llzk.main = !struct.type<@Parent::@Parent<[3]>>} {
+  function.def private @touch(%p: !pod.type<[@n: index]>) attributes {extern}
+  poly.template @Child {
+    poly.param @N : index
+    struct.def @Child {
+      function.def @compute() -> !struct.type<@Child::@Child<[@N]>> {
+        %s = struct.new : !struct.type<@Child::@Child<[@N]>>
+        function.return %s : !struct.type<@Child::@Child<[@N]>>
+      }
+      function.def @constrain(%s: !struct.type<@Child::@Child<[@N]>>) {
+        function.return
+      }
+    }
+  }
+  poly.template @Parent {
+    poly.param @N : index
+    poly.expr @Next {
+      %n = poly.read_const @N : index
+      %one = arith.constant 1 : index
+      %next = arith.addi %n, %one : index
+      poly.yield %next : index
+    }
+    struct.def @Parent {
+      function.def @compute(%input: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> {
+        %zero = arith.constant 0 : index
+        %one = arith.constant 1 : index
+        %two = arith.constant 2 : index
+        %fz = felt.const 0
+        %condition = bool.cmp eq(%input, %fz)
+        %original = pod.new { @n = %one } : !pod.type<[@n: index]>
+        %other = pod.new { @n = %zero } : !pod.type<[@n: index]>
+        %alias = arith.select %condition, %original, %other : !pod.type<[@n: index]>
+        function.call @touch(%alias) : (!pod.type<[@n: index]>) -> ()
+        %value = pod.read %original[@n] : !pod.type<[@n: index]>, index
+        // expected-error @+1 {{monomorphize-templates: cannot resolve affine struct specialization argument}}
+        %child = function.call @Child::@Child::@compute(){(%value)} : () -> !struct.type<@Child::@Child<[affine_map<(i) -> (i)>]>>
+        %self = struct.new : !struct.type<@Parent::@Parent<[@N]>>
+        function.return %self : !struct.type<@Parent::@Parent<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Parent::@Parent<[@N]>>, %input: !felt.type) {
+        function.return
+      }
+    }
+  }
+}

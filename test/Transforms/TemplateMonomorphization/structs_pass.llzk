@@ -56,10 +56,10 @@ module attributes {test.scenario = "structs", llzk.lang, llzk.main = !struct.typ
 // CHECK-NEXT:      struct.def @Leaf {
 // CHECK-NEXT:        struct.member @values : !array.type<@N x !felt.type>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Leaf::@Leaf<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf::@Leaf<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf::@Leaf<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -69,11 +69,11 @@ module attributes {test.scenario = "structs", llzk.lang, llzk.main = !struct.typ
 // CHECK-NEXT:      struct.def @Child {
 // CHECK-NEXT:        struct.member @leaf : !struct.type<@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Child::@Child<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@Child::@Child<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@Child::@Child<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -83,13 +83,13 @@ module attributes {test.scenario = "structs", llzk.lang, llzk.main = !struct.typ
 // CHECK-NEXT:      struct.def @Parent {
 // CHECK-NEXT:        struct.member @child : !struct.type<@Child::@Child<[@N]>>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent::@Parent<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_7]] : !struct.type<@Parent::@Parent<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_8:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>) attributes {function.allow_constraint} {
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_8]][@child] : <@Parent::@Parent<[@N]>>, !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:        function.def @constrain(%[[VAL_8:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent::@Parent<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_8]][@child] : <@Parent::@Parent<[@N]>>, !struct.type<@Child::@Child<[@N]>>
 // CHECK-NEXT:          function.call @Child::@Child::@constrain(%[[VAL_9]]) : (!struct.type<@Child::@Child<[@N]>>) -> ()
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
@@ -98,13 +98,13 @@ module attributes {test.scenario = "structs", llzk.lang, llzk.main = !struct.typ
 // CHECK-NEXT:    struct.def @Parent__spec_0 {
 // CHECK-NEXT:      struct.member @child : !struct.type<@Child__spec_1>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent__spec_0>
 // CHECK-NEXT:        function.return %[[VAL_12]] : !struct.type<@Parent__spec_0>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_13]][@child] : <@Parent__spec_0>, !struct.type<@Child__spec_1>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_13:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_13]][@child] : <@Parent__spec_0>, !struct.type<@Child__spec_1>
 // CHECK-NEXT:        function.call @Child__spec_1::@constrain(%[[VAL_14]]) : (!struct.type<@Child__spec_1>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -112,21 +112,21 @@ module attributes {test.scenario = "structs", llzk.lang, llzk.main = !struct.typ
 // CHECK-NEXT:    struct.def @Child__spec_1 {
 // CHECK-NEXT:      struct.member @leaf : !struct.type<@Leaf__spec_2>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @Leaf__spec_2::@compute() : () -> !struct.type<@Leaf__spec_2>
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = function.call @Leaf__spec_2::@compute() : () -> !struct.type<@Leaf__spec_2>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.new : <@Child__spec_1>
 // CHECK-NEXT:        function.return %[[VAL_16]] : !struct.type<@Child__spec_1>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
 // CHECK-NEXT:    struct.def @Leaf__spec_2 {
 // CHECK-NEXT:      struct.member @values : !array.type<3 x !felt.type>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Leaf__spec_2> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf__spec_2>
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf__spec_2>
 // CHECK-NEXT:        function.return %[[VAL_18]] : !struct.type<@Leaf__spec_2>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_19:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_19:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf__spec_2>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Leaf::@Leaf, poly.specialization_id = 2 : i64}
@@ -199,10 +199,10 @@ module attributes {test.scenario = "nested_arguments", llzk.lang, llzk.main = !s
 // CHECK-NEXT:      struct.def @Leaf {
 // CHECK-NEXT:        struct.member @values : !array.type<@N x !felt.type>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Leaf::@Leaf<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf::@Leaf<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf::@Leaf<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -212,11 +212,11 @@ module attributes {test.scenario = "nested_arguments", llzk.lang, llzk.main = !s
 // CHECK-NEXT:      struct.def @Child {
 // CHECK-NEXT:        struct.member @leaf : !struct.type<@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Child::@Child<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
-// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@Child::@Child<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_3]] : !struct.type<@Child::@Child<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -226,10 +226,10 @@ module attributes {test.scenario = "nested_arguments", llzk.lang, llzk.main = !s
 // CHECK-NEXT:      struct.def @Wrapper {
 // CHECK-NEXT:        struct.member @value : !poly.tvar<@T>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Wrapper::@Wrapper<[@T]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = struct.new : <@Wrapper::@Wrapper<[@T]>>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = struct.new : <@Wrapper::@Wrapper<[@T]>>
 // CHECK-NEXT:          function.return %[[VAL_5]] : !struct.type<@Wrapper::@Wrapper<[@T]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_6:[0-9a-zA-Z_\.]+]]: !struct.type<@Wrapper::@Wrapper<[@T]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_6:[0-9a-zA-Z_.-]+]]: !struct.type<@Wrapper::@Wrapper<[@T]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -239,12 +239,12 @@ module attributes {test.scenario = "nested_arguments", llzk.lang, llzk.main = !s
 // CHECK-NEXT:      struct.def @Parent {
 // CHECK-NEXT:        struct.member @wrapper : !struct.type<@Wrapper::@Wrapper<[!struct.type<@Child::@Child<[@N]>>]>>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Child::@Child::@compute() : () -> !struct.type<@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent::@Parent<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_9]] : !struct.type<@Parent::@Parent<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_10:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_10:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent::@Parent<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -252,43 +252,43 @@ module attributes {test.scenario = "nested_arguments", llzk.lang, llzk.main = !s
 // CHECK-NEXT:    struct.def @Parent__spec_0 {
 // CHECK-NEXT:      struct.member @wrapper : !struct.type<@Wrapper__spec_2>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        %[[VAL_11:[0-9a-zA-Z_.-]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @Child__spec_1::@compute() : () -> !struct.type<@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent__spec_0>
 // CHECK-NEXT:        function.return %[[VAL_13]] : !struct.type<@Parent__spec_0>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_14:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 0 : i64}
 // CHECK-NEXT:    struct.def @Child__spec_1 {
 // CHECK-NEXT:      struct.member @leaf : !struct.type<@Leaf__spec_3>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_1> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_\.]+]] = function.call @Leaf__spec_3::@compute() : () -> !struct.type<@Leaf__spec_3>
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_15:[0-9a-zA-Z_.-]+]] = function.call @Leaf__spec_3::@compute() : () -> !struct.type<@Leaf__spec_3>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.new : <@Child__spec_1>
 // CHECK-NEXT:        function.return %[[VAL_16]] : !struct.type<@Child__spec_1>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@Child__spec_1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Child::@Child, poly.specialization_id = 1 : i64}
 // CHECK-NEXT:    struct.def @Wrapper__spec_2 {
 // CHECK-NEXT:      struct.member @value : !struct.type<@Child__spec_1>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Wrapper__spec_2> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_\.]+]] = struct.new : <@Wrapper__spec_2>
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = struct.new : <@Wrapper__spec_2>
 // CHECK-NEXT:        function.return %[[VAL_18]] : !struct.type<@Wrapper__spec_2>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_19:[0-9a-zA-Z_\.]+]]: !struct.type<@Wrapper__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_19:[0-9a-zA-Z_.-]+]]: !struct.type<@Wrapper__spec_2>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [!struct.type<@Child::@Child<[3]>>], poly.origin = @Wrapper::@Wrapper, poly.specialization_id = 2 : i64}
 // CHECK-NEXT:    struct.def @Leaf__spec_3 {
 // CHECK-NEXT:      struct.member @values : !array.type<3 x !felt.type>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Leaf__spec_3> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf__spec_3>
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf__spec_3>
 // CHECK-NEXT:        function.return %[[VAL_20]] : !struct.type<@Leaf__spec_3>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_21:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf__spec_3>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_21:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf__spec_3>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Leaf::@Leaf, poly.specialization_id = 3 : i64}
@@ -349,10 +349,10 @@ module attributes {test.scenario = "nested_module", llzk.lang, llzk.main = !stru
 // CHECK-NEXT:      struct.def @Leaf {
 // CHECK-NEXT:        struct.member @values : !array.type<@N x !felt.type>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Leaf::@Leaf<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf::@Leaf<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf::@Leaf<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -363,11 +363,11 @@ module attributes {test.scenario = "nested_module", llzk.lang, llzk.main = !stru
 // CHECK-NEXT:        struct.def @Child {
 // CHECK-NEXT:          struct.member @leaf : !struct.type<@Leaf::@Leaf<[@N]>>
 // CHECK-NEXT:          function.def @compute() -> !struct.type<@Nested::@Child::@Child<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:            %[[VAL_2:[0-9a-zA-Z_\.]+]] = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
-// CHECK-NEXT:            %[[VAL_3:[0-9a-zA-Z_\.]+]] = struct.new : <@Nested::@Child::@Child<[@N]>>
+// CHECK-NEXT:            %[[VAL_2:[0-9a-zA-Z_.-]+]] = function.call @Leaf::@Leaf::@compute() : () -> !struct.type<@Leaf::@Leaf<[@N]>>
+// CHECK-NEXT:            %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.new : <@Nested::@Child::@Child<[@N]>>
 // CHECK-NEXT:            function.return %[[VAL_3]] : !struct.type<@Nested::@Child::@Child<[@N]>>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          function.def @constrain(%[[VAL_4:[0-9a-zA-Z_\.]+]]: !struct.type<@Nested::@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.def @constrain(%[[VAL_4:[0-9a-zA-Z_.-]+]]: !struct.type<@Nested::@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:            function.return
 // CHECK-NEXT:          }
 // CHECK-NEXT:        }
@@ -375,11 +375,11 @@ module attributes {test.scenario = "nested_module", llzk.lang, llzk.main = !stru
 // CHECK-NEXT:      struct.def @Child__spec_1 {
 // CHECK-NEXT:        struct.member @leaf : !struct.type<@Leaf__spec_2>
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Nested::@Child__spec_1> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @Leaf__spec_2::@compute() : () -> !struct.type<@Leaf__spec_2>
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.new : <@Nested::@Child__spec_1>
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @Leaf__spec_2::@compute() : () -> !struct.type<@Leaf__spec_2>
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@Nested::@Child__spec_1>
 // CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@Nested::@Child__spec_1>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@Nested::@Child__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@Nested::@Child__spec_1>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      } {poly.arguments = [3 : index], poly.origin = @Nested::@Child::@Child, poly.specialization_id = 1 : i64}
@@ -388,34 +388,34 @@ module attributes {test.scenario = "nested_module", llzk.lang, llzk.main = !stru
 // CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @Parent {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = function.call @Nested::@Child::@Child::@compute() : () -> !struct.type<@Nested::@Child::@Child<[@N]>>
-// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_\.]+]] = function.call @Nested::@Child::@Child::@compute() : () -> !struct.type<@Nested::@Child::@Child<[@N]>>
-// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = function.call @Nested::@Child::@Child::@compute() : () -> !struct.type<@Nested::@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = function.call @Nested::@Child::@Child::@compute() : () -> !struct.type<@Nested::@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent::@Parent<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_10]] : !struct.type<@Parent::@Parent<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_11:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent::@Parent<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Parent__spec_0 {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Parent__spec_0> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_\.]+]] = function.call @Nested::@Child__spec_1::@compute() : () -> !struct.type<@Nested::@Child__spec_1>
-// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_\.]+]] = function.call @Nested::@Child__spec_1::@compute() : () -> !struct.type<@Nested::@Child__spec_1>
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_0>
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = function.call @Nested::@Child__spec_1::@compute() : () -> !struct.type<@Nested::@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_13:[0-9a-zA-Z_.-]+]] = function.call @Nested::@Child__spec_1::@compute() : () -> !struct.type<@Nested::@Child__spec_1>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent__spec_0>
 // CHECK-NEXT:        function.return %[[VAL_14]] : !struct.type<@Parent__spec_0>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent__spec_0>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 0 : i64}
 // CHECK-NEXT:    struct.def @Leaf__spec_2 {
 // CHECK-NEXT:      struct.member @values : !array.type<3 x !felt.type>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Leaf__spec_2> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@Leaf__spec_2>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.new : <@Leaf__spec_2>
 // CHECK-NEXT:        function.return %[[VAL_16]] : !struct.type<@Leaf__spec_2>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Leaf__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@Leaf__spec_2>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [3 : index], poly.origin = @Leaf::@Leaf, poly.specialization_id = 2 : i64}
@@ -474,16 +474,16 @@ module attributes {test.scenario = "discovery_separate_bindings", llzk.lang, llz
   }
 }
 
-// CHECK: #[[$ATTR_0:[0-9a-zA-Z_\.]+]] = affine_map<(d0) -> (d0)>
+// CHECK: #[[$ATTR_0:[0-9a-zA-Z_.-]+]] = affine_map<(d0) -> (d0)>
 // CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Root__spec_0>, test.scenario = "discovery_separate_bindings"} {
 // CHECK-NEXT:    poly.template @Child {
 // CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      struct.def @Child {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Child::@Child<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Child::@Child<[@N]>>
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Child::@Child<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_0]] : !struct.type<@Child::@Child<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@Child::@Child<[@N]>>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -491,23 +491,23 @@ module attributes {test.scenario = "discovery_separate_bindings", llzk.lang, llz
 // CHECK-NEXT:    poly.template @Parent {
 // CHECK-NEXT:      poly.param @N : index
 // CHECK-NEXT:      poly.expr @Next {
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
-// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = poly.read_const @N : index
+// CHECK-NEXT:        %[[VAL_3:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = arith.addi %[[VAL_2]], %[[VAL_3]] : index
 // CHECK-NEXT:        poly.yield %[[VAL_4]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      struct.def @Parent {
-// CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_\.]+]] = poly.read_const @N : index
-// CHECK-NEXT:          scf.for %[[VAL_9:[0-9a-zA-Z_\.]+]] = %[[VAL_6]] to %[[VAL_8]] step %[[VAL_7]] {
-// CHECK-NEXT:            %[[VAL_10:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_8]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>
+// CHECK-NEXT:        function.def @compute(%[[VAL_5:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Parent::@Parent<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:          %[[VAL_7:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = poly.read_const @N : index
+// CHECK-NEXT:          scf.for %[[VAL_9:[0-9a-zA-Z_.-]+]] = %[[VAL_6]] to %[[VAL_8]] step %[[VAL_7]] {
+// CHECK-NEXT:            %[[VAL_10:[0-9a-zA-Z_.-]+]] = function.call @Child::@Child::@compute() {(%[[VAL_8]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>
 // CHECK-NEXT:          }
-// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent::@Parent<[@N]>>
+// CHECK-NEXT:          %[[VAL_11:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent::@Parent<[@N]>>
 // CHECK-NEXT:          function.return %[[VAL_11]] : !struct.type<@Parent::@Parent<[@N]>>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_12:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent::@Parent<[@N]>>, %[[VAL_13:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_12:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent::@Parent<[@N]>>, %[[VAL_13:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -516,10 +516,10 @@ module attributes {test.scenario = "discovery_separate_bindings", llzk.lang, llz
 // CHECK-NEXT:      struct.member @two : !struct.type<@Parent::@Parent<[2]>>
 // CHECK-NEXT:      struct.member @four : !struct.type<@Parent::@Parent<[4]>>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Root> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_\.]+]] = struct.new : <@Root>
+// CHECK-NEXT:        %[[VAL_14:[0-9a-zA-Z_.-]+]] = struct.new : <@Root>
 // CHECK-NEXT:        function.return %[[VAL_14]] : !struct.type<@Root>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_\.]+]]: !struct.type<@Root>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_15:[0-9a-zA-Z_.-]+]]: !struct.type<@Root>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -527,58 +527,58 @@ module attributes {test.scenario = "discovery_separate_bindings", llzk.lang, llz
 // CHECK-NEXT:      struct.member @two : !struct.type<@Parent__spec_1>
 // CHECK-NEXT:      struct.member @four : !struct.type<@Parent__spec_2>
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Root__spec_0> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_\.]+]] = struct.new : <@Root__spec_0>
+// CHECK-NEXT:        %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.new : <@Root__spec_0>
 // CHECK-NEXT:        function.return %[[VAL_16]] : !struct.type<@Root__spec_0>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_\.]+]]: !struct.type<@Root__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_17:[0-9a-zA-Z_.-]+]]: !struct.type<@Root__spec_0>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [], poly.origin = @Root, poly.specialization_id = 0 : i64}
 // CHECK-NEXT:    struct.def @Parent__spec_1 {
-// CHECK-NEXT:      function.def @compute(%[[VAL_18:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent__spec_1> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_\.]+]] = arith.constant 2 : index
-// CHECK-NEXT:        scf.for %[[VAL_22:[0-9a-zA-Z_\.]+]] = %[[VAL_19]] to %[[VAL_21]] step %[[VAL_20]] {
-// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_21]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>  {poly.family_specializations = [3]}
+// CHECK-NEXT:      function.def @compute(%[[VAL_18:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Parent__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_20:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_.-]+]] = arith.constant 2 : index
+// CHECK-NEXT:        scf.for %[[VAL_22:[0-9a-zA-Z_.-]+]] = %[[VAL_19]] to %[[VAL_21]] step %[[VAL_20]] {
+// CHECK-NEXT:          %[[VAL_23:[0-9a-zA-Z_.-]+]] = function.call @Child::@Child::@compute() {(%[[VAL_21]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>  {poly.family_specializations = [3]}
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_1>
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent__spec_1>
 // CHECK-NEXT:        function.return %[[VAL_24]] : !struct.type<@Parent__spec_1>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_25:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_1>, %[[VAL_26:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_25:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent__spec_1>, %[[VAL_26:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [2 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 1 : i64}
 // CHECK-NEXT:    struct.def @Parent__spec_2 {
-// CHECK-NEXT:      function.def @compute(%[[VAL_27:[0-9a-zA-Z_\.]+]]: !felt.type) -> !struct.type<@Parent__spec_2> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_\.]+]] = arith.constant 0 : index
-// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_\.]+]] = arith.constant 1 : index
-// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_\.]+]] = arith.constant 4 : index
-// CHECK-NEXT:        scf.for %[[VAL_31:[0-9a-zA-Z_\.]+]] = %[[VAL_28]] to %[[VAL_30]] step %[[VAL_29]] {
-// CHECK-NEXT:          %[[VAL_32:[0-9a-zA-Z_\.]+]] = function.call @Child::@Child::@compute() {(%[[VAL_30]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>  {poly.family_specializations = [4]}
+// CHECK-NEXT:      function.def @compute(%[[VAL_27:[0-9a-zA-Z_.-]+]]: !felt.type) -> !struct.type<@Parent__spec_2> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_.-]+]] = arith.constant 0 : index
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_.-]+]] = arith.constant 1 : index
+// CHECK-NEXT:        %[[VAL_30:[0-9a-zA-Z_.-]+]] = arith.constant 4 : index
+// CHECK-NEXT:        scf.for %[[VAL_31:[0-9a-zA-Z_.-]+]] = %[[VAL_28]] to %[[VAL_30]] step %[[VAL_29]] {
+// CHECK-NEXT:          %[[VAL_32:[0-9a-zA-Z_.-]+]] = function.call @Child::@Child::@compute() {(%[[VAL_30]])} : () -> !struct.type<@Child::@Child<[#[[$ATTR_0]]]>>  {poly.family_specializations = [4]}
 // CHECK-NEXT:        }
-// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_\.]+]] = struct.new : <@Parent__spec_2>
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_.-]+]] = struct.new : <@Parent__spec_2>
 // CHECK-NEXT:        function.return %[[VAL_33]] : !struct.type<@Parent__spec_2>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_34:[0-9a-zA-Z_\.]+]]: !struct.type<@Parent__spec_2>, %[[VAL_35:[0-9a-zA-Z_\.]+]]: !felt.type) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_34:[0-9a-zA-Z_.-]+]]: !struct.type<@Parent__spec_2>, %[[VAL_35:[0-9a-zA-Z_.-]+]]: !felt.type) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [4 : index], poly.origin = @Parent::@Parent, poly.specialization_id = 2 : i64}
 // CHECK-NEXT:    struct.def @Child__spec_3 {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_3> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_3>
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_.-]+]] = struct.new : <@Child__spec_3>
 // CHECK-NEXT:        function.return %[[VAL_36]] : !struct.type<@Child__spec_3>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_37:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_3>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_37:[0-9a-zA-Z_.-]+]]: !struct.type<@Child__spec_3>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [2 : index], poly.origin = @Child::@Child, poly.specialization_id = 3 : i64}
 // CHECK-NEXT:    struct.def @Child__spec_4 {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@Child__spec_4> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_\.]+]] = struct.new : <@Child__spec_4>
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_.-]+]] = struct.new : <@Child__spec_4>
 // CHECK-NEXT:        function.return %[[VAL_38]] : !struct.type<@Child__spec_4>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_39:[0-9a-zA-Z_\.]+]]: !struct.type<@Child__spec_4>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_39:[0-9a-zA-Z_.-]+]]: !struct.type<@Child__spec_4>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    } {poly.arguments = [4 : index], poly.origin = @Child::@Child, poly.specialization_id = 4 : i64}

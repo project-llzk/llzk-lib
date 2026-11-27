@@ -142,6 +142,32 @@ eval(FeltCmpPredicate pred, const llvm::DynamicAPInt &lval, const llvm::DynamicA
 OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
   auto lhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getLhs());
   auto rhsAttr = llvm::dyn_cast_or_null<felt::FeltConstAttr>(adaptor.getRhs());
+  const auto predicate = getPredicate();
+  // Field comparisons use nonnegative reduced representatives. A zero
+  // boundary can therefore determine the result even with one symbolic operand.
+  if (getLhs().getType() == getRhs().getType()) {
+    auto isZero = [](felt::FeltConstAttr value) {
+      if (!value) {
+        return false;
+      }
+      // Literal zero is zero in every field, including an unspecified field.
+      if (value.getRawValue() == 0) {
+        return true;
+      }
+      auto reduced = value.getReducedValue();
+      return reduced && *reduced == 0;
+    };
+    if (isZero(rhsAttr)) {
+      if (predicate == FeltCmpPredicate::GE || predicate == FeltCmpPredicate::LT) {
+        return makeBoolAttr(getContext(), predicate == FeltCmpPredicate::GE);
+      }
+    }
+    if (isZero(lhsAttr)) {
+      if (predicate == FeltCmpPredicate::LE || predicate == FeltCmpPredicate::GT) {
+        return makeBoolAttr(getContext(), predicate == FeltCmpPredicate::LE);
+      }
+    }
+  }
   if (!lhsAttr || !rhsAttr || lhsAttr.getFieldName() != rhsAttr.getFieldName()) {
     return {};
   }
@@ -152,7 +178,7 @@ OpFoldResult CmpOp::fold(FoldAdaptor adaptor) {
     return {};
   }
 
-  return makeBoolAttr(getContext(), eval(getPredicate(), *lhs, *rhs));
+  return makeBoolAttr(getContext(), eval(predicate, *lhs, *rhs));
 }
 
 //===------------------------------------------------------------------===//

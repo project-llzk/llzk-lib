@@ -42,9 +42,9 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    struct.def @Main {
 // CHECK-NEXT:      function.def @product() -> !struct.type<@Main> attributes {function.allow_constraint, function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@Main>
-// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_\.]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
-// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_\.]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@Main>
+// CHECK-NEXT:        %[[VAL_1:[0-9a-zA-Z_.-]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
+// CHECK-NEXT:        %[[VAL_2:[0-9a-zA-Z_.-]+]] = global.read const @global::@constants::@array_const : !array.type<2 x !felt.type>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@Main>
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }

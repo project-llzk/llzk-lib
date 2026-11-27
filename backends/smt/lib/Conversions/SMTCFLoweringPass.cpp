@@ -47,7 +47,7 @@ class PassImpl : public llzk::smt::impl::SMTCFLoweringPassBase<PassImpl> {
 
   // The condition of the ifOp might be an `unrealized_conversion_cast` from some !smt.bool
   // to an i1, so we need to see through that
-  Value getCondition(scf::IfOp ifOp) {
+  static Value getCondition(scf::IfOp ifOp) {
     Value condition = ifOp.getCondition();
     while (auto op =
                dyn_cast_or_null<mlir::UnrealizedConversionCastOp>(condition.getDefiningOp())) {
@@ -56,7 +56,7 @@ class PassImpl : public llzk::smt::impl::SMTCFLoweringPassBase<PassImpl> {
     return condition;
   }
 
-  IRMapping flatten(scf::IfOp ifOp, RewriterBase &rewriter) {
+  static IRMapping flatten(scf::IfOp ifOp, RewriterBase &rewriter) {
     IRMapping mapping;
 
     rewriter.setInsertionPoint(ifOp);
@@ -72,7 +72,7 @@ class PassImpl : public llzk::smt::impl::SMTCFLoweringPassBase<PassImpl> {
   }
 
 public:
-  LogicalResult processContainedAsserts(scf::IfOp ifOp, RewriterBase &rewriter) {
+  static LogicalResult processContainedAsserts(scf::IfOp ifOp, RewriterBase &rewriter) {
     SmallVector<mlir::smt::AssertOp> thenAssertions =
         walkCollect<mlir::smt::AssertOp>(ifOp.getThenRegion());
     SmallVector<mlir::smt::AssertOp> elseAssertions =
@@ -117,7 +117,7 @@ public:
     return success();
   }
 
-  LogicalResult processYieldedResults(scf::IfOp ifOp, RewriterBase &rewriter) {
+  static LogicalResult processYieldedResults(scf::IfOp ifOp, RewriterBase &rewriter) {
     if (ifOp->getNumResults() == 0) {
       flatten(ifOp, rewriter);
       ifOp.erase();

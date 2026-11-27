@@ -115,7 +115,7 @@ llvm::Expected<WitnessVal> defaultValue(
       if (!rng) {
         return makeError("missing RNG for random witgen initialization");
       }
-      return int64_t(randomIndexValue(*rng));
+      return randomIndexValue(*rng);
     }
     return int64_t(0);
   })

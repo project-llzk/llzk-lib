@@ -102,6 +102,7 @@
 #include <mlir/Transforms/DialectConversion.h>
 #include <mlir/Transforms/Passes.h>
 
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Debug.h>
 
 #include <optional>
@@ -141,22 +142,12 @@ inline ArrayType splittableArray(Type t) {
 /// Return `true` iff the given range contains any top-level ArrayType that can be split into
 /// scalars.
 inline bool containsSplittableArrayType(ArrayRef<Type> types) {
-  for (Type t : types) {
-    if (splittableArray(t)) {
-      return true;
-    }
-  }
-  return false;
+  return llvm::any_of(types, [](Type t) { return splittableArray(t); });
 }
 
 /// Return `true` iff the given range contains any ArrayType that can be split into scalars.
 template <typename T> bool containsSplittableArrayType(ValueTypeRange<T> types) {
-  for (Type t : types) {
-    if (splittableArray(t)) {
-      return true;
-    }
-  }
-  return false;
+  return llvm::any_of(types, [](Type t) { return splittableArray(t); });
 }
 
 /// If the given Type is an ArrayType that can be split into scalars, append `collect` with all of

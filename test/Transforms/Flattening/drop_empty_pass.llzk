@@ -34,9 +34,9 @@ module attributes {llzk.lang} {
   }
 }
 // CHECK-LABEL: function.def @carry(
-// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>, %[[COND:[0-9a-zA-Z_\.]+]]: i1) -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]> {
-// CHECK-NEXT:    %[[EXEC:[0-9a-zA-Z_\.]+]] = scf.execute_region -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]> {
-// CHECK-NEXT:      %[[IF:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>) {
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_.-]+]]: !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>, %[[COND:[0-9a-zA-Z_.-]+]]: i1) -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]> {
+// CHECK-NEXT:    %[[EXEC:[0-9a-zA-Z_.-]+]] = scf.execute_region -> !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]> {
+// CHECK-NEXT:      %[[IF:[0-9a-zA-Z_.-]+]] = scf.if %[[COND]] -> (!pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>) {
 // CHECK-NEXT:        scf.yield %[[ARG]] : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
 // CHECK-NEXT:      } else {
 // CHECK-NEXT:        scf.yield %[[ARG]] : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
@@ -45,11 +45,11 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    }
 // CHECK-NEXT:    function.return %[[EXEC]] : !pod.type<[@nested: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>]>
 // CHECK-LABEL: function.def @select_or_nondet(
-// CHECK-SAME: %[[ARG:[0-9a-zA-Z_\.]+]]: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>, %[[COND:[0-9a-zA-Z_\.]+]]: i1) -> !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]> {
-// CHECK:         %[[IF:[0-9a-zA-Z_\.]+]] = scf.if %[[COND]] -> (!pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>) {
+// CHECK-SAME: %[[ARG:[0-9a-zA-Z_.-]+]]: !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>, %[[COND:[0-9a-zA-Z_.-]+]]: i1) -> !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]> {
+// CHECK:         %[[IF:[0-9a-zA-Z_.-]+]] = scf.if %[[COND]] -> (!pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>) {
 // CHECK:           scf.yield %[[ARG]] : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // CHECK:         } else {
-// CHECK:           %[[NONDET:[0-9a-zA-Z_\.]+]] = llzk.nondet : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK:           %[[NONDET:[0-9a-zA-Z_.-]+]] = llzk.nondet : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // CHECK:           scf.yield %[[NONDET]] : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // CHECK:         }
 // CHECK:         function.return %[[IF]] : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
@@ -97,10 +97,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @TComponent {
 // CHECK-NEXT:    struct.def @Component {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TComponent::@Component> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = struct.new : <@TComponent::@Component>
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = struct.new : <@TComponent::@Component>
 // CHECK-NEXT:        function.return %[[VAL_0]] : !struct.type<@TComponent::@Component>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_\.]+]]: !struct.type<@TComponent::@Component>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[VAL_1:[0-9a-zA-Z_.-]+]]: !struct.type<@TComponent::@Component>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -114,18 +114,18 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:      struct.member @"$temp" : !struct.type<@TComponent::@Component>
 // CHECK-NEXT:      struct.member @snd : !poly.tvar<@Snd>
 // CHECK-NEXT:      struct.member @fst : !poly.tvar<@Fst>
-// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[VAL_3:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) -> !struct.type<@TPair::@Pair<[@Fst, @Snd]>> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_\.]+]] = struct.new : <@TPair::@Pair<[@Fst, @Snd]>>
+// CHECK-NEXT:      function.def @compute(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !poly.tvar<@Fst>, %[[VAL_3:[0-9a-zA-Z_.-]+]]: !poly.tvar<@Snd>) -> !struct.type<@TPair::@Pair<[@Fst, @Snd]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_4:[0-9a-zA-Z_.-]+]] = struct.new : <@TPair::@Pair<[@Fst, @Snd]>>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@fst] = %[[VAL_2]] : <@TPair::@Pair<[@Fst, @Snd]>>, !poly.tvar<@Fst>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@snd] = %[[VAL_3]] : <@TPair::@Pair<[@Fst, @Snd]>>, !poly.tvar<@Snd>
-// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_\.]+]] = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component>
+// CHECK-NEXT:        %[[VAL_5:[0-9a-zA-Z_.-]+]] = function.call @TComponent::@Component::@compute() : () -> !struct.type<@TComponent::@Component>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@"$temp"] = %[[VAL_5]] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
-// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_4]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
+// CHECK-NEXT:        %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_4]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
 // CHECK-NEXT:        struct.writem %[[VAL_4]][@"$super"] = %[[VAL_6]] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
 // CHECK-NEXT:        function.return %[[VAL_4]] : !struct.type<@TPair::@Pair<[@Fst, @Snd]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_\.]+]]: !struct.type<@TPair::@Pair<[@Fst, @Snd]>>, %[[VAL_8:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Fst>, %[[VAL_9:[0-9a-zA-Z_\.]+]]: !poly.tvar<@Snd>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_\.]+]] = struct.readm %[[VAL_7]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
+// CHECK-NEXT:      function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@TPair::@Pair<[@Fst, @Snd]>>, %[[VAL_8:[0-9a-zA-Z_.-]+]]: !poly.tvar<@Fst>, %[[VAL_9:[0-9a-zA-Z_.-]+]]: !poly.tvar<@Snd>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@"$temp"] : <@TPair::@Pair<[@Fst, @Snd]>>, !struct.type<@TComponent::@Component>
 // CHECK-NEXT:        function.call @TComponent::@Component::@constrain(%[[VAL_10]]) : (!struct.type<@TComponent::@Component>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -168,15 +168,15 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Templ {
 // CHECK-NEXT:      poly.expr @B {
-// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_\.]+]] = arith.constant 42 : index
+// CHECK-NEXT:        %[[VAL_0:[0-9a-zA-Z_.-]+]] = arith.constant 42 : index
 // CHECK-NEXT:        poly.yield %[[VAL_0]] : index
 // CHECK-NEXT:      }
 // CHECK-NEXT:      struct.def @Struct {
 // CHECK-NEXT:        function.def @compute() -> !struct.type<@Templ::@Struct> attributes {function.allow_witness} {
-// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_\.]+]] = struct.new : <@Templ::@Struct>
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@Templ::@Struct>
 // CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@Templ::@Struct>
 // CHECK-NEXT:        }
-// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_\.]+]]: !struct.type<@Templ::@Struct>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@Templ::@Struct>) attributes {function.allow_constraint} {
 // CHECK-NEXT:          function.return
 // CHECK-NEXT:        }
 // CHECK-NEXT:      }
@@ -196,7 +196,7 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.template @Templ {
 // CHECK-NEXT:      poly.param @A : index
-// CHECK-NEXT:      function.def @c(%[[VAL_0:[0-9a-zA-Z_\.]+]]: !array.type<@A x i1>) {
+// CHECK-NEXT:      function.def @c(%[[VAL_0:[0-9a-zA-Z_.-]+]]: !array.type<@A x i1>) {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -241,10 +241,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @TLeaf {
 // CHECK-NEXT:    struct.def @Leaf {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TLeaf::@Leaf> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[LEAF:[0-9a-zA-Z_\.]+]] = struct.new : <@TLeaf::@Leaf>
+// CHECK-NEXT:        %[[LEAF:[0-9a-zA-Z_.-]+]] = struct.new : <@TLeaf::@Leaf>
 // CHECK-NEXT:        function.return %[[LEAF]] : !struct.type<@TLeaf::@Leaf>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[ARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[ARG:[0-9a-zA-Z_.-]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -254,16 +254,16 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.param @Flag
 // CHECK-NEXT:    struct.def @UsesPod {
 // CHECK-NEXT:      struct.member @payload : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
-// CHECK-NEXT:      function.def @compute(%[[IN:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) -> !struct.type<@TPodUser::@UsesPod<[@Flag]>> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_\.]+]] = struct.new : <@TPodUser::@UsesPod<[@Flag]>>
-// CHECK-NEXT:        %[[POD:[0-9a-zA-Z_\.]+]] = pod.new : <[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:      function.def @compute(%[[IN:[0-9a-zA-Z_.-]+]]: !struct.type<@TLeaf::@Leaf>) -> !struct.type<@TPodUser::@UsesPod<[@Flag]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF:[0-9a-zA-Z_.-]+]] = struct.new : <@TPodUser::@UsesPod<[@Flag]>>
+// CHECK-NEXT:        %[[POD:[0-9a-zA-Z_.-]+]] = pod.new : <[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // CHECK-NEXT:        pod.write %[[POD]][@leaf] = %[[IN]] : <[@leaf: !struct.type<@TLeaf::@Leaf>]>, !struct.type<@TLeaf::@Leaf>
 // CHECK-NEXT:        struct.writem %[[SELF]][@payload] = %[[POD]] : <@TPodUser::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // CHECK-NEXT:        function.return %[[SELF]] : !struct.type<@TPodUser::@UsesPod<[@Flag]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[SELFARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TPodUser::@UsesPod<[@Flag]>>, %[[LEAFARG:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[PODVAL:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELFARG]][@payload] : <@TPodUser::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
-// CHECK-NEXT:        %[[LEAFVAL:[0-9a-zA-Z_\.]+]] = pod.read %[[PODVAL]][@leaf] : <[@leaf: !struct.type<@TLeaf::@Leaf>]>, !struct.type<@TLeaf::@Leaf>
+// CHECK-NEXT:      function.def @constrain(%[[SELFARG:[0-9a-zA-Z_.-]+]]: !struct.type<@TPodUser::@UsesPod<[@Flag]>>, %[[LEAFARG:[0-9a-zA-Z_.-]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[PODVAL:[0-9a-zA-Z_.-]+]] = struct.readm %[[SELFARG]][@payload] : <@TPodUser::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:        %[[LEAFVAL:[0-9a-zA-Z_.-]+]] = pod.read %[[PODVAL]][@leaf] : <[@leaf: !struct.type<@TLeaf::@Leaf>]>, !struct.type<@TLeaf::@Leaf>
 // CHECK-NEXT:        function.call @TLeaf::@Leaf::@constrain(%[[LEAFVAL]]) : (!struct.type<@TLeaf::@Leaf>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
@@ -307,10 +307,10 @@ module attributes {llzk.lang} {
 // CHECK-LABEL: module @TLeaf {
 // CHECK-NEXT:    struct.def @Leaf {
 // CHECK-NEXT:      function.def @compute() -> !struct.type<@TLeaf::@Leaf> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[LEAF2:[0-9a-zA-Z_\.]+]] = struct.new : <@TLeaf::@Leaf>
+// CHECK-NEXT:        %[[LEAF2:[0-9a-zA-Z_.-]+]] = struct.new : <@TLeaf::@Leaf>
 // CHECK-NEXT:        function.return %[[LEAF2]] : !struct.type<@TLeaf::@Leaf>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[ARG2:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:      function.def @constrain(%[[ARG2:[0-9a-zA-Z_.-]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
 // CHECK-NEXT:    }
@@ -320,15 +320,15 @@ module attributes {llzk.lang} {
 // CHECK-NEXT:    poly.param @Flag
 // CHECK-NEXT:    struct.def @UsesPod {
 // CHECK-NEXT:      struct.member @payload : !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
-// CHECK-NEXT:      function.def @compute(%[[IN2:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) -> !struct.type<@TPodUserInit::@UsesPod<[@Flag]>> attributes {function.allow_witness} {
-// CHECK-NEXT:        %[[SELF2:[0-9a-zA-Z_\.]+]] = struct.new : <@TPodUserInit::@UsesPod<[@Flag]>>
-// CHECK-NEXT:        %[[POD2:[0-9a-zA-Z_\.]+]] = pod.new { @leaf = %[[IN2]] } : <[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:      function.def @compute(%[[IN2:[0-9a-zA-Z_.-]+]]: !struct.type<@TLeaf::@Leaf>) -> !struct.type<@TPodUserInit::@UsesPod<[@Flag]>> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[SELF2:[0-9a-zA-Z_.-]+]] = struct.new : <@TPodUserInit::@UsesPod<[@Flag]>>
+// CHECK-NEXT:        %[[POD2:[0-9a-zA-Z_.-]+]] = pod.new { @leaf = %[[IN2]] } : <[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // CHECK-NEXT:        struct.writem %[[SELF2]][@payload] = %[[POD2]] : <@TPodUserInit::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
 // CHECK-NEXT:        function.return %[[SELF2]] : !struct.type<@TPodUserInit::@UsesPod<[@Flag]>>
 // CHECK-NEXT:      }
-// CHECK-NEXT:      function.def @constrain(%[[SELFARG2:[0-9a-zA-Z_\.]+]]: !struct.type<@TPodUserInit::@UsesPod<[@Flag]>>, %[[LEAFARG2:[0-9a-zA-Z_\.]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
-// CHECK-NEXT:        %[[PODVAL2:[0-9a-zA-Z_\.]+]] = struct.readm %[[SELFARG2]][@payload] : <@TPodUserInit::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
-// CHECK-NEXT:        %[[LEAFVAL2:[0-9a-zA-Z_\.]+]] = pod.read %[[PODVAL2]][@leaf] : <[@leaf: !struct.type<@TLeaf::@Leaf>]>, !struct.type<@TLeaf::@Leaf>
+// CHECK-NEXT:      function.def @constrain(%[[SELFARG2:[0-9a-zA-Z_.-]+]]: !struct.type<@TPodUserInit::@UsesPod<[@Flag]>>, %[[LEAFARG2:[0-9a-zA-Z_.-]+]]: !struct.type<@TLeaf::@Leaf>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[PODVAL2:[0-9a-zA-Z_.-]+]] = struct.readm %[[SELFARG2]][@payload] : <@TPodUserInit::@UsesPod<[@Flag]>>, !pod.type<[@leaf: !struct.type<@TLeaf::@Leaf>]>
+// CHECK-NEXT:        %[[LEAFVAL2:[0-9a-zA-Z_.-]+]] = pod.read %[[PODVAL2]][@leaf] : <[@leaf: !struct.type<@TLeaf::@Leaf>]>, !struct.type<@TLeaf::@Leaf>
 // CHECK-NEXT:        function.call @TLeaf::@Leaf::@constrain(%[[LEAFVAL2]]) : (!struct.type<@TLeaf::@Leaf>) -> ()
 // CHECK-NEXT:        function.return
 // CHECK-NEXT:      }
