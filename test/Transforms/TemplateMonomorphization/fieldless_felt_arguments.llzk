@@ -1,0 +1,273 @@
+// RUN: llzk-opt %s --llzk-const-global-propagation --llzk-monomorphize-templates --verify-diagnostics | FileCheck %s
+
+// Verify felt specialization behavior across fielded, fieldless, and untyped parameters:
+// - A fielded parameter reduces explicit fielded and fieldless arguments to the declared field.
+// - A fieldless parameter preserves raw fieldless arguments without field coercion.
+// - An untyped parameter keeps each input's field intact without collapsing across fields.
+module attributes {llzk.lang, llzk.main = !struct.type<@Caller::@Main<[#felt<const 2013265924 : !felt.type<"babybear">>]>>} {
+  global.def const @GlobalBabyBear : !felt.type<"babybear"> = 2013265924
+  global.def const @GlobalFieldless : !felt.type = 3
+
+  poly.template @FieldedChild {
+    poly.param @N : !felt.type<"babybear">
+    struct.def @Fielded {
+      struct.member @value : !felt.type<"babybear">
+      function.def @compute() -> !struct.type<@FieldedChild::@Fielded<[@N]>> {
+        %n = poly.read_const @N : !felt.type<"babybear">
+        %self = struct.new : !struct.type<@FieldedChild::@Fielded<[@N]>>
+        struct.writem %self[@value] = %n : !struct.type<@FieldedChild::@Fielded<[@N]>>, !felt.type<"babybear">
+        function.return %self : !struct.type<@FieldedChild::@Fielded<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@FieldedChild::@Fielded<[@N]>>) {
+        %actual = struct.readm %self[@value] : !struct.type<@FieldedChild::@Fielded<[@N]>>, !felt.type<"babybear">
+        %expected = poly.read_const @N : !felt.type<"babybear">
+        constrain.eq %actual, %expected : !felt.type<"babybear">, !felt.type<"babybear">
+        function.return
+      }
+    }
+  }
+
+  poly.template @FieldlessChild {
+    poly.param @N : !felt.type
+    struct.def @Fieldless {
+      struct.member @value : !felt.type
+      function.def @compute() -> !struct.type<@FieldlessChild::@Fieldless<[@N]>> {
+        %n = poly.read_const @N : !felt.type
+        %self = struct.new : !struct.type<@FieldlessChild::@Fieldless<[@N]>>
+        struct.writem %self[@value] = %n : !struct.type<@FieldlessChild::@Fieldless<[@N]>>, !felt.type
+        function.return %self : !struct.type<@FieldlessChild::@Fieldless<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@FieldlessChild::@Fieldless<[@N]>>) {
+        %actual = struct.readm %self[@value] : !struct.type<@FieldlessChild::@Fieldless<[@N]>>, !felt.type
+        %expected = poly.read_const @N : !felt.type
+        constrain.eq %actual, %expected : !felt.type
+        function.return
+      }
+    }
+  }
+
+  poly.template @UntypedChild {
+    poly.param @N
+    struct.def @Untyped {
+      function.def @compute() -> !struct.type<@UntypedChild::@Untyped<[@N]>> {
+        %self = struct.new : !struct.type<@UntypedChild::@Untyped<[@N]>>
+        function.return %self : !struct.type<@UntypedChild::@Untyped<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@UntypedChild::@Untyped<[@N]>>) {
+        function.return
+      }
+    }
+  }
+
+  poly.template @UntypedValueFunction {
+    poly.param @N
+    function.def @value() -> !felt.type<"babybear"> {
+      %n = poly.read_const @N : !felt.type<"babybear">
+      function.return %n : !felt.type<"babybear">
+    }
+  }
+
+  poly.template @Caller {
+    poly.param @N : !felt.type<"babybear">
+    struct.def @Main {
+      struct.member @fielded_literal : !struct.type<@FieldedChild::@Fielded<[#felt<const 2013265924 : !felt.type<"babybear">>]>>
+      struct.member @fielded_forwarded : !struct.type<@FieldedChild::@Fielded<[@N]>>
+      struct.member @fielded_raw : !struct.type<@FieldedChild::@Fielded<[#felt<const 3>]>>
+      struct.member @fielded_global : !struct.type<@FieldedChild::@Fielded<[@GlobalBabyBear]>>
+      struct.member @fieldless_raw : !struct.type<@FieldlessChild::@Fieldless<[#felt<const 3>]>>
+      struct.member @fieldless_global : !struct.type<@FieldlessChild::@Fieldless<[@GlobalFieldless]>>
+      struct.member @fieldless_unreduced : !struct.type<@FieldlessChild::@Fieldless<[#felt<const 2013265924>]>>
+      struct.member @untyped_fielded : !struct.type<@UntypedChild::@Untyped<[@N]>>
+      struct.member @untyped_fieldless : !struct.type<@UntypedChild::@Untyped<[#felt<const 3>]>>
+      struct.member @value : !felt.type<"babybear">
+      function.def @compute() -> !struct.type<@Caller::@Main<[@N]>> {
+        %self = struct.new : !struct.type<@Caller::@Main<[@N]>>
+        %value = function.call @UntypedValueFunction::@value<[@N]>() : () -> !felt.type<"babybear">
+        struct.writem %self[@value] = %value : !struct.type<@Caller::@Main<[@N]>>, !felt.type<"babybear">
+        function.return %self : !struct.type<@Caller::@Main<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@Caller::@Main<[@N]>>) {
+        %actual = struct.readm %self[@value] : !struct.type<@Caller::@Main<[@N]>>, !felt.type<"babybear">
+        %expected = felt.const 3 : <"babybear">
+        constrain.eq %actual, %expected : !felt.type<"babybear">, !felt.type<"babybear">
+        function.return
+      }
+    }
+  }
+}
+
+// CHECK-LABEL: module attributes {llzk.lang, llzk.main = !struct.type<@Main__spec_0>} {
+// CHECK-NEXT:    poly.template @FieldedChild {
+// CHECK-NEXT:      poly.param @N : !felt.type<"babybear">
+// CHECK-NEXT:      struct.def @Fielded {
+// CHECK-NEXT:        struct.member @value : !felt.type<"babybear">
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@FieldedChild::@Fielded<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_0:[0-9a-zA-Z_.-]+]] = poly.read_const @N : !felt.type<"babybear">
+// CHECK-NEXT:          %[[VAL_1:[0-9a-zA-Z_.-]+]] = struct.new : <@FieldedChild::@Fielded<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_1]][@value] = %[[VAL_0]] : <@FieldedChild::@Fielded<[@N]>>, !felt.type<"babybear">
+// CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@FieldedChild::@Fielded<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_2:[0-9a-zA-Z_.-]+]]: !struct.type<@FieldedChild::@Fielded<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_3:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_2]][@value] : <@FieldedChild::@Fielded<[@N]>>, !felt.type<"babybear">
+// CHECK-NEXT:          %[[VAL_4:[0-9a-zA-Z_.-]+]] = poly.read_const @N : !felt.type<"babybear">
+// CHECK-NEXT:          constrain.eq %[[VAL_3]], %[[VAL_4]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @FieldlessChild {
+// CHECK-NEXT:      poly.param @N : !felt.type
+// CHECK-NEXT:      struct.def @Fieldless {
+// CHECK-NEXT:        struct.member @value : !felt.type
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@FieldlessChild::@Fieldless<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_5:[0-9a-zA-Z_.-]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          %[[VAL_6:[0-9a-zA-Z_.-]+]] = struct.new : <@FieldlessChild::@Fieldless<[@N]>>
+// CHECK-NEXT:          struct.writem %[[VAL_6]][@value] = %[[VAL_5]] : <@FieldlessChild::@Fieldless<[@N]>>, !felt.type
+// CHECK-NEXT:          function.return %[[VAL_6]] : !struct.type<@FieldlessChild::@Fieldless<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_7:[0-9a-zA-Z_.-]+]]: !struct.type<@FieldlessChild::@Fieldless<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_8:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_7]][@value] : <@FieldlessChild::@Fieldless<[@N]>>, !felt.type
+// CHECK-NEXT:          %[[VAL_9:[0-9a-zA-Z_.-]+]] = poly.read_const @N : !felt.type
+// CHECK-NEXT:          constrain.eq %[[VAL_8]], %[[VAL_9]] : !felt.type, !felt.type
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @UntypedChild {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      struct.def @Untyped {
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@UntypedChild::@Untyped<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_10:[0-9a-zA-Z_.-]+]] = struct.new : <@UntypedChild::@Untyped<[@N]>>
+// CHECK-NEXT:          function.return %[[VAL_10]] : !struct.type<@UntypedChild::@Untyped<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_11:[0-9a-zA-Z_.-]+]]: !struct.type<@UntypedChild::@Untyped<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @UntypedValueFunction {
+// CHECK-NEXT:      poly.param @N
+// CHECK-NEXT:      function.def @value() -> !felt.type<"babybear"> {
+// CHECK-NEXT:        %[[VAL_12:[0-9a-zA-Z_.-]+]] = poly.read_const @N : !felt.type<"babybear">
+// CHECK-NEXT:        function.return %[[VAL_12]] : !felt.type<"babybear">
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    poly.template @Caller {
+// CHECK-NEXT:      poly.param @N : !felt.type<"babybear">
+// CHECK-NEXT:      struct.def @Main {
+// CHECK-NEXT:        struct.member @fielded_literal : !struct.type<@FieldedChild::@Fielded<[#felt<const 2013265924 : <"babybear">>]>>
+// CHECK-NEXT:        struct.member @fielded_forwarded : !struct.type<@FieldedChild::@Fielded<[@N]>>
+// CHECK-NEXT:        struct.member @fielded_raw : !struct.type<@FieldedChild::@Fielded<[#felt<const 3>]>>
+// CHECK-NEXT:        struct.member @fielded_global : !struct.type<@FieldedChild::@Fielded<[#felt<const 2013265924 : <"babybear">>]>>
+// CHECK-NEXT:        struct.member @fieldless_raw : !struct.type<@FieldlessChild::@Fieldless<[#felt<const 3>]>>
+// CHECK-NEXT:        struct.member @fieldless_global : !struct.type<@FieldlessChild::@Fieldless<[#felt<const 3>]>>
+// CHECK-NEXT:        struct.member @fieldless_unreduced : !struct.type<@FieldlessChild::@Fieldless<[#felt<const 2013265924>]>>
+// CHECK-NEXT:        struct.member @untyped_fielded : !struct.type<@UntypedChild::@Untyped<[@N]>>
+// CHECK-NEXT:        struct.member @untyped_fieldless : !struct.type<@UntypedChild::@Untyped<[#felt<const 3>]>>
+// CHECK-NEXT:        struct.member @value : !felt.type<"babybear">
+// CHECK-NEXT:        function.def @compute() -> !struct.type<@Caller::@Main<[@N]>> attributes {function.allow_witness} {
+// CHECK-NEXT:          %[[VAL_13:[0-9a-zA-Z_.-]+]] = struct.new : <@Caller::@Main<[@N]>>
+// CHECK-NEXT:          %[[VAL_14:[0-9a-zA-Z_.-]+]] = function.call @UntypedValueFunction::@value<[@N]>() : () -> !felt.type<"babybear">
+// CHECK-NEXT:          struct.writem %[[VAL_13]][@value] = %[[VAL_14]] : <@Caller::@Main<[@N]>>, !felt.type<"babybear">
+// CHECK-NEXT:          function.return %[[VAL_13]] : !struct.type<@Caller::@Main<[@N]>>
+// CHECK-NEXT:        }
+// CHECK-NEXT:        function.def @constrain(%[[VAL_15:[0-9a-zA-Z_.-]+]]: !struct.type<@Caller::@Main<[@N]>>) attributes {function.allow_constraint} {
+// CHECK-NEXT:          %[[VAL_16:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_15]][@value] : <@Caller::@Main<[@N]>>, !felt.type<"babybear">
+// CHECK-NEXT:          %[[VAL_17:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"babybear">
+// CHECK-NEXT:          constrain.eq %[[VAL_16]], %[[VAL_17]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:          function.return
+// CHECK-NEXT:        }
+// CHECK-NEXT:      }
+// CHECK-NEXT:    }
+// CHECK-NEXT:    struct.def @Main__spec_0 {
+// CHECK-NEXT:      struct.member @fielded_literal : !struct.type<@Fielded__spec_1>
+// CHECK-NEXT:      struct.member @fielded_forwarded : !struct.type<@Fielded__spec_1>
+// CHECK-NEXT:      struct.member @fielded_raw : !struct.type<@Fielded__spec_1>
+// CHECK-NEXT:      struct.member @fielded_global : !struct.type<@Fielded__spec_1>
+// CHECK-NEXT:      struct.member @fieldless_raw : !struct.type<@Fieldless__spec_2>
+// CHECK-NEXT:      struct.member @fieldless_global : !struct.type<@Fieldless__spec_2>
+// CHECK-NEXT:      struct.member @fieldless_unreduced : !struct.type<@Fieldless__spec_3>
+// CHECK-NEXT:      struct.member @untyped_fielded : !struct.type<@Untyped__spec_4>
+// CHECK-NEXT:      struct.member @untyped_fieldless : !struct.type<@Untyped__spec_5>
+// CHECK-NEXT:      struct.member @value : !felt.type<"babybear">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Main__spec_0> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_18:[0-9a-zA-Z_.-]+]] = struct.new : <@Main__spec_0>
+// CHECK-NEXT:        %[[VAL_19:[0-9a-zA-Z_.-]+]] = function.call @value__spec_0() : () -> !felt.type<"babybear">
+// CHECK-NEXT:        struct.writem %[[VAL_18]][@value] = %[[VAL_19]] : <@Main__spec_0>, !felt.type<"babybear">
+// CHECK-NEXT:        function.return %[[VAL_18]] : !struct.type<@Main__spec_0>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_20:[0-9a-zA-Z_.-]+]]: !struct.type<@Main__spec_0>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_21:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_20]][@value] : <@Main__spec_0>, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_22:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"babybear">
+// CHECK-NEXT:        constrain.eq %[[VAL_21]], %[[VAL_22]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @Caller::@Main, poly.specialization_id = 0 : i64}
+// CHECK-NEXT:    struct.def @Fielded__spec_1 {
+// CHECK-NEXT:      struct.member @value : !felt.type<"babybear">
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Fielded__spec_1> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_23:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"babybear">
+// CHECK-NEXT:        %[[VAL_24:[0-9a-zA-Z_.-]+]] = struct.new : <@Fielded__spec_1>
+// CHECK-NEXT:        struct.writem %[[VAL_24]][@value] = %[[VAL_23]] : <@Fielded__spec_1>, !felt.type<"babybear">
+// CHECK-NEXT:        function.return %[[VAL_24]] : !struct.type<@Fielded__spec_1>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_25:[0-9a-zA-Z_.-]+]]: !struct.type<@Fielded__spec_1>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_26:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_25]][@value] : <@Fielded__spec_1>, !felt.type<"babybear">
+// CHECK-NEXT:        %[[VAL_27:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"babybear">
+// CHECK-NEXT:        constrain.eq %[[VAL_26]], %[[VAL_27]] : !felt.type<"babybear">, !felt.type<"babybear">
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @FieldedChild::@Fielded, poly.specialization_id = 1 : i64}
+// CHECK-NEXT:    struct.def @Fieldless__spec_2 {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Fieldless__spec_2> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_28:[0-9a-zA-Z_.-]+]] = felt.const  3
+// CHECK-NEXT:        %[[VAL_29:[0-9a-zA-Z_.-]+]] = struct.new : <@Fieldless__spec_2>
+// CHECK-NEXT:        struct.writem %[[VAL_29]][@value] = %[[VAL_28]] : <@Fieldless__spec_2>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_29]] : !struct.type<@Fieldless__spec_2>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_30:[0-9a-zA-Z_.-]+]]: !struct.type<@Fieldless__spec_2>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_31:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_30]][@value] : <@Fieldless__spec_2>, !felt.type
+// CHECK-NEXT:        %[[VAL_32:[0-9a-zA-Z_.-]+]] = felt.const  3
+// CHECK-NEXT:        constrain.eq %[[VAL_31]], %[[VAL_32]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 3> : !felt.type], poly.origin = @FieldlessChild::@Fieldless, poly.specialization_id = 2 : i64}
+// CHECK-NEXT:    struct.def @Fieldless__spec_3 {
+// CHECK-NEXT:      struct.member @value : !felt.type
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Fieldless__spec_3> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_33:[0-9a-zA-Z_.-]+]] = felt.const  2013265924
+// CHECK-NEXT:        %[[VAL_34:[0-9a-zA-Z_.-]+]] = struct.new : <@Fieldless__spec_3>
+// CHECK-NEXT:        struct.writem %[[VAL_34]][@value] = %[[VAL_33]] : <@Fieldless__spec_3>, !felt.type
+// CHECK-NEXT:        function.return %[[VAL_34]] : !struct.type<@Fieldless__spec_3>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_35:[0-9a-zA-Z_.-]+]]: !struct.type<@Fieldless__spec_3>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        %[[VAL_36:[0-9a-zA-Z_.-]+]] = struct.readm %[[VAL_35]][@value] : <@Fieldless__spec_3>, !felt.type
+// CHECK-NEXT:        %[[VAL_37:[0-9a-zA-Z_.-]+]] = felt.const  2013265924
+// CHECK-NEXT:        constrain.eq %[[VAL_36]], %[[VAL_37]] : !felt.type, !felt.type
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 2013265924> : !felt.type], poly.origin = @FieldlessChild::@Fieldless, poly.specialization_id = 3 : i64}
+// CHECK-NEXT:    struct.def @Untyped__spec_4 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Untyped__spec_4> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_38:[0-9a-zA-Z_.-]+]] = struct.new : <@Untyped__spec_4>
+// CHECK-NEXT:        function.return %[[VAL_38]] : !struct.type<@Untyped__spec_4>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_39:[0-9a-zA-Z_.-]+]]: !struct.type<@Untyped__spec_4>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @UntypedChild::@Untyped, poly.specialization_id = 4 : i64}
+// CHECK-NEXT:    struct.def @Untyped__spec_5 {
+// CHECK-NEXT:      function.def @compute() -> !struct.type<@Untyped__spec_5> attributes {function.allow_witness} {
+// CHECK-NEXT:        %[[VAL_40:[0-9a-zA-Z_.-]+]] = struct.new : <@Untyped__spec_5>
+// CHECK-NEXT:        function.return %[[VAL_40]] : !struct.type<@Untyped__spec_5>
+// CHECK-NEXT:      }
+// CHECK-NEXT:      function.def @constrain(%[[VAL_41:[0-9a-zA-Z_.-]+]]: !struct.type<@Untyped__spec_5>) attributes {function.allow_constraint} {
+// CHECK-NEXT:        function.return
+// CHECK-NEXT:      }
+// CHECK-NEXT:    } {poly.arguments = [#felt<const 3> : !felt.type], poly.origin = @UntypedChild::@Untyped, poly.specialization_id = 5 : i64}
+// CHECK-NEXT:    function.def @value__spec_0() -> !felt.type<"babybear"> attributes {poly.arguments = [#felt<const 3 : <"babybear">> : !felt.type<"babybear">], poly.origin = @UntypedValueFunction::@value} {
+// CHECK-NEXT:      %[[VAL_42:[0-9a-zA-Z_.-]+]] = felt.const  3 : <"babybear">
+// CHECK-NEXT:      function.return %[[VAL_42]] : !felt.type<"babybear">
+// CHECK-NEXT:    }
+// CHECK-NEXT:  }

@@ -106,9 +106,10 @@ def TemplateMonomorphizationPass : LLZKPass<"llzk-monomorphize-templates"> {
     parameters with a known field are reduced modulo its prime before forming
     the cache key and substituting uses. A felt literal with no specified field
     acquires the parameter's declared field; a different explicit field is
-    rejected. Equivalent field values therefore share a specialization. With no
-    known field, index-to-felt conversion requires a nonnegative value and
-    preserves it. Untyped parameters retain their input
+    rejected (including fielded arguments passed to a fieldless felt parameter).
+    Equivalent normalized values share a specialization. With no known field,
+    index-to-felt conversion requires a nonnegative value and preserves it.
+    Untyped parameters retain their input
     attributes, so differently spelled numeric values can create distinct
     specializations. An `i1` parameter accepts only boolean arguments or index
     zero and one, which become false and true. Other index values fail type

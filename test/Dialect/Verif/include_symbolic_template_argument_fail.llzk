@@ -1,4 +1,4 @@
-// RUN: llzk-opt -verify-diagnostics %s
+// RUN: llzk-opt -split-input-file -verify-diagnostics %s
 
 module attributes {llzk.lang} {
   poly.template @Spec {
@@ -14,5 +14,27 @@ module attributes {llzk.lang} {
   verif.contract @Wrapper for @wrapper_entry () {
     // expected-error@+1 {{'verif.include' op template argument '@Mutable' refers to a global that is not marked as 'const'}}
     verif.include @Spec::@Base<[@Mutable]>() : () -> ()
+  }
+}
+
+// -----
+
+// A value-valued global cannot instantiate a type-only include parameter.
+module attributes {llzk.lang} {
+  poly.template @Spec {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @Ty : !poly.tvar<@Ty>
+    function.def @entry() { function.return }
+    verif.contract @Base for @Spec::@entry () {
+      %ok = arith.constant true
+      verif.ensure_compute %ok
+    }
+  }
+  // expected-note@+1 {{argument symbol defined here}}
+  global.def const @Value : index = 35
+  function.def @wrapper_entry() { function.return }
+  verif.contract @Wrapper for @wrapper_entry () {
+    // expected-error@+1 {{'verif.include' op instantiation value '@Value' is not compatible with parameter "@Ty" type restriction '!poly.tvar<@Ty>'}}
+    verif.include @Spec::@Base<[@Value]>() : () -> ()
   }
 }

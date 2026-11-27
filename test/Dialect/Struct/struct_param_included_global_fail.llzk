@@ -1,0 +1,30 @@
+// RUN: llzk-opt -I %input_dir -verify-diagnostics %s
+
+// The argument definition is in an included module and must stay alive for the diagnostic.
+module attributes {llzk.lang} {
+  include.from "Inputs/struct_param_wrong_field_global.llzk" as @Lib
+
+  poly.template @T {
+    // expected-note@+1 {{parameter restriction declared here}}
+    poly.param @N : !felt.type<"bn128">
+    struct.def @S {
+      function.def @compute() -> !struct.type<@T::@S<[@N]>> {
+        %self = struct.new : !struct.type<@T::@S<[@N]>>
+        function.return %self : !struct.type<@T::@S<[@N]>>
+      }
+      function.def @constrain(%self: !struct.type<@T::@S<[@N]>>) { function.return }
+    }
+  }
+
+  struct.def @Use {
+    // The matching included global is accepted; the mismatched one must fail.
+    struct.member @good : !struct.type<@T::@S<[@Lib::@CorrectField]>>
+    // expected-error@+1 {{'struct.member' op instantiation value '@Lib::@WrongField' is not compatible with parameter "@N" type restriction '!felt.type<"bn128">'}}
+    struct.member @bad : !struct.type<@T::@S<[@Lib::@WrongField]>>
+    function.def @compute() -> !struct.type<@Use> {
+      %self = struct.new : !struct.type<@Use>
+      function.return %self : !struct.type<@Use>
+    }
+    function.def @constrain(%self: !struct.type<@Use>) { function.return }
+  }
+}
