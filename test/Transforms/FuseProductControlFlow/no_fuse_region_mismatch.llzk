@@ -1,5 +1,4 @@
 // RUN: llzk-opt --llzk-compute-constrain-to-product="root-struct=A" --llzk-fuse-product-control-flow %s | FileCheck --enable-var-scope %s
-// REQUIRES: raghav-cf-fusion
 
 module attributes {llzk.lang = "llzk"} {
     poly.template @TA {
@@ -66,6 +65,8 @@ module attributes {llzk.lang = "llzk"} {
     }
 }
 
+// Matching descendant controls in different parent regions are not paired, so the original loop
+// and conditional structure remains separate.
 // CHECK-LABEL: module attributes {llzk.lang = "llzk"} {
 // CHECK-NEXT:    poly.template @TA {
 // CHECK-NEXT:      poly.param @N : index
@@ -113,7 +114,6 @@ module attributes {llzk.lang = "llzk"} {
 // CHECK-NEXT:              constrain.eq %[[VAL_24]], %[[VAL_15]] : !felt.type, !felt.type {product_source = "constrain"}
 // CHECK-NEXT:            } {product_source = "constrain"}
 // CHECK-NEXT:          } {product_source = "constrain"}
-// CHECK-NOT: scf.for
 // CHECK-NEXT:          function.return %[[VAL_1]] : !struct.type<@TA::@A<[@N, @M]>>
 // CHECK-NEXT:        }
 // CHECK-NEXT:        function.def @compute(%[[VAL_25:[0-9a-zA-Z_.-]+]]: !array.type<@N x !felt.type>) -> !struct.type<@TA::@A<[@N, @M]>> attributes {function.allow_witness, product_source = "compute"} {
